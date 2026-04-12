@@ -1,13 +1,20 @@
 <script setup lang="ts">
 const router = useRouter()
 
+type ClientItem = {
+  id: string
+  associationId: string
+  name: string
+}
+
 const { data: clientsData, refresh: refreshClients } = useFetch('/api/clients', {
   server: false,
   default: () => ({ data: [] }),
 })
 
+const clients = computed<ClientItem[]>(() => clientsData.value?.data || [])
+
 const form = reactive({
-  associationId: 'cmnud3fhk0000nhjajr6wpemo',
   clientId: '',
   title: '',
   description: '',
@@ -30,7 +37,12 @@ async function submitForm() {
   try {
     await $fetch('/api/projects/create', {
       method: 'POST',
-      body: form,
+      body: {
+        clientId: form.clientId,
+        title: form.title,
+        description: form.description,
+        status: form.status,
+      },
     })
 
     successMessage.value = 'Projet créé avec succès.'
@@ -38,10 +50,12 @@ async function submitForm() {
     setTimeout(() => {
       router.push('/projects')
     }, 700)
-  } catch (error) {
+  }
+  catch (error) {
     console.error(error)
     errorMessage.value = 'Erreur lors de la création du projet.'
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -65,7 +79,7 @@ async function submitForm() {
           <select v-model="form.clientId" class="input" required>
             <option value="" disabled>-- Choisir un client --</option>
             <option
-              v-for="client in clientsData?.data || []"
+              v-for="client in clients"
               :key="client.id"
               :value="client.id"
             >
