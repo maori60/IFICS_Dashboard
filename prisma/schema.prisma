@@ -1,0 +1,311 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ClientType {
+  MAIRIE
+  SERVICE_MUNICIPAL
+  ETABLISSEMENT_SCOLAIRE
+  ASSOCIATION
+  AUTRE
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProjectStatus {
+  DRAFT
+  VALIDATED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum IntervenorStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum AssignmentStatus {
+  PENDING
+  ACCEPTED
+  REFUSED
+  CANCELLED
+}
+
+enum ProjectDocumentType {
+  CONTRACT
+  CONVENTION
+  QUOTE
+  INVOICE
+  REPORT
+  ANNEX
+  OTHER
+}
+
+enum DocumentVisibility {
+  ADMIN_ONLY
+  INTERNAL
+  CLIENT_VISIBLE
+  INTERVENOR_VISIBLE
+}
+
+model Association {
+  id                 String      @id @default(cuid())
+  name               String
+  legalName          String?
+  logoUrl            String?
+  primaryColor       String?
+  secondaryColor     String?
+  legalNotice        String?
+  billingName        String?
+  billingAddress     String?
+  billingPostalCode  String?
+  billingCity        String?
+  billingCountry     String?
+  billingEmail       String?
+  billingPhone       String?
+  siret              String?
+  pdfFooter          String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  roles              Role[]
+  users              User[]
+  clients            Client[]
+  projects           Project[]
+  intervenors        Intervenor[]
+}
+
+model Role {
+  id             String      @id @default(cuid())
+  associationId  String
+  name           String
+  code           String
+  description    String?
+  isSystemRole   Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  association    Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  users          User[]
+
+  @@unique([associationId, code])
+}
+
+model User {
+  id                  String      @id @default(cuid())
+  associationId       String
+  roleId              String
+  firstName           String
+  lastName            String
+  email               String      @unique
+  passwordHash        String
+  phone               String?
+  status              UserStatus  @default(ACTIVE)
+  lastLoginAt         DateTime?
+  resetToken          String?
+  resetTokenExpiresAt DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  association         Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  role                Role        @relation(fields: [roleId], references: [id])
+
+  intervenorProfile   Intervenor?
+  uploadedProjectDocuments ProjectDocument[] @relation("ProjectDocumentUploadedBy")
+
+  @@index([associationId])
+  @@index([roleId])
+}
+
+model Client {
+  id                  String       @id @default(cuid())
+  associationId       String
+  type                ClientType
+  status              ClientStatus @default(ACTIVE)
+  name                String
+  serviceName         String?
+  email               String
+  phone1              String?
+  phone2              String?
+  siret               String?
+  addressLine1        String
+  addressLine2        String?
+  postalCode          String
+  city                String
+  country             String
+  billingAddressLine1 String?
+  billingAddressLine2 String?
+  billingPostalCode   String?
+  billingCity         String?
+  billingCountry      String?
+  notes               String?
+  archivedAt          DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  association         Association  @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  contacts            ClientContact[]
+  projectClients      ProjectClient[]
+
+  @@index([associationId])
+  @@index([status])
+  @@index([archivedAt])
+}
+
+model ClientContact {
+  id          String    @id @default(cuid())
+  clientId    String
+  firstName   String
+  lastName    String
+  jobTitle    String?
+  email       String
+  phone1      String?
+  phone2      String?
+  isPrimary   Boolean   @default(false)
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+model Project {
+  id                  String              @id @default(cuid())
+  associationId       String
+  title               String
+  description         String?
+  status              ProjectStatus       @default(DRAFT)
+  internalComments    String?
+  startDate           DateTime?
+  endDate             DateTime?
+  plannedBudget       Decimal?            @db.Decimal(10, 2)
+  actualBudget        Decimal?            @db.Decimal(10, 2)
+  totalIntervenorCost Decimal?            @db.Decimal(10, 2)
+  materialCost        Decimal?            @db.Decimal(10, 2)
+  printingCost        Decimal?            @db.Decimal(10, 2)
+  otherCost           Decimal?            @db.Decimal(10, 2)
+  estimatedNetMargin  Decimal?            @db.Decimal(10, 2)
+  actualNetMargin     Decimal?            @db.Decimal(10, 2)
+  totalSessions       Int?
+  sessionUnitPrice    Decimal?            @db.Decimal(10, 2)
+  archivedAt          DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  association         Association         @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  projectClients      ProjectClient[]
+  projectIntervenors  ProjectIntervenor[]
+  documents           ProjectDocument[]
+
+  @@index([associationId])
+  @@index([status])
+  @@index([archivedAt])
+}
+
+model ProjectClient {
+  id            String    @id @default(cuid())
+  projectId     String
+  clientId      String
+  isMainClient  Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, clientId])
+  @@index([clientId])
+}
+
+model Intervenor {
+  id              String              @id @default(cuid())
+  associationId   String
+  userId          String?             @unique
+  firstName       String
+  lastName        String
+  email           String
+  phone           String?
+  specialty       String?
+  status          IntervenorStatus    @default(ACTIVE)
+  siret           String?
+  ribIban         String?
+  ribBic          String?
+  addressLine1    String?
+  addressLine2    String?
+  postalCode      String?
+  city            String?
+  country         String?
+  notes           String?
+  archivedAt      DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  association     Association         @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  projectLinks    ProjectIntervenor[]
+
+  @@index([associationId])
+  @@index([status])
+  @@index([archivedAt])
+}
+
+model ProjectIntervenor {
+  id                String            @id @default(cuid())
+  projectId         String
+  intervenorId      String
+  assignmentStatus  AssignmentStatus  @default(PENDING)
+  invitedAt         DateTime?
+  respondedAt       DateTime?
+  responseComment   String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  intervenor        Intervenor        @relation(fields: [intervenorId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, intervenorId])
+  @@index([intervenorId])
+  @@index([assignmentStatus])
+}
+
+model ProjectDocument {
+  id               String              @id @default(cuid())
+  projectId        String
+  uploadedByUserId String?
+  type             ProjectDocumentType @default(OTHER)
+  visibility       DocumentVisibility  @default(ADMIN_ONLY)
+  title            String?
+  originalName     String
+  storedName       String
+  filePath         String
+  mimeType         String
+  fileSize         Int
+  archivedAt       DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  project          Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedByUser   User?               @relation("ProjectDocumentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([type])
+  @@index([visibility])
+  @@index([archivedAt])
+}
