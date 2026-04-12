@@ -7,24 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!projectId) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Project id manquant',
-    })
-  }
-
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-    },
-    select: {
-      id: true,
-      archivedAt: true,
-    },
-  })
-
-  if (!project) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Projet introuvable',
+      statusMessage: 'Project ID manquant',
     })
   }
 
@@ -52,8 +35,13 @@ export default defineEventHandler(async (event) => {
     },
   })
 
+  const safeDocuments = documents.map((document) => ({
+    ...document,
+    fileSize: document.fileSize.toString(),
+  }))
+
   return {
     ok: true,
-    data: documents,
+    data: safeDocuments,
   }
 })

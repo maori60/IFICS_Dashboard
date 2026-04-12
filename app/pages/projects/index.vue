@@ -248,7 +248,9 @@ function getStatusClass(status: string) {
 
                   <div class="info-block">
                     <span class="info-label">Intervenants liés</span>
-                    <span class="info-value">0</span>
+                    <span class="info-value">
+                        {{ (project.projectIntervenors || []).length }}
+                    </span>
                   </div>
 
                   <div class="info-block">

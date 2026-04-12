@@ -1,8 +1,8 @@
 import { createError, getRouterParam, setHeader } from 'h3'
-import { prisma } from '../../../../utils/prisma'
 import { access, readFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { join } from 'node:path'
+import { prisma } from '../../../utils/prisma'
 
 export default defineEventHandler(async (event) => {
   const documentId = getRouterParam(event, 'documentId')
@@ -10,13 +10,14 @@ export default defineEventHandler(async (event) => {
   if (!documentId) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Document manquant.',
+      statusMessage: 'Document ID manquant.',
     })
   }
 
   const document = await prisma.intervenorDocument.findFirst({
     where: {
       id: documentId,
+      archivedAt: null,
     },
     select: {
       id: true,

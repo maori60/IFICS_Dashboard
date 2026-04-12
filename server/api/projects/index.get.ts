@@ -5,15 +5,34 @@ export default defineEventHandler(async () => {
     where: {
       archivedAt: null,
     },
-    include: {
-      projectClients: {
-        include: {
-          client: true,
-        },
-      },
-    },
     orderBy: {
       createdAt: 'desc',
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      status: true,
+
+      projectClients: {
+        select: {
+          id: true,
+          isMainClient: true,
+          client: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+
+      // 🔥 IMPORTANT
+      projectIntervenors: {
+        select: {
+          id: true,
+        },
+      },
     },
   })
 

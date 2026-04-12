@@ -32,7 +32,7 @@ type ProjectDocument = {
   storedName: string
   filePath: string
   mimeType: string
-  fileSize: number
+  fileSize: string
   createdAt: string
   updatedAt: string
 }
@@ -45,6 +45,14 @@ type ProjectDetail = {
   archivedAt?: string | null
   projectClients?: ProjectClientLink[]
   projectIntervenors?: ProjectIntervenorLink[]
+}
+
+type IntervenorOption = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  status: string
 }
 
 const emptyProject: ProjectDetail = {
@@ -64,10 +72,13 @@ const {
   pending,
   error,
   refresh,
-} = useFetch<ProjectDetail | null>(`/api/projects/${projectId.value}`, {
-  server: false,
-  default: () => null,
-})
+} = useFetch<{ ok: boolean; data: ProjectDetail | null }>(
+  `/api/projects/${projectId.value}`,
+  {
+    server: false,
+    default: () => ({ ok: true, data: null }),
+  },
+)
 
 const {
   data: documentsResponse,
@@ -82,8 +93,20 @@ const {
   },
 )
 
-const hasProject = computed(() => !!projectResponse.value)
-const projectData = computed<ProjectDetail>(() => projectResponse.value ?? emptyProject)
+const {
+  data: intervenorsOptionsResponse,
+  pending: intervenorsOptionsPending,
+  refresh: refreshIntervenorOptions,
+} = useFetch<{ ok: boolean; data: IntervenorOption[] }>(
+  '/api/intervenors/options',
+  {
+    server: false,
+    default: () => ({ ok: true, data: [] }),
+  },
+)
+
+const hasProject = computed(() => !!projectResponse.value?.data)
+const projectData = computed<ProjectDetail>(() => projectResponse.value?.data ?? emptyProject)
 
 const isArchiving = ref(false)
 const archiveError = ref('')
@@ -95,6 +118,13 @@ const uploadType = ref('CONTRACT')
 const isUploading = ref(false)
 const uploadError = ref('')
 const uploadSuccess = ref('')
+
+const selectedIntervenorId = ref('')
+const isLinkingIntervenor = ref(false)
+const linkIntervenorError = ref('')
+const linkIntervenorSuccess = ref('')
+const unlinkIntervenorError = ref('')
+const unlinkingIntervenorId = ref('')
 
 const documentTypeOptions = [
   { label: 'Contrat', value: 'CONTRACT' },
@@ -191,16 +221,22 @@ function getVisibilityLabel(visibility: string) {
   }
 }
 
-function formatFileSize(size: number) {
-  if (size < 1024) {
-    return `${size} o`
+function formatFileSize(size: string) {
+  const value = Number(size)
+
+  if (!Number.isFinite(value) || value < 0) {
+    return 'Taille inconnue'
   }
 
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} Ko`
+  if (value < 1024) {
+    return `${value} o`
   }
 
-  return `${(size / (1024 * 1024)).toFixed(1)} Mo`
+  if (value < 1024 * 1024) {
+    return `${(value / 1024).toFixed(1)} Ko`
+  }
+
+  return `${(value / (1024 * 1024)).toFixed(1)} Mo`
 }
 
 function formatDate(date: string) {
@@ -239,9 +275,22 @@ const mainClient = computed(() => {
 const linkedClientsCount = computed(() => projectData.value.projectClients?.length || 0)
 const linkedIntervenorsCount = computed(() => projectData.value.projectIntervenors?.length || 0)
 const documents = computed(() => documentsResponse.value?.data || [])
+const intervenorOptions = computed(() => intervenorsOptionsResponse.value?.data || [])
+
+const availableIntervenors = computed(() => {
+  const linkedIds = new Set(
+    (projectData.value.projectIntervenors || []).map((item) => item.intervenor.id),
+  )
+
+  return intervenorOptions.value.filter((item) => !linkedIds.has(item.id))
+})
 
 async function refreshAll() {
-  await Promise.all([refresh(), refreshDocuments()])
+  await Promise.all([
+    refresh(),
+    refreshDocuments(),
+    refreshIntervenorOptions(),
+  ])
 }
 
 async function uploadDocument() {
@@ -256,7 +305,7 @@ async function uploadDocument() {
   try {
     const formData = new FormData()
     formData.append('file', selectedFile.value)
-    formData.append('title', uploadTitle.value)
+    formData.append('title', uploadTitle.value.trim())
     formData.append('type', uploadType.value)
     formData.append('visibility', 'ADMIN_ONLY')
 
@@ -284,6 +333,74 @@ async function uploadDocument() {
     uploadError.value = err?.data?.statusMessage || 'Erreur lors de l’ajout du document.'
   } finally {
     isUploading.value = false
+  }
+}
+
+async function linkIntervenor() {
+  if (!projectData.value.id || !selectedIntervenorId.value || isLinkingIntervenor.value) {
+    return
+  }
+
+  isLinkingIntervenor.value = true
+  linkIntervenorError.value = ''
+  linkIntervenorSuccess.value = ''
+  unlinkIntervenorError.value = ''
+
+  try {
+    await $fetch('/api/projects/link-intervenor', {
+      method: 'POST',
+      body: {
+        projectId: projectData.value.id,
+        intervenorId: selectedIntervenorId.value,
+      },
+    })
+
+    linkIntervenorSuccess.value = 'Intervenant lié au projet avec succès.'
+    selectedIntervenorId.value = ''
+
+    await Promise.all([refresh(), refreshIntervenorOptions()])
+  } catch (err: any) {
+    console.error(err)
+    linkIntervenorError.value =
+      err?.data?.statusMessage || 'Erreur lors de la liaison de l’intervenant.'
+  } finally {
+    isLinkingIntervenor.value = false
+  }
+}
+
+async function unlinkIntervenor(intervenorId: string) {
+  if (!projectData.value.id || !intervenorId || unlinkingIntervenorId.value) {
+    return
+  }
+
+  const confirmed = window.confirm(
+    'Voulez-vous vraiment retirer cet intervenant du projet ?',
+  )
+
+  if (!confirmed) {
+    return
+  }
+
+  unlinkingIntervenorId.value = intervenorId
+  unlinkIntervenorError.value = ''
+  linkIntervenorSuccess.value = ''
+
+  try {
+    await $fetch('/api/projects/unlink-intervenor', {
+      method: 'POST',
+      body: {
+        projectId: projectData.value.id,
+        intervenorId,
+      },
+    })
+
+    await Promise.all([refresh(), refreshIntervenorOptions()])
+  } catch (err: any) {
+    console.error(err)
+    unlinkIntervenorError.value =
+      err?.data?.statusMessage || 'Erreur lors du retrait de l’intervenant.'
+  } finally {
+    unlinkingIntervenorId.value = ''
   }
 }
 
@@ -419,21 +536,116 @@ async function archiveProject() {
           </div>
         </div>
 
-        <div v-if="projectData.projectIntervenors?.length" class="related-section">
-          <h3 class="section-title">Intervenants associés</h3>
+        <div class="related-section">
+          <div class="section-header">
+            <h3 class="section-title">Lier un intervenant</h3>
+            <span class="section-counter">
+              {{ linkedIntervenorsCount }} lié(s)
+            </span>
+          </div>
 
-          <div class="related-list">
+          <div class="upload-card">
+            <div class="upload-grid">
+              <div class="field-group full">
+                <label class="field-label" for="project-intervenor-id">
+                  Intervenant
+                </label>
+                <select
+                  id="project-intervenor-id"
+                  v-model="selectedIntervenorId"
+                  class="field-input"
+                  :disabled="intervenorsOptionsPending || !availableIntervenors.length"
+                >
+                  <option value="">
+                    Sélectionnez un intervenant
+                  </option>
+                  <option
+                    v-for="item in availableIntervenors"
+                    :key="item.id"
+                    :value="item.id"
+                  >
+                    {{ item.firstName }} {{ item.lastName }} — {{ item.email }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="upload-actions">
+              <button
+                type="button"
+                class="primary-upload-button"
+                :disabled="!selectedIntervenorId || isLinkingIntervenor"
+                @click="linkIntervenor"
+              >
+                {{ isLinkingIntervenor ? 'Liaison...' : 'Lier l’intervenant' }}
+              </button>
+            </div>
+
+            <p v-if="linkIntervenorSuccess" class="success-message">
+              {{ linkIntervenorSuccess }}
+            </p>
+
+            <p v-if="linkIntervenorError" class="error-message">
+              {{ linkIntervenorError }}
+            </p>
+
+            <p v-if="unlinkIntervenorError" class="error-message">
+              {{ unlinkIntervenorError }}
+            </p>
+          </div>
+        </div>
+
+        <div class="related-section">
+          <div class="section-header">
+            <h3 class="section-title">Intervenants associés</h3>
+            <span class="section-counter">{{ linkedIntervenorsCount }}</span>
+          </div>
+
+          <div
+            v-if="!projectData.projectIntervenors?.length"
+            class="empty-state section-empty-state"
+          >
+            Aucun intervenant lié à ce projet.
+          </div>
+
+          <div v-else class="related-list">
             <div
               v-for="item in projectData.projectIntervenors"
               :key="item.id"
               class="related-item"
             >
-              <span class="related-name">
-                {{ item.intervenor.firstName }} {{ item.intervenor.lastName }}
-              </span>
-              <span class="related-meta">
-                {{ getAssignmentStatusLabel(item.assignmentStatus) }}
-              </span>
+              <div>
+                <span class="related-name">
+                  {{ item.intervenor.firstName }} {{ item.intervenor.lastName }}
+                </span>
+                <div class="document-meta">
+                  <span>{{ item.intervenor.email || 'Email non renseigné' }}</span>
+                  <span>•</span>
+                  <span>{{ getAssignmentStatusLabel(item.assignmentStatus) }}</span>
+                </div>
+              </div>
+
+              <div class="document-actions">
+                <NuxtLink
+                  :to="`/intervenors/${item.intervenor.id}`"
+                  class="document-action-link"
+                >
+                  Voir la fiche
+                </NuxtLink>
+
+                <button
+                  type="button"
+                  class="danger-action-button"
+                  :disabled="unlinkingIntervenorId === item.intervenor.id"
+                  @click="unlinkIntervenor(item.intervenor.id)"
+                >
+                  {{
+                    unlinkingIntervenorId === item.intervenor.id
+                      ? 'Retrait...'
+                      : 'Délier'
+                  }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -877,25 +1089,45 @@ async function archiveProject() {
   gap: 8px;
 }
 
-.document-action-link {
+.document-action-link,
+.danger-action-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 38px;
   padding: 0 14px;
   border-radius: 10px;
-  border: 1px solid #d1d5db;
-  background: white;
-  color: #111827;
-  text-decoration: none;
   font-size: 13px;
   font-weight: 700;
   transition: all 0.2s ease;
 }
 
+.document-action-link {
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #111827;
+  text-decoration: none;
+}
+
 .document-action-link:hover {
   background: #f9fafb;
   border-color: #cbd5e1;
+}
+
+.danger-action-button {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.danger-action-button:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.danger-action-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .section-empty-state {
@@ -977,13 +1209,16 @@ async function archiveProject() {
   }
 
   .actions-bar,
-  .upload-actions {
+  .upload-actions,
+  .document-actions {
     justify-content: stretch;
     flex-direction: column;
   }
 
   .archive-button,
-  .primary-upload-button {
+  .primary-upload-button,
+  .document-action-link,
+  .danger-action-button {
     width: 100%;
   }
 }

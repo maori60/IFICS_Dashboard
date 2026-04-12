@@ -64,70 +64,109 @@ enum DocumentVisibility {
   INTERVENOR_VISIBLE
 }
 
-model Association {
-  id                 String      @id @default(cuid())
-  name               String
-  legalName          String?
-  logoUrl            String?
-  primaryColor       String?
-  secondaryColor     String?
-  legalNotice        String?
-  billingName        String?
-  billingAddress     String?
-  billingPostalCode  String?
-  billingCity        String?
-  billingCountry     String?
-  billingEmail       String?
-  billingPhone       String?
-  siret              String?
-  pdfFooter          String?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+enum AccountingDocumentType {
+  QUOTE
+  INVOICE
+}
 
-  roles              Role[]
-  users              User[]
-  clients            Client[]
-  projects           Project[]
-  intervenors        Intervenor[]
+enum AccountingDocumentStatus {
+  PENDING
+  ACCEPTED
+  REFUSED
+}
+
+enum ReportStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  VALIDATED
+  REFUSED
+}
+
+enum IntervenorDocumentType {
+  IDENTITY
+  SIRENE
+  RC_PRO
+  CONTRACT
+  CONVENTION
+  SIGNED_CONVENTION
+  OTHER
+}
+
+enum IntervenorDocumentStatus {
+  PENDING
+  ACCEPTED
+  REFUSED
+}
+
+model Association {
+  id                String   @id @default(cuid())
+  name              String   @db.VarChar(150)
+  legalName         String?  @db.VarChar(255)
+  logoUrl           String?  @db.VarChar(500)
+  primaryColor      String?  @db.VarChar(20)
+  secondaryColor    String?  @db.VarChar(20)
+  legalNotice       String?
+  billingName       String?  @db.VarChar(255)
+  billingAddress    String?  @db.VarChar(255)
+  billingPostalCode String?  @db.VarChar(20)
+  billingCity       String?  @db.VarChar(120)
+  billingCountry    String?  @db.VarChar(100)
+  billingEmail      String?  @db.VarChar(255)
+  billingPhone      String?  @db.VarChar(30)
+  siret             String?  @db.VarChar(30)
+  pdfFooter         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  roles       Role[]
+  users       User[]
+  clients     Client[]
+  projects    Project[]
+  intervenors Intervenor[]
 }
 
 model Role {
-  id             String      @id @default(cuid())
-  associationId  String
-  name           String
-  code           String
-  description    String?
-  isSystemRole   Boolean     @default(false)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id            String   @id @default(cuid())
+  associationId String
+  name          String   @db.VarChar(100)
+  code          String   @db.VarChar(50)
+  description   String?
+  isSystemRole  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  association    Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
-  users          User[]
+  association Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  users       User[]
 
   @@unique([associationId, code])
+  @@unique([associationId, name])
 }
 
 model User {
-  id                  String      @id @default(cuid())
+  id                  String     @id @default(cuid())
   associationId       String
   roleId              String
-  firstName           String
-  lastName            String
-  email               String      @unique
+  firstName           String     @db.VarChar(100)
+  lastName            String     @db.VarChar(100)
+  email               String     @unique @db.VarChar(255)
   passwordHash        String
-  phone               String?
-  status              UserStatus  @default(ACTIVE)
+  phone               String?    @db.VarChar(30)
+  status              UserStatus @default(ACTIVE)
   lastLoginAt         DateTime?
-  resetToken          String?
+  resetToken          String?    @unique @db.VarChar(255)
   resetTokenExpiresAt DateTime?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
-  association         Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
-  role                Role        @relation(fields: [roleId], references: [id])
+  association Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  role        Role        @relation(fields: [roleId], references: [id])
 
-  intervenorProfile   Intervenor?
-  uploadedProjectDocuments ProjectDocument[] @relation("ProjectDocumentUploadedBy")
+  intervenorProfile           Intervenor?
+  uploadedProjectDocuments    ProjectDocument[]              @relation("ProjectDocumentUploadedBy")
+  reviewedIntervenorDocuments IntervenorDocument[]           @relation("IntervenorDocumentReviewedBy")
+  reviewedAccountingDocuments IntervenorAccountingDocument[] @relation("AccountingDocumentReviewedBy")
+  reviewedProjectReports      ProjectReport[]                @relation("ProjectReportReviewedBy")
 
   @@index([associationId])
   @@index([roleId])
@@ -138,147 +177,154 @@ model Client {
   associationId       String
   type                ClientType
   status              ClientStatus @default(ACTIVE)
-  name                String
-  serviceName         String?
-  email               String
-  phone1              String?
-  phone2              String?
-  siret               String?
-  addressLine1        String
-  addressLine2        String?
-  postalCode          String
-  city                String
-  country             String
-  billingAddressLine1 String?
-  billingAddressLine2 String?
-  billingPostalCode   String?
-  billingCity         String?
-  billingCountry      String?
+  name                String       @db.VarChar(150)
+  serviceName         String?      @db.VarChar(150)
+  email               String?      @db.VarChar(255)
+  phone1              String?      @db.VarChar(30)
+  phone2              String?      @db.VarChar(30)
+  siret               String?      @db.VarChar(30)
+  addressLine1        String       @db.VarChar(255)
+  addressLine2        String?      @db.VarChar(255)
+  postalCode          String       @db.VarChar(20)
+  city                String       @db.VarChar(120)
+  country             String       @db.VarChar(100)
+  billingAddressLine1 String?      @db.VarChar(255)
+  billingAddressLine2 String?      @db.VarChar(255)
+  billingPostalCode   String?      @db.VarChar(20)
+  billingCity         String?      @db.VarChar(120)
+  billingCountry      String?      @db.VarChar(100)
   notes               String?
   archivedAt          DateTime?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
-  association         Association  @relation(fields: [associationId], references: [id], onDelete: Cascade)
-  contacts            ClientContact[]
-  projectClients      ProjectClient[]
+  association    Association     @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  contacts       ClientContact[]
+  projectClients ProjectClient[]
 
   @@index([associationId])
-  @@index([status])
+  @@index([associationId, status])
   @@index([archivedAt])
+  @@index([siret])
 }
 
 model ClientContact {
-  id          String    @id @default(cuid())
-  clientId    String
-  firstName   String
-  lastName    String
-  jobTitle    String?
-  email       String
-  phone1      String?
-  phone2      String?
-  isPrimary   Boolean   @default(false)
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  clientId  String
+  firstName String   @db.VarChar(100)
+  lastName  String   @db.VarChar(100)
+  jobTitle  String?  @db.VarChar(100)
+  email     String?  @db.VarChar(255)
+  phone1    String?  @db.VarChar(30)
+  phone2    String?  @db.VarChar(30)
+  isPrimary Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
 }
 
 model Project {
-  id                  String              @id @default(cuid())
+  id                  String        @id @default(cuid())
   associationId       String
-  title               String
+  title               String        @db.VarChar(255)
   description         String?
-  status              ProjectStatus       @default(DRAFT)
+  status              ProjectStatus @default(DRAFT)
   internalComments    String?
   startDate           DateTime?
   endDate             DateTime?
-  plannedBudget       Decimal?            @db.Decimal(10, 2)
-  actualBudget        Decimal?            @db.Decimal(10, 2)
-  totalIntervenorCost Decimal?            @db.Decimal(10, 2)
-  materialCost        Decimal?            @db.Decimal(10, 2)
-  printingCost        Decimal?            @db.Decimal(10, 2)
-  otherCost           Decimal?            @db.Decimal(10, 2)
-  estimatedNetMargin  Decimal?            @db.Decimal(10, 2)
-  actualNetMargin     Decimal?            @db.Decimal(10, 2)
+  plannedBudget       Decimal?      @db.Decimal(10, 2)
+  actualBudget        Decimal?      @db.Decimal(10, 2)
+  totalIntervenorCost Decimal?      @db.Decimal(10, 2)
+  materialCost        Decimal?      @db.Decimal(10, 2)
+  printingCost        Decimal?      @db.Decimal(10, 2)
+  otherCost           Decimal?      @db.Decimal(10, 2)
+  estimatedNetMargin  Decimal?      @db.Decimal(10, 2)
+  actualNetMargin     Decimal?      @db.Decimal(10, 2)
   totalSessions       Int?
-  sessionUnitPrice    Decimal?            @db.Decimal(10, 2)
+  sessionUnitPrice    Decimal?      @db.Decimal(10, 2)
   archivedAt          DateTime?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
-  association         Association         @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  association         Association                    @relation(fields: [associationId], references: [id], onDelete: Cascade)
   projectClients      ProjectClient[]
   projectIntervenors  ProjectIntervenor[]
   documents           ProjectDocument[]
+  reports             ProjectReport[]
+  accountingDocuments IntervenorAccountingDocument[]
 
   @@index([associationId])
-  @@index([status])
+  @@index([associationId, status])
   @@index([archivedAt])
 }
 
 model ProjectClient {
-  id            String    @id @default(cuid())
-  projectId     String
-  clientId      String
-  isMainClient  Boolean   @default(false)
-  createdAt     DateTime  @default(now())
+  id           String   @id @default(cuid())
+  projectId    String
+  clientId     String
+  isMainClient Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
-  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, clientId])
   @@index([clientId])
 }
 
 model Intervenor {
-  id              String              @id @default(cuid())
-  associationId   String
-  userId          String?             @unique
-  firstName       String
-  lastName        String
-  email           String
-  phone           String?
-  specialty       String?
-  status          IntervenorStatus    @default(ACTIVE)
-  siret           String?
-  ribIban         String?
-  ribBic          String?
-  addressLine1    String?
-  addressLine2    String?
-  postalCode      String?
-  city            String?
-  country         String?
-  notes           String?
-  archivedAt      DateTime?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id            String           @id @default(cuid())
+  associationId String
+  userId        String?          @unique
+  firstName     String           @db.VarChar(100)
+  lastName      String           @db.VarChar(100)
+  email         String           @db.VarChar(255)
+  phone         String?          @db.VarChar(30)
+  specialty     String?          @db.VarChar(150)
+  status        IntervenorStatus @default(ACTIVE)
+  siret         String?          @db.VarChar(30)
+  ribIban       String?          @db.VarChar(34)
+  ribBic        String?          @db.VarChar(11)
+  addressLine1  String?          @db.VarChar(255)
+  addressLine2  String?          @db.VarChar(255)
+  postalCode    String?          @db.VarChar(20)
+  city          String?          @db.VarChar(120)
+  country       String?          @db.VarChar(100)
+  notes         String?
+  archivedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
-  association     Association         @relation(fields: [associationId], references: [id], onDelete: Cascade)
-  user            User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  projectLinks    ProjectIntervenor[]
+  association         Association                    @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  user                User?                          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  projectLinks        ProjectIntervenor[]
+  documents           IntervenorDocument[]
+  accountingDocuments IntervenorAccountingDocument[]
+  reports             ProjectReport[]
 
+  @@unique([associationId, email])
   @@index([associationId])
-  @@index([status])
+  @@index([associationId, status])
   @@index([archivedAt])
 }
 
 model ProjectIntervenor {
-  id                String            @id @default(cuid())
-  projectId         String
-  intervenorId      String
-  assignmentStatus  AssignmentStatus  @default(PENDING)
-  invitedAt         DateTime?
-  respondedAt       DateTime?
-  responseComment   String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id               String           @id @default(cuid())
+  projectId        String
+  intervenorId     String
+  assignmentStatus AssignmentStatus @default(PENDING)
+  invitedAt        DateTime?
+  respondedAt      DateTime?
+  responseComment  String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
-  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  intervenor        Intervenor        @relation(fields: [intervenorId], references: [id], onDelete: Cascade)
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  intervenor Intervenor @relation(fields: [intervenorId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, intervenorId])
   @@index([intervenorId])
@@ -291,21 +337,106 @@ model ProjectDocument {
   uploadedByUserId String?
   type             ProjectDocumentType @default(OTHER)
   visibility       DocumentVisibility  @default(ADMIN_ONLY)
-  title            String?
-  originalName     String
-  storedName       String
-  filePath         String
-  mimeType         String
-  fileSize         Int
+  title            String?             @db.VarChar(255)
+  originalName     String              @db.VarChar(255)
+  storedName       String              @db.VarChar(255)
+  filePath         String              @db.VarChar(500)
+  mimeType         String              @db.VarChar(100)
+  fileSize         BigInt
   archivedAt       DateTime?
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @updatedAt
 
-  project          Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  uploadedByUser   User?               @relation("ProjectDocumentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedByUser User?   @relation("ProjectDocumentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
 
   @@index([projectId])
+  @@index([projectId, visibility])
   @@index([type])
   @@index([visibility])
   @@index([archivedAt])
+}
+
+model IntervenorDocument {
+  id               String                   @id @default(cuid())
+  intervenorId     String
+  reviewedByUserId String?
+  type             IntervenorDocumentType
+  status           IntervenorDocumentStatus @default(PENDING)
+  title            String?                  @db.VarChar(255)
+  originalName     String                   @db.VarChar(255)
+  storedName       String                   @db.VarChar(255)
+  filePath         String                   @db.VarChar(500)
+  mimeType         String                   @db.VarChar(100)
+  fileSize         BigInt
+  adminComment     String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  reviewedAt       DateTime?
+
+  intervenor     Intervenor @relation(fields: [intervenorId], references: [id], onDelete: Cascade)
+  reviewedByUser User?      @relation("IntervenorDocumentReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([intervenorId])
+  @@index([status])
+  @@index([reviewedByUserId])
+}
+
+model IntervenorAccountingDocument {
+  id               String                   @id @default(cuid())
+  intervenorId     String
+  projectId        String?
+  reviewedByUserId String?
+  type             AccountingDocumentType
+  status           AccountingDocumentStatus @default(PENDING)
+  title            String?                  @db.VarChar(255)
+  description      String?
+  periodMonth      Int?
+  periodYear       Int?
+  originalName     String                   @db.VarChar(255)
+  storedName       String                   @db.VarChar(255)
+  filePath         String                   @db.VarChar(500)
+  mimeType         String                   @db.VarChar(100)
+  fileSize         BigInt
+  adminComment     String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  reviewedAt       DateTime?
+
+  intervenor     Intervenor @relation(fields: [intervenorId], references: [id], onDelete: Cascade)
+  project        Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  reviewedByUser User?      @relation("AccountingDocumentReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([intervenorId])
+  @@index([projectId])
+  @@index([status])
+  @@index([type])
+  @@index([periodYear, periodMonth])
+  @@index([reviewedByUserId])
+}
+
+model ProjectReport {
+  id               String       @id @default(cuid())
+  projectId        String
+  intervenorId     String?
+  reviewedByUserId String?
+  sessionDate      DateTime
+  studentsCount    Int?
+  status           ReportStatus @default(NOT_STARTED)
+  pdfPath          String?      @db.VarChar(500)
+  comment          String?
+  refusalReason    String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  reviewedAt       DateTime?
+
+  project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  intervenor     Intervenor? @relation(fields: [intervenorId], references: [id], onDelete: SetNull)
+  reviewedByUser User?       @relation("ProjectReportReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, intervenorId, sessionDate])
+  @@index([projectId])
+  @@index([intervenorId])
+  @@index([status])
+  @@index([reviewedByUserId])
 }
