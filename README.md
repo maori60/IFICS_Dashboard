@@ -180,16 +180,8 @@ Créer un outil métier basé sur une vraie expérience terrain, capable d’aid
 **Van BUI**
 
 - Étudiant à l’école 42
-- Ancien Responsable Projets & Solutions Digitales
-- Intéressé par les systèmes métiers, la cybersécurité et les outils à impact social
+- Responsable Projets & Solutions Digitales
 
----
-
-## 🎯 Objectif du projet
-
-- construire un portfolio solide
-- démontrer mes compétences full stack
-- trouver un stage / alternance
 
 ---
 
