@@ -7,11 +7,17 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "start": "node .output/server/index.mjs",
+    "db:seed": "tsx prisma/seed.ts",
     "postinstall": "nuxt prepare"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
+    "dotenv": "^16.6.1",
     "nuxt": "^4.4.2",
     "pg": "^8.20.0",
     "prisma": "^7.7.0",
@@ -19,6 +25,7 @@
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
+    "@types/node": "^24.5.2",
     "tsx": "^4.21.0"
   }
 }
