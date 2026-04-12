@@ -18,7 +18,6 @@ export default defineEventHandler(async (event) => {
     where: {
       intervenorId,
       type: 'CONTRACT',
-      archivedAt: null,
     },
     orderBy: {
       createdAt: 'desc',
@@ -41,16 +40,14 @@ export default defineEventHandler(async (event) => {
   try {
     await access(absoluteFilePath, constants.R_OK)
     await unlink(absoluteFilePath)
-  } catch {
-    // ignore
+  }
+  catch {
+    // ignore file deletion errors
   }
 
-  await prisma.intervenorDocument.update({
+  await prisma.intervenorDocument.delete({
     where: {
       id: contract.id,
-    },
-    data: {
-      archivedAt: new Date(),
     },
   })
 

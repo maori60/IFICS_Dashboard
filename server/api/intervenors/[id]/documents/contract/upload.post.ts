@@ -1,5 +1,5 @@
 import { createError, getRouterParam, readMultipartFormData } from 'h3'
-import { access, mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, unlink, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { join, extname } from 'node:path'
 import { randomUUID } from 'node:crypto'
@@ -56,7 +56,6 @@ export default defineEventHandler(async (event) => {
     where: {
       intervenorId,
       type: 'CONTRACT',
-      archivedAt: null,
     },
     select: {
       id: true,
@@ -70,20 +69,17 @@ export default defineEventHandler(async (event) => {
     try {
       await access(absolutePath, constants.R_OK)
       await unlink(absolutePath)
-    } catch {
-      // ignore
+    }
+    catch {
+      // ignore file deletion errors
     }
   }
 
   if (existingContracts.length) {
-    await prisma.intervenorDocument.updateMany({
+    await prisma.intervenorDocument.deleteMany({
       where: {
         intervenorId,
         type: 'CONTRACT',
-        archivedAt: null,
-      },
-      data: {
-        archivedAt: new Date(),
       },
     })
   }
@@ -111,7 +107,7 @@ export default defineEventHandler(async (event) => {
       storedName,
       filePath: relativeFilePath,
       mimeType: filePart.type || 'application/pdf',
-      fileSize: filePart.data.length,
+      fileSize: BigInt(filePart.data.length),
     },
     select: {
       id: true,
