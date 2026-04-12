@@ -1,10 +1,10 @@
-# 🚀 IFICS Dashboard
+# IFICS Dashboard
 
 > Dashboard de gestion associative dédié aux structures éducatives, collectivités et intervenants.
 
 ---
 
-## 🧠 Contexte
+## Contexte
 
 Ce projet est directement issu de mon expérience professionnelle.
 
@@ -27,7 +27,7 @@ En novembre 2023, j’intègre **l’école 42** afin de me reconvertir dans le 
 
 ---
 
-## 🎯 Objectif
+## Objectif
 
 Créer une application web permettant de :
 
@@ -39,7 +39,7 @@ Créer une application web permettant de :
 
 ---
 
-## 🏗️ Vision produit
+## Vision produit
 
 Le projet est conçu comme :
 
@@ -49,7 +49,7 @@ Le projet est conçu comme :
 - **responsive / mobile-first**
 - **évolutive et personnalisable**
 
-🎯 Objectif long terme :
+Objectif long terme :
 
 - outil métier robuste
 - solution réutilisable
@@ -64,36 +64,36 @@ Le projet est conçu comme :
 - permissions
 - accès temporaires
 
-### 🏫 Gestion des clients
+### Gestion des clients
 - collectivités
 - établissements scolaires
 - associations
 - multi-contacts
 
-### 📁 Gestion des projets
+### Gestion des projets
 - statuts (brouillon, validé, en cours, terminé…)
 - clients associés
 - intervenants
 - partenaires
 - suivi global
 
-### 🧑‍🏫 Gestion des intervenants
+### Gestion des intervenants
 - affectation aux projets
 - acceptation / refus de mission
 - dépôt de documents
 
-### 📄 Gestion documentaire
+### Gestion documentaire
 - upload de fichiers (PDF)
 - consultation sécurisée
 - gestion des accès
 - traçabilité
 
-### 🧾 Devis & Factures *(en cours)*
+### Devis & Factures *(en cours)*
 - génération
 - suivi
 - export PDF
 
-### 📝 Bilans *(en cours)*
+### Bilans *(en cours)*
 - rédaction libre
 - versioning
 - export
@@ -104,7 +104,7 @@ Le projet est conçu comme :
 
 ---
 
-## 🧱 Stack technique
+## Stack technique
 
 - **Frontend** : Nuxt 3 / Vue 3
 - **Backend** : Node.js (Nitro)
