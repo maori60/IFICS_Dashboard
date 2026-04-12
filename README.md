@@ -1,75 +1,199 @@
-# Nuxt Minimal Starter
+# 🚀 IFICS Dashboard
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+> Dashboard de gestion associative dédié aux structures éducatives, collectivités et intervenants.
 
-## Setup
+---
 
-Make sure to install dependencies:
+## 🧠 Contexte
 
-```bash
-# npm
-npm install
+Ce projet est directement issu de mon expérience professionnelle.
 
-# pnpm
-pnpm install
+De 2021 à 2026, j’ai travaillé en tant que **Responsable Projets et Solutions Digitales** au sein de l’association **IFICSI**, spécialisée dans l’éducation et les projets avec les collectivités territoriales.
 
-# yarn
-yarn install
+Au quotidien, j’ai été confronté à des problématiques concrètes :
 
-# bun
-bun install
-```
+- gestion complexe des projets
+- multiplicité des interlocuteurs (collectivités, établissements scolaires, partenaires)
+- suivi des intervenants
+- organisation des documents (bilans, conventions, contrats)
+- gestion des devis et factures
+- absence d’un outil centralisé réellement adapté aux associations
 
-## Development Server
+En novembre 2023, j’intègre **l’école 42** afin de me reconvertir dans le développement.
 
-Start the development server on `http://localhost:3000`:
+👉 Ce projet est donc la fusion entre :
+- mon expérience métier terrain
+- mes compétences techniques en cours d’acquisition
 
-```bash
-# npm
-npm run dev
+---
 
-# pnpm
-pnpm dev
+## 🎯 Objectif
 
-# yarn
-yarn dev
+Créer une application web permettant de :
 
-# bun
-bun run dev
-```
+- centraliser la gestion d’une association
+- structurer les projets et les acteurs
+- simplifier la gestion administrative et documentaire
+- sécuriser les accès aux données sensibles
+- proposer un outil réutilisable par d’autres structures
 
-## Production
+---
 
-Build the application for production:
+## 🏗️ Vision produit
 
-```bash
-# npm
-npm run build
+Le projet est conçu comme :
 
-# pnpm
-pnpm build
+- une **web application**
+- **auto-hébergée**
+- **une association = une instance**
+- **responsive / mobile-first**
+- **évolutive et personnalisable**
 
-# yarn
-yarn build
+🎯 Objectif long terme :
 
-# bun
-bun run build
-```
+- outil métier robuste
+- solution réutilisable
+- produit scalable et distribuable
 
-Locally preview production build:
+---
 
-```bash
-# npm
-npm run preview
+## ⚙️ Fonctionnalités principales
 
-# pnpm
-pnpm preview
+### 👥 Gestion des utilisateurs
+- rôles (admin, client, intervenant)
+- permissions
+- accès temporaires
 
-# yarn
-yarn preview
+### 🏫 Gestion des clients
+- collectivités
+- établissements scolaires
+- associations
+- multi-contacts
 
-# bun
-bun run preview
-```
+### 📁 Gestion des projets
+- statuts (brouillon, validé, en cours, terminé…)
+- clients associés
+- intervenants
+- partenaires
+- suivi global
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+### 🧑‍🏫 Gestion des intervenants
+- affectation aux projets
+- acceptation / refus de mission
+- dépôt de documents
+
+### 📄 Gestion documentaire
+- upload de fichiers (PDF)
+- consultation sécurisée
+- gestion des accès
+- traçabilité
+
+### 🧾 Devis & Factures *(en cours)*
+- génération
+- suivi
+- export PDF
+
+### 📝 Bilans *(en cours)*
+- rédaction libre
+- versioning
+- export
+
+### 🔔 Notifications
+- actions importantes
+- activité récente
+
+---
+
+## 🧱 Stack technique
+
+- **Frontend** : Nuxt 3 / Vue 3
+- **Backend** : Node.js (Nitro)
+- **ORM** : Prisma
+- **Base de données** : PostgreSQL
+- **Gestion PDF** : serveur (upload + visualisation)
+- **Déploiement** : Docker (prévu)
+
+---
+
+## 📂 Structure du projet
+app/ → Frontend Nuxt (pages, composants)
+server/ → API backend (routes, logique métier)
+prisma/ → schéma + migrations base de données
+public/ → assets statiques
+
+
+---
+
+## 🔐 Sécurité
+
+- gestion des rôles et permissions
+- accès restreints aux documents
+- traçabilité des actions
+- séparation des données
+
+---
+
+## 🚧 État du projet
+
+⚠️ Projet en développement actif
+
+### Fonctionnel actuellement :
+- gestion des projets
+- gestion des documents (upload + visualisation PDF)
+- API backend structurée
+- routing dynamique Nuxt
+
+### En cours :
+- amélioration UI/UX
+- gestion avancée des rôles
+- devis / factures
+- notifications
+
+---
+
+## 🚀 Roadmap
+
+### V1 (MVP)
+- authentification
+- clients / projets
+- intervenants
+- documents
+- devis / factures
+- dashboard
+
+### V2
+- signature électronique
+- statistiques avancées
+- recherche globale
+- relances automatiques
+
+---
+
+## 💡 Vision
+
+Créer un outil métier basé sur une vraie expérience terrain, capable d’aider les associations à structurer leur activité et à gagner en efficacité.
+
+---
+
+## 👨‍💻 Auteur
+
+**Van BUI**
+
+- Étudiant à l’école 42
+- Ancien Responsable Projets & Solutions Digitales
+- Intéressé par les systèmes métiers, la cybersécurité et les outils à impact social
+
+---
+
+## 🎯 Objectif du projet
+
+- construire un portfolio solide
+- démontrer mes compétences full stack
+- trouver un stage / alternance
+
+---
+
+## ⚠️ Disclaimer
+
+Projet en développement actif.  
+Certaines fonctionnalités sont encore en cours d’implémentation.
