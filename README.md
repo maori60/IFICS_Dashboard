@@ -4,7 +4,7 @@
 
 ## 🎬 Demo
 
-![IFICS Dashboard Demo](./demo.gif)
+![IFICS Dashboard Demo](./output_demo.gif)
 
 ---
 
