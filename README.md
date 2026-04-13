@@ -1,4 +1,34 @@
-# IFICS Dashboard
+# 🚀 IFICS Dashboard
+
+> Full-stack SaaS dashboard to manage projects, clients and documents.
+
+## 🎬 Demo
+
+![IFICS Dashboard Demo](./demo.gif)
+
+---
+
+## 💡 Quick overview
+
+- Client management  
+- Project tracking  
+- Document handling (PDF)  
+- Invoices & quotes (in progress)  
+- Data-driven dashboard  
+
+---
+
+## ⚙️ Tech Stack
+
+- Nuxt 3 / Vue 3  
+- Node.js (Nitro)  
+- Prisma ORM  
+- PostgreSQL (self-hosted)  
+- Docker  
+
+---
+
+## 📌 Contexte du projet
 
 > Dashboard de gestion associative dédié aux structures éducatives, collectivités et intervenants.
 
@@ -8,7 +38,7 @@
 
 Ce projet est directement issu de mon expérience professionnelle.
 
-De 2021 à 2026, j’ai travaillé en tant que **Responsable Projets et Solutions Digitales** au sein de l’association **IFICSI**, spécialisée dans l’éducation et les projets avec les collectivités territoriales.
+De 2021 à 2026, j’ai travaillé en tant que **Responsable Projets et Solutions Digitales** au sein de l’association **IFICS**, spécialisée dans l’éducation et les projets avec les collectivités territoriales.
 
 Au quotidien, j’ai été confronté à des problématiques concrètes :
 
