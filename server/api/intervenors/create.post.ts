@@ -1,99 +1,47 @@
-import { createError, readBody } from 'h3'
+import { readBody } from 'h3'
+import { requirePermission } from '../../utils/auth'
+import { PERMISSIONS } from '../../utils/constants'
 import { prisma } from '../../utils/prisma'
+import { httpError, prismaErrorCode, success } from '../../utils/api'
+import { normalizeBic, normalizeIban, normalizeSiret, optionalString, requiredEmail, requiredString, safeObject } from '../../utils/validation'
+import { writeAuditLog } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-
-  const firstName = String(body.firstName || '').trim()
-  const lastName = String(body.lastName || '').trim()
-  const email = String(body.email || '').trim().toLowerCase()
-  const phone = String(body.phone || '').trim()
-  const specialty = String(body.specialty || '').trim()
-
-  if (!firstName) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Le prénom est obligatoire.',
-    })
-  }
-
-  if (!lastName) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Le nom est obligatoire.',
-    })
-  }
-
-  if (!email) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'L’email est obligatoire.',
-    })
-  }
-
-  if (!email.includes('@')) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Email invalide.',
-    })
-  }
-
-  const association = await prisma.association.findFirst({
-    orderBy: {
-      createdAt: 'asc',
-    },
-    select: {
-      id: true,
-    },
-  })
-
-  if (!association) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Aucune association trouvée en base.',
-    })
-  }
+  const context = await requirePermission(event, PERMISSIONS.INTERVENOR_WRITE)
+  const body = safeObject(await readBody(event))
 
   try {
     const intervenor = await prisma.intervenor.create({
       data: {
-        associationId: association.id,
-        firstName,
-        lastName,
-        email,
-        phone: phone || null,
-        specialty: specialty || null,
-        status: 'ACTIVE',
+        associationId: context.associationId,
+        firstName: requiredString(body.firstName, 'Prénom', { max: 100 }),
+        lastName: requiredString(body.lastName, 'Nom', { max: 100 }),
+        email: requiredEmail(body.email),
+        phone: optionalString(body.phone, 'Téléphone', { max: 30 }),
+        specialty: optionalString(body.specialty, 'Spécialité', { max: 150 }),
+        siret: normalizeSiret(body.siret),
+        ribIban: normalizeIban(body.ribIban),
+        ribBic: normalizeBic(body.ribBic),
+        addressLine1: optionalString(body.addressLine1, 'Adresse', { max: 255 }),
+        addressLine2: optionalString(body.addressLine2, 'Complément d’adresse', { max: 255 }),
+        postalCode: optionalString(body.postalCode, 'Code postal', { max: 20 }),
+        city: optionalString(body.city, 'Ville', { max: 120 }),
+        country: optionalString(body.country, 'Pays', { max: 100 }),
+        notes: optionalString(body.notes, 'Notes'),
       },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        specialty: true,
-        status: true,
-        createdAt: true,
-      },
+      select: { id: true, firstName: true, lastName: true, email: true, status: true, createdAt: true },
     })
 
-    return {
-      ok: true,
-      data: intervenor,
-    }
-  } catch (err: any) {
-    if (err?.code === 'P2002') {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Un intervenant avec cet email existe déjà.',
-      })
-    }
-
-    console.error(err)
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Erreur serveur lors de la création de l’intervenant.',
+    await writeAuditLog(event, context, {
+      action: 'INTERVENOR_CREATED', entityType: 'Intervenor', entityId: intervenor.id,
     })
+
+    return success(intervenor)
+  }
+  catch (error) {
+    if (prismaErrorCode(error) === 'P2002') {
+      httpError(409, 'Un intervenant avec cet email existe déjà.', 'INTERVENOR_DUPLICATE')
+    }
+    throw error
   }
 })
