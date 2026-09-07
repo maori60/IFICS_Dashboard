@@ -1,0 +1,8 @@
+import { getRouterParam, readBody } from 'h3'
+import { requirePermission } from '../../../utils/auth'
+import { PERMISSIONS } from '../../../utils/constants'
+import { prisma } from '../../../utils/prisma'
+import { httpError, requireRouterId, success } from '../../../utils/api'
+import { optionalString, requiredString, safeObject } from '../../../utils/validation'
+import { writeAuditLog } from '../../../utils/audit'
+export default defineEventHandler(async (event) => { const context = await requirePermission(event, PERMISSIONS.HR_WRITE); const departmentId = requireRouterId(getRouterParam(event, 'id'), 'Service'); const body = safeObject(await readBody(event)); const userId = requiredString(body.userId, 'Utilisateur', { max: 191 }); const department = await prisma.department.findFirst({ where: { id: departmentId, associationId: context.associationId }, select: { id: true } }); const user = await prisma.user.findFirst({ where: { id: userId, associationId: context.associationId }, select: { id: true } }); if (!department || !user) httpError(404, 'Service ou utilisateur introuvable.', 'MEMBERSHIP_RESOURCE_NOT_FOUND'); const membership = await prisma.departmentMembership.upsert({ where: { departmentId_userId: { departmentId, userId } }, create: { departmentId, userId, position: optionalString(body.position, 'Fonction', { max: 150 }), isManager: body.isManager === true }, update: { position: optionalString(body.position, 'Fonction', { max: 150 }), isManager: body.isManager === true } }); await writeAuditLog(event, context, { action: 'DEPARTMENT_MEMBERSHIP_UPSERTED', entityType: 'DepartmentMembership', entityId: membership.id, metadata: { departmentId, userId } }); return success(membership) })

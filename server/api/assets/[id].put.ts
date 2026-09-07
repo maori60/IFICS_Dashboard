@@ -1,0 +1,9 @@
+import { getRouterParam, readBody } from 'h3'
+import { requirePermission } from '../../utils/auth'
+import { PERMISSIONS } from '../../utils/constants'
+import { prisma } from '../../utils/prisma'
+import { httpError, requireRouterId, success } from '../../utils/api'
+import { optionalDate, optionalEnum, optionalString, requiredString, safeObject } from '../../utils/validation'
+import { writeAuditLog } from '../../utils/audit'
+const STATUSES = ['STOCK', 'ASSIGNED', 'MAINTENANCE', 'RETIRED', 'LOST'] as const
+export default defineEventHandler(async (event) => { const context = await requirePermission(event, PERMISSIONS.IT_WRITE); const id = requireRouterId(getRouterParam(event, 'id'), 'Matériel'); const body = safeObject(await readBody(event)); const existing = await prisma.asset.findFirst({ where: { id, associationId: context.associationId }, select: { id: true } }); if (!existing) httpError(404, 'Matériel introuvable.', 'ASSET_NOT_FOUND'); const asset = await prisma.asset.update({ where: { id }, data: { inventoryTag: requiredString(body.inventoryTag, 'Référence', { max: 100 }), type: requiredString(body.type, 'Type', { max: 100 }), brand: optionalString(body.brand, 'Marque', { max: 100 }), model: optionalString(body.model, 'Modèle', { max: 150 }), serialNumber: optionalString(body.serialNumber, 'Numéro de série', { max: 150 }), status: optionalEnum(body.status, STATUSES, 'Statut') || undefined, assignedUserId: body.assignedUserId === null ? null : optionalString(body.assignedUserId, 'Utilisateur', { max: 191 }), location: optionalString(body.location, 'Localisation', { max: 200 }), purchaseDate: body.purchaseDate === null ? null : optionalDate(body.purchaseDate, 'Achat'), warrantyUntil: body.warrantyUntil === null ? null : optionalDate(body.warrantyUntil, 'Garantie'), notes: optionalString(body.notes, 'Notes') } }); await writeAuditLog(event, context, { action: 'ASSET_UPDATED', entityType: 'Asset', entityId: id }); return success(asset) })

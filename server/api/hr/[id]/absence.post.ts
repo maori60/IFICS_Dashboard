@@ -1,0 +1,8 @@
+import { getRouterParam, readBody } from 'h3'
+import { requirePermission } from '../../../utils/auth'
+import { PERMISSIONS } from '../../../utils/constants'
+import { prisma } from '../../../utils/prisma'
+import { httpError, requireRouterId, success } from '../../../utils/api'
+import { optionalString, requiredString, safeObject } from '../../../utils/validation'
+import { writeAuditLog } from '../../../utils/audit'
+export default defineEventHandler(async (event) => { const context = await requirePermission(event, PERMISSIONS.HR_WRITE); const profileId = requireRouterId(getRouterParam(event, 'id'), 'Profil RH'); const body = safeObject(await readBody(event)); const profile = await prisma.hrProfile.findFirst({ where: { id: profileId, associationId: context.associationId }, select: { id: true } }); if (!profile) httpError(404, 'Profil RH introuvable.', 'HR_PROFILE_NOT_FOUND'); const startDate = new Date(requiredString(body.startDate, 'Début')); const endDate = new Date(requiredString(body.endDate, 'Fin')); if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate < startDate) httpError(400, 'Période invalide.', 'INVALID_ABSENCE_PERIOD'); const absence = await prisma.hrAbsence.create({ data: { profileId, type: requiredString(body.type, 'Type', { max: 100 }), startDate, endDate, status: optionalString(body.status, 'Statut', { max: 40 }) || 'PENDING', note: optionalString(body.note, 'Note') } }); await writeAuditLog(event, context, { action: 'HR_ABSENCE_CREATED', entityType: 'HrAbsence', entityId: absence.id, metadata: { profileId } }); return success(absence) })
