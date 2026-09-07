@@ -24,12 +24,12 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.7.0",
-    "@prisma/client": "^7.7.0",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "dotenv": "^17.4.1",
-    "nuxt": "^4.4.2",
+    "nuxt": "^4.5.2",
     "pg": "^8.20.0",
-    "prisma": "^7.7.0",
+    "prisma": "^7.10.0",
     "vue": "^3.5.32",
     "vue-router": "^5.0.4"
   },
