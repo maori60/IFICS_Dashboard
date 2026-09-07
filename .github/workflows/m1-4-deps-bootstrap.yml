@@ -1,0 +1,46 @@
+name: M1.4 Dependency Bootstrap
+
+on:
+  push:
+    branches:
+      - milestone-1/foundation
+    paths:
+      - '.github/workflows/m1-4-deps-bootstrap.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: milestone-1/foundation
+
+      - name: Use Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install M1.4 quality dependencies
+        run: npm install --save-dev eslint @nuxt/eslint typescript vue-tsc vitest @vitest/coverage-v8
+
+      - name: Show dependency audit summary
+        run: npm audit --audit-level=low || true
+
+      - name: Commit package manifests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if git diff --cached --quiet; then
+            echo "No dependency changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(m1.4): add quality toolchain"
+          git push origin HEAD:milestone-1/foundation
