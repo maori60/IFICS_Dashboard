@@ -21,7 +21,7 @@
 ## ⚙️ Tech Stack
 
 - Nuxt 4 / Vue 3
-- Node.js (Nitro)
+- Node.js 22 / Nitro
 - Prisma ORM
 - PostgreSQL 16 (self-hosted)
 - Docker / Docker Compose
