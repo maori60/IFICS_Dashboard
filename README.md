@@ -21,14 +21,16 @@
 ## ⚙️ Tech Stack
 
 - Nuxt 4 / Vue 3
-- Node.js 22 / Nitro
+- Node.js 22
+- Nitro server API
 - Prisma ORM
 - PostgreSQL 16 (self-hosted)
 - Docker / Docker Compose
+- ESLint / TypeScript / Vitest
 
 ---
 
-## 🧪 Local development
+## 🧪 Local setup
 
 1. Clone the repository.
 2. Create your local environment file:
@@ -38,28 +40,31 @@ cp .env.example .env
 ```
 
 3. Replace every placeholder secret in `.env` with a unique local value.
-4. Initialize the isolated development stack:
+4. Initialize the development stack:
 
 ```bash
 make dev-init
 ```
 
-The development application is exposed on `http://127.0.0.1:3000` by default. `APP_PORT` can be changed in `.env`.
-
-Daily commands:
-
-```bash
-make dev-up
-make dev-down
-make dev-logs
-make dev-ps
-```
-
-Database migrations and seed operations are explicit. Restarting a container never performs `prisma db push` and never seeds the database automatically.
-
-Full workflow: `docs/development/docker.md`.
+The application is exposed on `http://localhost:3000` by default. `APP_PORT` can be changed in `.env`.
 
 > Never commit `.env` or real credentials. Values that appeared in Git history before Milestone 1.2 must be considered compromised and must not be reused.
+
+### Quality checks
+
+Before proposing a change, run:
+
+```bash
+npm run quality
+```
+
+The permanent pull-request quality gate also validates deterministic installation, Prisma client generation, lint, Nuxt type checking, Vitest coverage and the production dependency critical-vulnerability threshold.
+
+See:
+
+- `docs/development/docker.md`
+- `docs/development/quality.md`
+- `docs/security/secrets-management.md`
 
 ---
 
@@ -173,6 +178,7 @@ Objectif long terme :
 - `server/` → API backend (routes, logique métier)
 - `prisma/` → schéma + migrations base de données
 - `public/` → assets statiques
+- `tests/` → tests automatisés
 - `docs/` → documentation architecture, sécurité et exploitation
 
 ---
@@ -189,7 +195,7 @@ Le projet est en cours de durcissement dans le cadre du Milestone 1. La cible in
 - tests automatisés de sécurité et d’autorisation
 - environnement auditable
 
-Voir `docs/architecture/current-state.md` et `docs/security/secrets-management.md`.
+Voir `docs/architecture/current-state.md`, `docs/development/quality.md` et `docs/security/secrets-management.md`.
 
 ---
 
@@ -203,11 +209,13 @@ Voir `docs/architecture/current-state.md` et `docs/security/secrets-management.m
 - gestion des documents (upload + visualisation PDF)
 - API backend structurée
 - routing dynamique Nuxt
+- environnement Docker DEV reproductible
+- lint, typecheck et tests unitaires automatisés
 
 ### En cours
 
+- tests de régression API
 - socle sécurité / authentification
-- tests automatisés
 - amélioration UI/UX
 - gestion avancée des rôles
 - devis / factures
