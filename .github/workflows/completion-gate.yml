@@ -1,0 +1,44 @@
+name: Completion Gate
+
+on:
+  push:
+    branches:
+      - project-completion/v1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  completion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://build_only:unused@127.0.0.1:5432/build_only?schema=public
+      NODE_ENV: development
+      APP_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      IP_HASH_PEPPER: completion-gate-development-pepper
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Use Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate Prisma schema
+        run: npx prisma validate
+      - name: Generate Prisma client
+        run: npx prisma generate
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm run test:coverage
+      - name: Block critical production dependency vulnerabilities
+        run: npm run security:audit
+      - name: Build
+        run: npm run build
