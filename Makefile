@@ -14,6 +14,8 @@ dev-db:
 	$(DEV_COMPOSE) up -d db
 
 dev-init: dev-build dev-db
+	@echo "Generating Prisma client..."
+	$(DEV_COMPOSE) run --rm app npx prisma generate
 	@echo "Applying versioned database migrations..."
 	$(DEV_COMPOSE) run --rm app npx prisma migrate deploy
 	@echo "Seeding development data explicitly..."
@@ -43,6 +45,7 @@ dev-migrate:
 	$(DEV_COMPOSE) run --rm app npx prisma migrate deploy
 
 dev-seed:
+	$(DEV_COMPOSE) run --rm app npx prisma generate
 	$(DEV_COMPOSE) run --rm app npm run db:seed
 
 dev-generate:
@@ -51,6 +54,7 @@ dev-generate:
 dev-reset:
 	@echo "WARNING: this deletes the DEVELOPMENT database contents."
 	$(DEV_COMPOSE) run --rm app npx prisma migrate reset --force --skip-seed
+	$(DEV_COMPOSE) run --rm app npx prisma generate
 	$(DEV_COMPOSE) run --rm app npm run db:seed
 
 dev-shell-app:
