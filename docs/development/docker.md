@@ -132,6 +132,8 @@ It checks:
 9. absence of automatic reseeding during application recreation
 10. production-like Compose syntax and application image build
 
+The GitHub check attached to the tested commit is part of the M1.3 audit evidence. A failed run is retained as useful evidence of a detected defect; remediation is accepted only after a subsequent run passes the same assertions.
+
 ## Local validation checklist
 
 After `make dev-init`:
