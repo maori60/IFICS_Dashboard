@@ -19,25 +19,34 @@ export default defineEventHandler(async (event) => {
 
   const document = await prisma.intervenorDocument.findFirst({
     where: { id: documentId, intervenorId, archivedAt: null, intervenor: { associationId: context.associationId } },
-    select: { id: true, type: true, intervenor: { select: { userId: true } } },
+    select: { id: true, type: true, expiresAt: true, intervenor: { select: { userId: true } } },
   })
   if (!document) httpError(404, 'Document introuvable.', 'DOCUMENT_NOT_FOUND')
 
+  const now = new Date()
+  const effectiveStatus = status === 'ACCEPTED' && document.expiresAt && document.expiresAt <= now ? 'EXPIRED' : status
   const updated = await prisma.intervenorDocument.update({
     where: { id: documentId },
-    data: { status, adminComment, reviewedByUserId: context.userId, reviewedAt: new Date() },
-    select: { id: true, type: true, status: true, adminComment: true, reviewedAt: true },
+    data: { status: effectiveStatus, adminComment, reviewedByUserId: context.userId, reviewedAt: now },
+    select: { id: true, type: true, status: true, adminComment: true, issuedAt: true, expiresAt: true, reviewedAt: true },
   })
 
   if (document.intervenor.userId) {
     await notifyUser(document.intervenor.userId, {
-      type: status === 'ACCEPTED' ? 'SUCCESS' : 'WARNING',
+      type: effectiveStatus === 'ACCEPTED' ? 'SUCCESS' : 'WARNING',
       title: 'Document administratif examiné',
-      message: `Votre document ${document.type} a été ${status === 'ACCEPTED' ? 'validé' : 'refusé'}.`,
-      href: `/intervenors/${intervenorId}`,
+      message: effectiveStatus === 'ACCEPTED'
+        ? `Votre document ${document.type} a été validé.`
+        : effectiveStatus === 'EXPIRED'
+          ? `Votre document ${document.type} est déjà expiré et doit être renouvelé.`
+          : `Votre document ${document.type} a été refusé.`,
+      href: `/dashboard/intervenors`,
     })
   }
 
-  await writeAuditLog(event, context, { action: 'INTERVENOR_DOCUMENT_REVIEWED', entityType: 'IntervenorDocument', entityId: documentId, metadata: { intervenorId, status } })
+  await writeAuditLog(event, context, {
+    action: 'INTERVENOR_DOCUMENT_REVIEWED', entityType: 'IntervenorDocument', entityId: documentId,
+    metadata: { intervenorId, status: effectiveStatus },
+  })
   return success(updated)
 })

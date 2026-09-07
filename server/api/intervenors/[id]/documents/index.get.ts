@@ -12,7 +12,11 @@ export default defineEventHandler(async (event) => {
   const documents = await prisma.intervenorDocument.findMany({
     where: { intervenorId, archivedAt: null, intervenor: { associationId: context.associationId } },
     orderBy: { createdAt: 'desc' },
-    select: { id: true, type: true, status: true, title: true, originalName: true, mimeType: true, fileSize: true, sha256: true, version: true, adminComment: true, createdAt: true, reviewedAt: true },
+    select: {
+      id: true, type: true, status: true, title: true, originalName: true, mimeType: true,
+      fileSize: true, sha256: true, version: true, adminComment: true, issuedAt: true,
+      expiresAt: true, lastExpiryReminderDays: true, createdAt: true, reviewedAt: true,
+    },
   })
   return success(jsonSafe(documents))
 })
