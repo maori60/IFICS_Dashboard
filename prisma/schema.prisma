@@ -95,8 +95,27 @@ enum IntervenorDocumentType {
 
 enum IntervenorDocumentStatus {
   PENDING
+  UNDER_REVIEW
   ACCEPTED
   REFUSED
+  TO_RENEW
+  EXPIRED
+  ARCHIVED
+}
+
+enum DataClassification {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum MfaResetStatus {
+  PENDING
+  APPROVED
+  USED
+  REJECTED
+  EXPIRED
 }
 
 enum NotificationType {
@@ -130,27 +149,31 @@ enum AuditOutcome {
 }
 
 model Association {
-  id                String   @id @default(cuid())
-  name              String   @db.VarChar(150)
-  legalName         String?  @db.VarChar(255)
-  logoUrl           String?  @db.VarChar(500)
-  primaryColor      String?  @db.VarChar(20)
-  secondaryColor    String?  @db.VarChar(20)
-  legalNotice       String?
-  billingName       String?  @db.VarChar(255)
-  billingAddress    String?  @db.VarChar(255)
-  billingPostalCode String?  @db.VarChar(20)
-  billingCity       String?  @db.VarChar(120)
-  billingCountry    String?  @db.VarChar(100)
-  billingEmail      String?  @db.VarChar(255)
-  billingPhone      String?  @db.VarChar(30)
-  siret             String?  @db.VarChar(30)
-  pdfFooter         String?
-  timezone          String   @default("Europe/Paris") @db.VarChar(100)
-  locale            String   @default("fr-FR") @db.VarChar(20)
-  currency          String   @default("EUR") @db.VarChar(3)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  name                String    @db.VarChar(150)
+  legalName           String?   @db.VarChar(255)
+  logoUrl             String?   @db.VarChar(500)
+  primaryColor        String?   @db.VarChar(20)
+  secondaryColor      String?   @db.VarChar(20)
+  legalNotice         String?
+  billingName         String?   @db.VarChar(255)
+  billingAddress      String?   @db.VarChar(255)
+  billingPostalCode   String?   @db.VarChar(20)
+  billingCity         String?   @db.VarChar(120)
+  billingCountry      String?   @db.VarChar(100)
+  billingEmail        String?   @db.VarChar(255)
+  billingPhone        String?   @db.VarChar(30)
+  siret               String?   @db.VarChar(30)
+  pdfFooter           String?
+  timezone            String    @default("Europe/Paris") @db.VarChar(100)
+  locale              String    @default("fr-FR") @db.VarChar(20)
+  currency            String    @default("EUR") @db.VarChar(3)
+  maintenanceEnabled  Boolean   @default(false)
+  maintenanceMessage  String?
+  maintenanceStartsAt DateTime?
+  maintenanceEndsAt   DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   roles            Role[]
   users            User[]
@@ -368,28 +391,29 @@ model ClientContact {
 }
 
 model Project {
-  id                  String        @id @default(cuid())
+  id                  String             @id @default(cuid())
   associationId       String
-  reference           String?       @db.VarChar(50)
-  title               String        @db.VarChar(255)
+  reference           String?            @db.VarChar(50)
+  title               String             @db.VarChar(255)
   description         String?
-  status              ProjectStatus @default(DRAFT)
+  status              ProjectStatus      @default(DRAFT)
+  classification      DataClassification @default(INTERNAL)
   internalComments    String?
   startDate           DateTime?
   endDate             DateTime?
-  plannedBudget       Decimal?      @db.Decimal(12, 2)
-  actualBudget        Decimal?      @db.Decimal(12, 2)
-  totalIntervenorCost Decimal?      @db.Decimal(12, 2)
-  materialCost        Decimal?      @db.Decimal(12, 2)
-  printingCost        Decimal?      @db.Decimal(12, 2)
-  otherCost           Decimal?      @db.Decimal(12, 2)
-  estimatedNetMargin  Decimal?      @db.Decimal(12, 2)
-  actualNetMargin     Decimal?      @db.Decimal(12, 2)
+  plannedBudget       Decimal?           @db.Decimal(12, 2)
+  actualBudget        Decimal?           @db.Decimal(12, 2)
+  totalIntervenorCost Decimal?           @db.Decimal(12, 2)
+  materialCost        Decimal?           @db.Decimal(12, 2)
+  printingCost        Decimal?           @db.Decimal(12, 2)
+  otherCost           Decimal?           @db.Decimal(12, 2)
+  estimatedNetMargin  Decimal?           @db.Decimal(12, 2)
+  actualNetMargin     Decimal?           @db.Decimal(12, 2)
   totalSessions       Int?
-  sessionUnitPrice    Decimal?      @db.Decimal(12, 2)
+  sessionUnitPrice    Decimal?           @db.Decimal(12, 2)
   archivedAt          DateTime?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   association         Association                    @relation(fields: [associationId], references: [id], onDelete: Cascade)
   projectClients      ProjectClient[]
@@ -504,24 +528,27 @@ model ProjectDocument {
 }
 
 model IntervenorDocument {
-  id               String                   @id @default(cuid())
-  intervenorId     String
-  reviewedByUserId String?
-  type             IntervenorDocumentType
-  status           IntervenorDocumentStatus @default(PENDING)
-  title            String?                  @db.VarChar(255)
-  originalName     String                   @db.VarChar(255)
-  storedName       String                   @db.VarChar(255)
-  filePath         String                   @db.VarChar(500)
-  mimeType         String                   @db.VarChar(100)
-  fileSize         BigInt
-  sha256           String?                  @db.VarChar(64)
-  version          Int                      @default(1)
-  adminComment     String?
-  archivedAt       DateTime?
-  createdAt        DateTime                 @default(now())
-  updatedAt        DateTime                 @updatedAt
-  reviewedAt       DateTime?
+  id                     String                   @id @default(cuid())
+  intervenorId           String
+  reviewedByUserId       String?
+  type                   IntervenorDocumentType
+  status                 IntervenorDocumentStatus @default(PENDING)
+  title                  String?                  @db.VarChar(255)
+  originalName           String                   @db.VarChar(255)
+  storedName             String                   @db.VarChar(255)
+  filePath               String                   @db.VarChar(500)
+  mimeType               String                   @db.VarChar(100)
+  fileSize               BigInt
+  sha256                 String?                  @db.VarChar(64)
+  version                Int                      @default(1)
+  adminComment           String?
+  issuedAt               DateTime?
+  expiresAt              DateTime?
+  lastExpiryReminderDays Int?
+  archivedAt             DateTime?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  reviewedAt             DateTime?
 
   intervenor     Intervenor @relation(fields: [intervenorId], references: [id], onDelete: Cascade)
   reviewedByUser User?      @relation("IntervenorDocumentReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
@@ -530,6 +557,7 @@ model IntervenorDocument {
   @@index([status])
   @@index([reviewedByUserId])
   @@index([archivedAt])
+  @@index([expiresAt])
   @@index([sha256])
 }
 
@@ -1311,4 +1339,24 @@ model SystemSetting {
   updatedAt     DateTime @updatedAt
 
   @@unique([associationId, key])
+}
+
+model MfaResetRequest {
+  id               String         @id @default(cuid())
+  associationId    String
+  userId           String
+  status           MfaResetStatus @default(PENDING)
+  tokenHash        String?        @unique @db.VarChar(64)
+  approvedByUserId String?
+  requestedAt      DateTime       @default(now())
+  approvedAt       DateTime?
+  expiresAt        DateTime?
+  usedAt           DateTime?
+  rejectedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([associationId, status, requestedAt])
+  @@index([userId, status])
+  @@index([expiresAt])
 }
