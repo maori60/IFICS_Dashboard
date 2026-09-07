@@ -42,6 +42,9 @@ function safeSegment(value: string): string {
 }
 
 export function safeOriginalFilename(value: string): string {
+  // The explicit control-character range is intentional: uploaded names are
+  // untrusted data and must not carry terminal/log control bytes.
+  // eslint-disable-next-line no-control-regex
   const clean = basename(value)
     .replace(/[\u0000-\u001f\u007f]/g, '')
     .replace(/["'<>\\/]/g, '_')
