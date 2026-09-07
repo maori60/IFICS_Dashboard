@@ -18,7 +18,7 @@ on:
 jobs:
   docker-dev-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       POSTGRES_USER: ifics_ci
       POSTGRES_PASSWORD: ci_only_not_a_secret
@@ -29,9 +29,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Validate Compose configuration
+      - name: Validate development Compose configuration
         run: docker compose -f docker-compose.dev.yml config --quiet
 
       - name: Build development image
@@ -67,18 +67,40 @@ jobs:
             psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc 'SELECT COUNT(*) FROM "Association";')
           test "$count" -ge 1
 
-      - name: Verify upload volume survives app recreation
+      - name: Capture seed timestamp before app recreation
+        run: |
+          timestamp=$(docker compose -f docker-compose.dev.yml exec -T db \
+            psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
+            'SELECT "updatedAt" FROM "Association" WHERE id = '\''assoc_default_ifics'\'';')
+          test -n "$timestamp"
+          echo "SEED_UPDATED_AT=$timestamp" >> "$GITHUB_ENV"
+
+      - name: Verify upload volume and database are untouched by app recreation
         run: |
           docker compose -f docker-compose.dev.yml exec -T app \
             sh -c 'mkdir -p /app/uploads/smoke && printf persistent > /app/uploads/smoke/marker.txt'
+
           docker compose -f docker-compose.dev.yml up -d --force-recreate app
+
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3000/ >/dev/null; then
               break
             fi
             sleep 2
           done
+
           test "$(docker compose -f docker-compose.dev.yml exec -T app cat /app/uploads/smoke/marker.txt)" = "persistent"
+
+          timestamp_after=$(docker compose -f docker-compose.dev.yml exec -T db \
+            psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc \
+            'SELECT "updatedAt" FROM "Association" WHERE id = '\''assoc_default_ifics'\'';')
+          test "$timestamp_after" = "$SEED_UPDATED_AT"
+
+      - name: Validate production-like Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build production-like application image
+        run: docker compose build app
 
       - name: Show final service state
         if: always()
