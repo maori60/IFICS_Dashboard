@@ -4,15 +4,14 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 
 RUN chmod +x docker-entrypoint.sh
 
-ARG DATABASE_URL=postgresql://van_dashboard:van1234@db:5432/association_dashboard?schema=public
-ENV DATABASE_URL=$DATABASE_URL
-
+# DATABASE_URL is provided at runtime by the environment / compose file.
+# Build-time Prisma generation does not require live database access.
 RUN npx prisma generate
 RUN npm run build
 
