@@ -12,6 +12,12 @@
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
     "db:seed": "tsx prisma/seed.ts",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "quality": "npm run lint && npm run typecheck && npm run test:coverage",
     "postinstall": "nuxt prepare"
   },
   "prisma": {
