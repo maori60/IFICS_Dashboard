@@ -1,4 +1,5 @@
 # M1.3 audit evidence: reproducible Docker development bootstrap and persistence checks.
+# Keep this workflow in sync with the documented Node/Docker runtime.
 name: Docker Dev Smoke
 
 on:
