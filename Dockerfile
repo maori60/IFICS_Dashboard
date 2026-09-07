@@ -10,10 +10,14 @@ COPY . .
 
 RUN chmod +x docker-entrypoint.sh
 
-# DATABASE_URL is provided at runtime by the environment / compose file.
-# Build-time Prisma generation does not require live database access.
-RUN npx prisma generate
-RUN npm run build
+# Prisma loads prisma.config.ts while generating the client. Generation does not
+# connect to PostgreSQL, so use a deliberately non-secret, unreachable build-only
+# placeholder instead of injecting a real database credential into image layers.
+RUN DATABASE_URL="postgresql://build_only:unused@127.0.0.1:5432/build_only" npx prisma generate
+
+# Keep the same non-secret placeholder available while Nuxt/Nitro bundles server
+# modules that import Prisma. Runtime DATABASE_URL is provided separately by Docker.
+RUN DATABASE_URL="postgresql://build_only:unused@127.0.0.1:5432/build_only" npm run build
 
 EXPOSE 3000
 
