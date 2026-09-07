@@ -14,11 +14,13 @@ export const PERMISSIONS = {
   DASHBOARD_READ: 'dashboard:read',
   CLIENT_READ: 'client:read', CLIENT_WRITE: 'client:write',
   PROJECT_READ: 'project:read', PROJECT_WRITE: 'project:write', PROJECT_ASSIGN: 'project:assign',
+  PROJECT_CONFIDENTIAL_READ: 'project:confidential:read',
   INTERVENOR_READ: 'intervenor:read', INTERVENOR_WRITE: 'intervenor:write',
   DOCUMENT_READ: 'document:read', DOCUMENT_WRITE: 'document:write', DOCUMENT_REVIEW: 'document:review',
   REPORT_READ: 'report:read', REPORT_WRITE: 'report:write', REPORT_REVIEW: 'report:review',
   BILLING_READ: 'billing:read', BILLING_WRITE: 'billing:write',
   NOTIFICATION_READ: 'notification:read', USER_MANAGE: 'user:manage', SETTINGS_MANAGE: 'settings:manage', AUDIT_READ: 'audit:read',
+  SECURITY_MFA_RESET: 'security:mfa:reset',
   TICKET_READ: 'ticket:read', TICKET_WRITE: 'ticket:write', TICKET_MANAGE: 'ticket:manage',
   CONTENT_READ: 'content:read', CONTENT_WRITE: 'content:write', CONTENT_PUBLISH: 'content:publish',
   PARTNER_READ: 'partner:read', PARTNER_WRITE: 'partner:write',
@@ -32,7 +34,7 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 export const SYSTEM_ROLES: Record<RoleCode, { name: string; description: string; permissions: Permission[] }> = {
   ADMIN: { name: 'Administrateur', description: 'Accès complet à l’instance IFICS.', permissions: [PERMISSIONS.ALL] },
   MANAGER: {
-    name: 'Gestionnaire', description: 'Gestion opérationnelle de la plateforme IFICS.', permissions: [
+    name: 'Gestionnaire', description: 'Gestion opérationnelle de la plateforme IFICS hors ressources explicitement confidentielles.', permissions: [
       PERMISSIONS.DASHBOARD_READ, PERMISSIONS.CLIENT_READ, PERMISSIONS.CLIENT_WRITE,
       PERMISSIONS.PROJECT_READ, PERMISSIONS.PROJECT_WRITE, PERMISSIONS.PROJECT_ASSIGN,
       PERMISSIONS.INTERVENOR_READ, PERMISSIONS.INTERVENOR_WRITE,

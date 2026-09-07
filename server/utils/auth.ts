@@ -92,15 +92,8 @@ export async function createSession(
     maxAge: sessionTtlHours() * 60 * 60,
   })
 
-  // Set-Cookie affects the response, not the cookies of the request currently
-  // being handled. Pass the freshly-issued token explicitly so the context can
-  // be loaded without waiting for the browser's next request.
   const context = await loadSessionContext(event, session.id, token)
-
-  if (!context) {
-    throw new Error('Session created but user context could not be loaded.')
-  }
-
+  if (!context) throw new Error('Session created but user context could not be loaded.')
   event.context[SESSION_CONTEXT_KEY] = context
   return context
 }
@@ -111,40 +104,18 @@ async function loadSessionContext(
   issuedToken?: string,
 ): Promise<AuthContext | null> {
   const token = issuedToken || getCookie(event, sessionCookieName())
-
-  if (!token) {
-    return null
-  }
+  if (!token) return null
 
   const session = await prisma.authSession.findUnique({
     where: { tokenHash: hashToken(token) },
     select: {
-      id: true,
-      expiresAt: true,
-      revokedAt: true,
-      lastSeenAt: true,
-      mfaVerifiedAt: true,
+      id: true, expiresAt: true, revokedAt: true, lastSeenAt: true, mfaVerifiedAt: true,
       user: {
         select: {
-          id: true,
-          associationId: true,
-          clientId: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          status: true,
-          accessExpiresAt: true,
-          mfaEnabled: true,
-          role: {
-            select: {
-              code: true,
-              name: true,
-              permissions: true,
-            },
-          },
-          intervenorProfile: {
-            select: { id: true },
-          },
+          id: true, associationId: true, clientId: true, firstName: true, lastName: true,
+          email: true, status: true, accessExpiresAt: true, mfaEnabled: true,
+          role: { select: { code: true, name: true, permissions: true } },
+          intervenorProfile: { select: { id: true } },
         },
       },
     },
@@ -160,22 +131,17 @@ async function loadSessionContext(
     || session.expiresAt <= now
     || session.user.status !== 'ACTIVE'
     || (session.user.accessExpiresAt && session.user.accessExpiresAt <= now)
-
   if (invalid) {
     deleteCookie(event, sessionCookieName(), { path: '/' })
     return null
   }
 
   if (now.getTime() - session.lastSeenAt.getTime() > 5 * 60 * 1000) {
-    await prisma.authSession.update({
-      where: { id: session.id },
-      data: { lastSeenAt: now },
-    })
+    await prisma.authSession.update({ where: { id: session.id }, data: { lastSeenAt: now } })
   }
 
   const roleCode = session.user.role.code
   const roleRequiresMfa = MFA_REQUIRED_ROLE_CODES.has(roleCode as RoleCode)
-
   return {
     sessionId: session.id,
     userId: session.user.id,
@@ -196,180 +162,106 @@ async function loadSessionContext(
 
 export async function getAuthContext(event: H3Event): Promise<AuthContext | null> {
   const existing = event.context[SESSION_CONTEXT_KEY] as AuthContext | undefined
-
-  if (existing) {
-    return existing
-  }
-
+  if (existing) return existing
   const context = await loadSessionContext(event)
-
-  if (context) {
-    event.context[SESSION_CONTEXT_KEY] = context
-  }
-
+  if (context) event.context[SESSION_CONTEXT_KEY] = context
   return context
 }
 
-export async function requireAuth(
-  event: H3Event,
-  options: { skipMfa?: boolean } = {},
-): Promise<AuthContext> {
+export async function requireAuth(event: H3Event, options: { skipMfa?: boolean } = {}): Promise<AuthContext> {
   const context = await getAuthContext(event)
-
-  if (!context) {
-    httpError(401, 'Authentification requise.', 'AUTH_REQUIRED')
-  }
+  if (!context) httpError(401, 'Authentification requise.', 'AUTH_REQUIRED')
 
   if (!options.skipMfa && MFA_REQUIRED_ROLE_CODES.has(context.roleCode as RoleCode)) {
-    if (context.mfaSetupRequired) {
-      httpError(403, 'Configuration MFA requise.', 'MFA_SETUP_REQUIRED')
-    }
-
-    if (!context.mfaVerified) {
-      httpError(403, 'Validation MFA requise.', 'MFA_REQUIRED')
-    }
+    if (context.mfaSetupRequired) httpError(403, 'Configuration MFA requise.', 'MFA_SETUP_REQUIRED')
+    if (!context.mfaVerified) httpError(403, 'Validation MFA requise.', 'MFA_REQUIRED')
   }
-
   return context
 }
 
-export async function requirePermission(
-  event: H3Event,
-  permission: Permission | string,
-): Promise<AuthContext> {
+export async function requirePermission(event: H3Event, permission: Permission | string): Promise<AuthContext> {
   const context = await requireAuth(event)
-
   if (!hasPermission(context, permission)) {
     httpError(403, 'Vous ne disposez pas de la permission nécessaire.', 'FORBIDDEN')
   }
-
   return context
 }
 
 export async function revokeCurrentSession(event: H3Event): Promise<void> {
   const context = await getAuthContext(event)
-
   if (context) {
-    await prisma.authSession.updateMany({
-      where: { id: context.sessionId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    })
+    await prisma.authSession.updateMany({ where: { id: context.sessionId, revokedAt: null }, data: { revokedAt: new Date() } })
   }
-
   deleteCookie(event, sessionCookieName(), { path: '/' })
   event.context[SESSION_CONTEXT_KEY] = undefined
 }
 
 export async function revokeUserSessions(userId: string, exceptSessionId?: string): Promise<void> {
   await prisma.authSession.updateMany({
-    where: {
-      userId,
-      revokedAt: null,
-      ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}),
-    },
+    where: { userId, revokedAt: null, ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}) },
     data: { revokedAt: new Date() },
   })
 }
 
 export async function markSessionMfaVerified(sessionId: string): Promise<void> {
-  await prisma.authSession.update({
-    where: { id: sessionId },
-    data: { mfaVerifiedAt: new Date() },
-  })
+  await prisma.authSession.update({ where: { id: sessionId }, data: { mfaVerifiedAt: new Date() } })
 }
 
 export async function recordLoginAttempt(email: string, ipHash: string | null, success: boolean): Promise<void> {
-  await prisma.loginAttempt.create({
-    data: { email, ipHash, success },
-  })
-
+  await prisma.loginAttempt.create({ data: { email, ipHash, success } })
   if (success) {
-    await prisma.loginAttempt.deleteMany({
-      where: {
-        email,
-        createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-      },
-    })
+    await prisma.loginAttempt.deleteMany({ where: { email, createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } } })
   }
 }
 
 export async function assertLoginAllowed(email: string, ipHash: string | null): Promise<void> {
   const since = new Date(Date.now() - LOGIN_WINDOW_MINUTES * 60 * 1000)
   const failures = await prisma.loginAttempt.count({
-    where: {
-      success: false,
-      createdAt: { gte: since },
-      OR: [
-        { email },
-        ...(ipHash ? [{ ipHash }] : []),
-      ],
-    },
+    where: { success: false, createdAt: { gte: since }, OR: [{ email }, ...(ipHash ? [{ ipHash }] : [])] },
   })
-
   if (failures >= MAX_LOGIN_ATTEMPTS) {
-    httpError(
-      429,
-      `Trop de tentatives. Réessayez dans ${LOGIN_WINDOW_MINUTES} minutes.`,
-      'LOGIN_RATE_LIMITED',
-    )
+    httpError(429, `Trop de tentatives. Réessayez dans ${LOGIN_WINDOW_MINUTES} minutes.`, 'LOGIN_RATE_LIMITED')
   }
 }
 
 export async function assertClientAccess(context: AuthContext, clientId: string, write = false): Promise<void> {
   if (hasPermission(context, write ? PERMISSIONS.CLIENT_WRITE : PERMISSIONS.CLIENT_READ)
-    && !['CLIENT', 'INTERVENOR'].includes(context.roleCode)) {
-    return
-  }
-
-  if (!write && context.roleCode === 'CLIENT' && context.clientId === clientId) {
-    return
-  }
-
+    && !['CLIENT', 'INTERVENOR'].includes(context.roleCode)) return
+  if (!write && context.roleCode === 'CLIENT' && context.clientId === clientId) return
   httpError(403, 'Accès à ce client interdit.', 'RESOURCE_FORBIDDEN')
 }
 
 export async function assertProjectAccess(context: AuthContext, projectId: string, write = false): Promise<void> {
-  if (hasPermission(context, write ? PERMISSIONS.PROJECT_WRITE : PERMISSIONS.PROJECT_READ)
-    && !['CLIENT', 'INTERVENOR'].includes(context.roleCode)) {
-    return
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, associationId: context.associationId, archivedAt: null },
+    select: { id: true, classification: true },
+  })
+  if (!project) httpError(404, 'Projet introuvable.', 'PROJECT_NOT_FOUND')
+
+  if (['CONFIDENTIAL', 'RESTRICTED'].includes(project.classification)
+    && !hasPermission(context, PERMISSIONS.PROJECT_CONFIDENTIAL_READ)) {
+    httpError(403, 'Ce projet est classifié et nécessite une autorisation spécifique.', 'CLASSIFIED_PROJECT_FORBIDDEN')
   }
 
-  if (write) {
-    httpError(403, 'Modification de ce projet interdite.', 'RESOURCE_FORBIDDEN')
-  }
+  if (hasPermission(context, write ? PERMISSIONS.PROJECT_WRITE : PERMISSIONS.PROJECT_READ)
+    && !['CLIENT', 'INTERVENOR'].includes(context.roleCode)) return
+
+  if (write) httpError(403, 'Modification de ce projet interdite.', 'RESOURCE_FORBIDDEN')
 
   if (context.roleCode === 'CLIENT' && context.clientId) {
-    const link = await prisma.projectClient.findFirst({
-      where: { projectId, clientId: context.clientId },
-      select: { id: true },
-    })
+    const link = await prisma.projectClient.findFirst({ where: { projectId, clientId: context.clientId }, select: { id: true } })
     if (link) return
   }
-
   if (context.roleCode === 'INTERVENOR' && context.intervenorId) {
-    const link = await prisma.projectIntervenor.findFirst({
-      where: { projectId, intervenorId: context.intervenorId },
-      select: { id: true },
-    })
+    const link = await prisma.projectIntervenor.findFirst({ where: { projectId, intervenorId: context.intervenorId }, select: { id: true } })
     if (link) return
   }
-
   httpError(403, 'Accès à ce projet interdit.', 'RESOURCE_FORBIDDEN')
 }
 
-export async function assertIntervenorAccess(
-  context: AuthContext,
-  intervenorId: string,
-  write = false,
-): Promise<void> {
+export async function assertIntervenorAccess(context: AuthContext, intervenorId: string, write = false): Promise<void> {
   if (hasPermission(context, write ? PERMISSIONS.INTERVENOR_WRITE : PERMISSIONS.INTERVENOR_READ)
-    && context.roleCode !== 'INTERVENOR') {
-    return
-  }
-
-  if (!write && context.roleCode === 'INTERVENOR' && context.intervenorId === intervenorId) {
-    return
-  }
-
+    && context.roleCode !== 'INTERVENOR') return
+  if (!write && context.roleCode === 'INTERVENOR' && context.intervenorId === intervenorId) return
   httpError(403, 'Accès à cet intervenant interdit.', 'RESOURCE_FORBIDDEN')
 }
