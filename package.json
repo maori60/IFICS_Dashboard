@@ -12,7 +12,7 @@
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
     "db:seed": "tsx prisma/seed.ts",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=37",
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
