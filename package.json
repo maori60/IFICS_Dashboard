@@ -28,7 +28,13 @@
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
+    "@nuxt/eslint": "^1.17.0",
     "@types/node": "^22.0.0",
-    "tsx": "^4.21.0"
+    "@vitest/coverage-v8": "^5.0.0",
+    "eslint": "^10.10.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0",
+    "vue-tsc": "^3.3.11"
   }
 }
