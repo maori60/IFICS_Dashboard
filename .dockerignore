@@ -6,6 +6,7 @@ node_modules
 .env.*
 npm-debug.log
 uploads
+generated
 storage
 tmp
 dist
