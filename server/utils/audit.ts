@@ -1,4 +1,5 @@
 import { getRequestHeader, type H3Event } from 'h3'
+import type { Prisma } from '../../generated/prisma/client'
 import { prisma } from './prisma'
 import { getIpHash, type AuthContext } from './auth'
 
@@ -39,6 +40,10 @@ function redact(value: unknown, depth = 0): unknown {
   return value
 }
 
+function auditMetadata(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(redact(value))) as Prisma.InputJsonValue
+}
+
 export async function writeAuditLog(
   event: H3Event,
   context: AuthContext | null,
@@ -64,7 +69,7 @@ export async function writeAuditLog(
           : null,
         ipHash: getIpHash(event),
         userAgent: getRequestHeader(event, 'user-agent')?.slice(0, 500) || null,
-        metadata: input.metadata === undefined ? undefined : redact(input.metadata),
+        metadata: input.metadata === undefined ? undefined : auditMetadata(input.metadata),
       },
     })
   }
