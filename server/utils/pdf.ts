@@ -5,7 +5,13 @@ const PAGE_HEIGHT = 841.89
 const MARGIN = 48
 
 function safeText(value: unknown): string {
-  return String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim()
+  return Array.from(String(value ?? ''))
+    .map((character) => {
+      const code = character.charCodeAt(0)
+      return code < 32 || code === 127 ? ' ' : character
+    })
+    .join('')
+    .trim()
 }
 
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
