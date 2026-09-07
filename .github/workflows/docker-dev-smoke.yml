@@ -1,6 +1,6 @@
 # M1.3 audit evidence: reproducible Docker development bootstrap and persistence checks.
 # Keep this workflow in sync with the documented Node/Docker runtime.
-# Final M1.3 gate: the green check on this HEAD is the acceptance evidence.
+# Acceptance gate: the green check on this HEAD is the M1.3 infrastructure evidence.
 name: Docker Dev Smoke
 
 on:
