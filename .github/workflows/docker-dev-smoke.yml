@@ -1,5 +1,6 @@
 # M1.3 audit evidence: reproducible Docker development bootstrap and persistence checks.
 # Keep this workflow in sync with the documented Node/Docker runtime.
+# Final M1.3 gate: changes to this file intentionally retrigger the full smoke suite.
 name: Docker Dev Smoke
 
 on:
