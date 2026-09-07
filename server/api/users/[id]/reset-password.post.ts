@@ -1,12 +1,12 @@
 import { getRouterParam, readBody } from 'h3'
-import { requirePermission, revokeUserSessions } from '../../../../utils/auth'
-import { PERMISSIONS } from '../../../../utils/constants'
-import { prisma } from '../../../../utils/prisma'
-import { createOpaqueToken, hashPassword } from '../../../../utils/security'
-import { sendMail } from '../../../../utils/mail'
-import { httpError, requireRouterId, success } from '../../../../utils/api'
-import { optionalString, safeObject } from '../../../../utils/validation'
-import { writeAuditLog } from '../../../../utils/audit'
+import { requirePermission, revokeUserSessions } from '../../../utils/auth'
+import { PERMISSIONS } from '../../../utils/constants'
+import { prisma } from '../../../utils/prisma'
+import { createOpaqueToken, hashPassword } from '../../../utils/security'
+import { sendMail } from '../../../utils/mail'
+import { httpError, requireRouterId, success } from '../../../utils/api'
+import { optionalString, safeObject } from '../../../utils/validation'
+import { writeAuditLog } from '../../../utils/audit'
 
 function generatedPassword(): string {
   return `If!${createOpaqueToken(15)}aA1`
@@ -26,14 +26,9 @@ export default defineEventHandler(async (event) => {
 
   const providedPassword = optionalString(body.password, 'Mot de passe', { max: 128 })
   const temporaryPassword = providedPassword || generatedPassword()
-  let passwordHash: string
-
-  try {
-    passwordHash = await hashPassword(temporaryPassword)
-  }
-  catch (error) {
+  const passwordHash = await hashPassword(temporaryPassword).catch((error: unknown) => {
     httpError(400, error instanceof Error ? error.message : 'Mot de passe invalide.', 'WEAK_PASSWORD')
-  }
+  })
 
   const now = new Date()
   await prisma.$transaction([

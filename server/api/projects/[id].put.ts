@@ -1,8 +1,8 @@
 import { getRouterParam, readBody } from 'h3'
-import { assertProjectAccess, requirePermission } from '../../../utils/auth'
-import { PERMISSIONS } from '../../../utils/constants'
-import { prisma } from '../../../utils/prisma'
-import { httpError, jsonSafe, requireRouterId, success } from '../../../utils/api'
+import { assertProjectAccess, requirePermission } from '../../utils/auth'
+import { PERMISSIONS } from '../../utils/constants'
+import { prisma } from '../../utils/prisma'
+import { httpError, jsonSafe, requireRouterId, success } from '../../utils/api'
 import {
   optionalDate,
   optionalInteger,
@@ -11,8 +11,8 @@ import {
   requiredEnum,
   requiredString,
   safeObject,
-} from '../../../utils/validation'
-import { writeAuditLog } from '../../../utils/audit'
+} from '../../utils/validation'
+import { writeAuditLog } from '../../utils/audit'
 
 const PROJECT_STATUSES = ['DRAFT', 'VALIDATED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as const
 

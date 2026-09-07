@@ -23,6 +23,14 @@ export type BillingTotals = {
   total: string
 }
 
+const ZERO = BigInt(0)
+const ONE = BigInt(1)
+const TEN = BigInt(10)
+const FIFTY = BigInt(50)
+const HUNDRED = BigInt(100)
+const FIVE_THOUSAND = BigInt(5000)
+const TEN_THOUSAND = BigInt(10000)
+
 function scaledInteger(value: unknown, scale: number, label: string, allowZero = false): bigint {
   const raw = String(value ?? '').trim().replace(',', '.')
 
@@ -31,17 +39,17 @@ function scaledInteger(value: unknown, scale: number, label: string, allowZero =
   }
 
   const [wholeRaw, fractionRaw = ''] = raw.split('.')
-  const factor = 10n ** BigInt(scale)
+  const factor = TEN ** BigInt(scale)
   const padded = `${fractionRaw}${'0'.repeat(scale)}`.slice(0, scale + 1)
   const retained = padded.slice(0, scale)
   const nextDigit = Number(padded[scale] || '0')
   let result = BigInt(wholeRaw || '0') * factor + BigInt(retained || '0')
 
   if (nextDigit >= 5) {
-    result += 1n
+    result += ONE
   }
 
-  if (allowZero ? result < 0n : result <= 0n) {
+  if (allowZero ? result < ZERO : result <= ZERO) {
     badRequest(`${label} doit être ${allowZero ? 'positif' : 'strictement positif'}.`)
   }
 
@@ -49,7 +57,7 @@ function scaledInteger(value: unknown, scale: number, label: string, allowZero =
 }
 
 function scaledString(value: bigint, scale: number): string {
-  const factor = 10n ** BigInt(scale)
+  const factor = TEN ** BigInt(scale)
   const whole = value / factor
   const fraction = (value % factor).toString().padStart(scale, '0')
   return scale === 0 ? whole.toString() : `${whole}.${fraction}`
@@ -69,11 +77,11 @@ export function calculateBillingTotals(
 
   const taxBasisPoints = scaledInteger(rawTaxRate, 2, 'Taux de TVA', true)
 
-  if (taxBasisPoints > 10_000n) {
+  if (taxBasisPoints > TEN_THOUSAND) {
     badRequest('Le taux de TVA ne peut pas dépasser 100 %.')
   }
 
-  let subtotalCents = 0n
+  let subtotalCents = ZERO
   const lines = rawLines.map((rawLine, index) => {
     if (!rawLine || typeof rawLine !== 'object' || Array.isArray(rawLine)) {
       badRequest(`Ligne ${index + 1} invalide.`)
@@ -83,7 +91,7 @@ export function calculateBillingTotals(
     const description = requiredString(line.description, `Description ligne ${index + 1}`, { max: 500 })
     const quantityHundredths = scaledInteger(line.quantity, 2, `Quantité ligne ${index + 1}`)
     const unitPriceCents = scaledInteger(line.unitPrice, 2, `Prix unitaire ligne ${index + 1}`, true)
-    const lineTotalCents = (unitPriceCents * quantityHundredths + 50n) / 100n
+    const lineTotalCents = (unitPriceCents * quantityHundredths + FIFTY) / HUNDRED
 
     subtotalCents += lineTotalCents
 
@@ -96,7 +104,7 @@ export function calculateBillingTotals(
     }
   })
 
-  const taxAmountCents = (subtotalCents * taxBasisPoints + 5_000n) / 10_000n
+  const taxAmountCents = (subtotalCents * taxBasisPoints + FIVE_THOUSAND) / TEN_THOUSAND
   const totalCents = subtotalCents + taxAmountCents
 
   return {

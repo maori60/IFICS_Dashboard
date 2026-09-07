@@ -1,8 +1,8 @@
 import { getRouterParam, readBody } from 'h3'
-import { assertClientAccess, requirePermission } from '../../../utils/auth'
-import { PERMISSIONS } from '../../../utils/constants'
-import { prisma } from '../../../utils/prisma'
-import { httpError, requireRouterId, success } from '../../../utils/api'
+import { assertClientAccess, requirePermission } from '../../utils/auth'
+import { PERMISSIONS } from '../../utils/constants'
+import { prisma } from '../../utils/prisma'
+import { httpError, requireRouterId, success } from '../../utils/api'
 import {
   normalizeSiret,
   optionalEmail,
@@ -10,8 +10,8 @@ import {
   requiredEnum,
   requiredString,
   safeObject,
-} from '../../../utils/validation'
-import { writeAuditLog } from '../../../utils/audit'
+} from '../../utils/validation'
+import { writeAuditLog } from '../../utils/audit'
 
 const CLIENT_TYPES = ['MAIRIE', 'SERVICE_MUNICIPAL', 'ETABLISSEMENT_SCOLAIRE', 'ASSOCIATION', 'AUTRE'] as const
 const CLIENT_STATUSES = ['ACTIVE', 'INACTIVE'] as const

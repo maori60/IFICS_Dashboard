@@ -41,12 +41,17 @@ function safeSegment(value: string): string {
   return value
 }
 
+function stripControlCharacters(value: string): string {
+  return [...value]
+    .filter((character) => {
+      const code = character.charCodeAt(0)
+      return code > 31 && code !== 127
+    })
+    .join('')
+}
+
 export function safeOriginalFilename(value: string): string {
-  // The explicit control-character range is intentional: uploaded names are
-  // untrusted data and must not carry terminal/log control bytes.
-  // eslint-disable-next-line no-control-regex
-  const clean = basename(value)
-    .replace(/[\u0000-\u001f\u007f]/g, '')
+  const clean = stripControlCharacters(basename(value))
     .replace(/["'<>\\/]/g, '_')
     .trim()
     .slice(0, 180)

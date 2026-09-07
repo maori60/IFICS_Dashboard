@@ -1,16 +1,16 @@
 import { getRouterParam, readBody } from 'h3'
-import { requirePermission, revokeUserSessions } from '../../../utils/auth'
-import { PERMISSIONS } from '../../../utils/constants'
-import { prisma } from '../../../utils/prisma'
-import { httpError, prismaErrorCode, requireRouterId, success } from '../../../utils/api'
+import { requirePermission, revokeUserSessions } from '../../utils/auth'
+import { PERMISSIONS } from '../../utils/constants'
+import { prisma } from '../../utils/prisma'
+import { httpError, prismaErrorCode, requireRouterId, success } from '../../utils/api'
 import {
   optionalDate,
   optionalString,
   requiredEmail,
   requiredString,
   safeObject,
-} from '../../../utils/validation'
-import { writeAuditLog } from '../../../utils/audit'
+} from '../../utils/validation'
+import { writeAuditLog } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
   const context = await requirePermission(event, PERMISSIONS.USER_MANAGE)
