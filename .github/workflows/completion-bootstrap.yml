@@ -1,0 +1,56 @@
+name: Completion Bootstrap Validation
+
+on:
+  push:
+    branches:
+      - project-completion/v1
+    paths:
+      - '.github/workflows/completion-bootstrap.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://build_only:unused@127.0.0.1:5432/build_only?schema=public
+      NODE_ENV: development
+
+    steps:
+      - name: Checkout completion branch
+        uses: actions/checkout@v5
+        with:
+          ref: project-completion/v1
+
+      - name: Use Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Synchronize dependencies
+        run: npm install --package-lock-only
+
+      - name: Commit lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(deps): synchronize completion lockfile"
+            git push origin HEAD:project-completion/v1
+          fi
+
+      - name: Install dependencies deterministically
+        run: npm ci
+
+      - name: Validate Prisma schema
+        run: npx prisma validate
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npm run typecheck
