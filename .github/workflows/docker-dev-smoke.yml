@@ -8,6 +8,7 @@ on:
       - 'Dockerfile'
       - 'docker-compose.yml'
       - 'docker-entrypoint.sh'
+      - '.dockerignore'
       - 'package.json'
       - 'package-lock.json'
       - 'prisma/**'
