@@ -1,6 +1,6 @@
 # 🚀 IFICS Dashboard
 
-> Full-stack SaaS dashboard to manage projects, clients and documents.
+> Full-stack associative management platform for projects, clients, intervenors and documents.
 
 ## 🎬 Demo
 
@@ -10,29 +10,49 @@
 
 ## 💡 Quick overview
 
-- Client management  
-- Project tracking  
-- Document handling (PDF)  
-- Invoices & quotes (in progress)  
-- Data-driven dashboard  
+- Client management
+- Project tracking
+- Document handling (PDF)
+- Invoices & quotes (in progress)
+- Data-driven dashboard
 
 ---
 
 ## ⚙️ Tech Stack
 
-- Nuxt 3 / Vue 3  
-- Node.js (Nitro)  
-- Prisma ORM  
-- PostgreSQL (self-hosted)  
-- Docker  
+- Nuxt 4 / Vue 3
+- Node.js (Nitro)
+- Prisma ORM
+- PostgreSQL 16 (self-hosted)
+- Docker / Docker Compose
+
+---
+
+## 🧪 Local setup
+
+1. Clone the repository.
+2. Create your local environment file:
+
+```bash
+cp .env.example .env
+```
+
+3. Replace every placeholder secret in `.env` with a unique local value.
+4. Start the stack:
+
+```bash
+docker compose up --build
+```
+
+The application is exposed on `http://localhost:3000` by default. `APP_PORT` can be changed in `.env`.
+
+> Never commit `.env` or real credentials. Values that appeared in Git history before Milestone 1.2 must be considered compromised and must not be reused.
 
 ---
 
 ## 📌 Contexte du projet
 
 > Dashboard de gestion associative dédié aux structures éducatives, collectivités et intervenants.
-
----
 
 ## Contexte
 
@@ -134,46 +154,47 @@ Objectif long terme :
 
 ---
 
-## Stack technique
-
-- **Frontend** : Nuxt 3 / Vue 3
-- **Backend** : Node.js (Nitro)
-- **ORM** : Prisma
-- **Base de données** : PostgreSQL
-- **Gestion PDF** : serveur (upload + visualisation)
-- **Déploiement** : Docker (prévu)
-
----
-
 ## 📂 Structure du projet
-app/ → Frontend Nuxt (pages, composants)
-server/ → API backend (routes, logique métier)
-prisma/ → schéma + migrations base de données
-public/ → assets statiques
 
+- `app/` → Frontend Nuxt (pages, composants)
+- `server/` → API backend (routes, logique métier)
+- `prisma/` → schéma + migrations base de données
+- `public/` → assets statiques
+- `docs/` → documentation architecture, sécurité et exploitation
 
 ---
 
 ## 🔐 Sécurité
 
-- gestion des rôles et permissions
-- accès restreints aux documents
-- traçabilité des actions
-- séparation des données
+Le projet est en cours de durcissement dans le cadre du Milestone 1. La cible inclut notamment :
+
+- authentification forte et MFA
+- permissions granulaires et scopes
+- journal d’audit
+- gestion sécurisée des documents
+- séparation des données sensibles
+- tests automatisés de sécurité et d’autorisation
+- environnement auditable
+
+Voir `docs/architecture/current-state.md` et `docs/security/secrets-management.md`.
 
 ---
 
 ## 🚧 État du projet
 
-⚠️ Projet en développement actif
+⚠️ Projet en développement actif.
 
-### Fonctionnel actuellement :
+### Fonctionnel actuellement
+
 - gestion des projets
 - gestion des documents (upload + visualisation PDF)
 - API backend structurée
 - routing dynamique Nuxt
 
-### En cours :
+### En cours
+
+- socle sécurité / authentification
+- tests automatisés
 - amélioration UI/UX
 - gestion avancée des rôles
 - devis / factures
@@ -183,19 +204,7 @@ public/ → assets statiques
 
 ## 🚀 Roadmap
 
-### V1 (MVP)
-- authentification
-- clients / projets
-- intervenants
-- documents
-- devis / factures
-- dashboard
-
-### V2
-- signature électronique
-- statistiques avancées
-- recherche globale
-- relances automatiques
+Le projet suit maintenant une construction incrémentale par milestones, avec tests et documentation à chaque étape. Le détail du Milestone 1 est documenté dans `docs/architecture/current-state.md`.
 
 ---
 
@@ -212,10 +221,8 @@ Créer un outil métier basé sur une vraie expérience terrain, capable d’aid
 - Étudiant à l’école 42
 - Responsable Projets & Solutions Digitales
 
-
 ---
 
 ## ⚠️ Disclaimer
 
-Projet en développement actif.  
-Certaines fonctionnalités sont encore en cours d’implémentation.
+Projet en développement actif. Certaines fonctionnalités sont encore en cours d’implémentation.
