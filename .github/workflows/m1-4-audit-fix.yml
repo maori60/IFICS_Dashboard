@@ -31,7 +31,7 @@ jobs:
         run: npm install --global npm@11
 
       - name: Generate non-breaking lockfile remediation
-        run: npm audit fix --package-lock-only
+        run: npm audit fix --package-lock-only || true
 
       - name: Verify no critical production vulnerabilities remain
         run: npm audit --omit=dev --audit-level=critical
