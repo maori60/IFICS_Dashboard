@@ -31,7 +31,7 @@ jobs:
           cache: npm
 
       - name: Synchronize dependencies
-        run: npm install --package-lock-only
+        run: npm install --package-lock-only --ignore-scripts
 
       - name: Commit lockfile
         run: |
