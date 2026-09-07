@@ -1,0 +1,41 @@
+name: M1.4 Audit Fix Artifact
+
+on:
+  push:
+    branches:
+      - milestone-1/foundation
+    paths:
+      - '.github/workflows/m1-4-audit-fix.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: postgresql://audit:audit@127.0.0.1:5432/audit?schema=public
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Use Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Generate non-breaking lockfile remediation
+        run: npm audit fix --package-lock-only
+
+      - name: Verify no critical production vulnerabilities remain
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Upload remediated lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: m1-4-remediated-lockfile
+          path: package-lock.json
+          if-no-files-found: error
