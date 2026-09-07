@@ -257,7 +257,7 @@ export async function revokeCurrentSession(event: H3Event): Promise<void> {
   }
 
   deleteCookie(event, sessionCookieName(), { path: '/' })
-  delete event.context[SESSION_CONTEXT_KEY]
+  event.context[SESSION_CONTEXT_KEY] = undefined
 }
 
 export async function revokeUserSessions(userId: string, exceptSessionId?: string): Promise<void> {
