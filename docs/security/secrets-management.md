@@ -29,6 +29,7 @@ and replace every placeholder locally.
 - `POSTGRES_DB`
 - `DATABASE_URL`
 - `APP_PORT` (optional; defaults to 3000)
+- `POSTGRES_PORT` (optional; defaults to 5432 in development)
 
 ## Password requirements for infrastructure secrets
 
@@ -50,6 +51,12 @@ Therefore the previous values are permanently classified as compromised and must
 
 A later security-hardening task may rewrite repository history if there is a concrete need, but secret rotation remains mandatory because history rewriting cannot make an already disclosed secret trustworthy again.
 
+## Dependency-security observation
+
+M1.3 deterministic installation exposed an existing dependency baseline of 30 npm audit findings: 4 low, 6 moderate, 16 high and 4 critical.
+
+This is tracked for controlled triage in M1.4. We do not use `npm audit fix --force` as an automatic remediation because dependency upgrades must be reviewed, tested and documented before acceptance.
+
 ## Future production direction
 
 Production secret storage will be selected during the infrastructure milestone. The application code must consume secrets only through runtime configuration and must not depend on a specific secret-management vendor.
@@ -64,3 +71,4 @@ An auditor should be able to verify:
 4. staging and production secrets are distinct from development secrets.
 5. documented rotation procedures exist.
 6. secret-scanning CI is enabled once M1.14 is implemented.
+7. dependency-security findings are tracked to a reviewed remediation decision rather than silently auto-fixed.
