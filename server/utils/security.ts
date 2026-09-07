@@ -6,10 +6,9 @@ import {
   randomBytes,
   scrypt as scryptCallback,
   timingSafeEqual,
+  type ScryptOptions,
 } from 'node:crypto'
-import { promisify } from 'node:util'
 
-const scrypt = promisify(scryptCallback)
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 const PASSWORD_COST = 16_384
 const PASSWORD_BLOCK_SIZE = 8
@@ -20,6 +19,23 @@ export type EncryptedValue = {
   ciphertext: string
   iv: string
   tag: string
+}
+
+function deriveScryptKey(
+  password: string,
+  salt: Buffer,
+  keyLength: number,
+  options: ScryptOptions,
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scryptCallback(password, salt, keyLength, options, (error, derivedKey) => {
+      if (error) {
+        reject(error)
+        return
+      }
+      resolve(derivedKey)
+    })
+  })
 }
 
 function equalBuffers(left: Buffer, right: Buffer): boolean {
@@ -59,12 +75,12 @@ export async function hashPassword(password: string): Promise<string> {
   validatePasswordPolicy(password)
 
   const salt = randomBytes(16)
-  const derivedKey = await scrypt(password, salt, PASSWORD_KEY_LENGTH, {
+  const derivedKey = await deriveScryptKey(password, salt, PASSWORD_KEY_LENGTH, {
     cost: PASSWORD_COST,
     blockSize: PASSWORD_BLOCK_SIZE,
     parallelization: PASSWORD_PARALLELIZATION,
     maxmem: 64 * 1024 * 1024,
-  }) as Buffer
+  })
 
   return [
     'scrypt',
@@ -94,12 +110,12 @@ export async function verifyPassword(password: string, encoded: string): Promise
   try {
     const salt = Buffer.from(saltRaw, 'base64')
     const expected = Buffer.from(hashRaw, 'base64')
-    const actual = await scrypt(password, salt, expected.length, {
+    const actual = await deriveScryptKey(password, salt, expected.length, {
       cost,
       blockSize,
       parallelization,
       maxmem: 64 * 1024 * 1024,
-    }) as Buffer
+    })
 
     return equalBuffers(actual, expected)
   }
@@ -205,7 +221,7 @@ export function generateTotpSecret(): string {
   return base32Encode(randomBytes(20))
 }
 
-function generateTotpCode(secret: string, timestampMs = Date.now()): string {
+export function generateTotpCode(secret: string, timestampMs = Date.now()): string {
   const counter = Math.floor(timestampMs / 30_000)
   const counterBuffer = Buffer.alloc(8)
   counterBuffer.writeBigUInt64BE(BigInt(counter))
