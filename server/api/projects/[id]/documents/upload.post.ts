@@ -1,122 +1,35 @@
-import { createError, getRouterParam, readMultipartFormData } from 'h3'
+import { getRouterParam, readMultipartFormData } from 'h3'
+import { assertProjectAccess, requirePermission } from '../../../../utils/auth'
+import { PERMISSIONS } from '../../../../utils/constants'
 import { prisma } from '../../../../utils/prisma'
-import { mkdir, writeFile } from 'node:fs/promises'
-import { join, extname } from 'node:path'
-import { randomUUID } from 'node:crypto'
+import { httpError, requireRouterId, success } from '../../../../utils/api'
+import { storePdf } from '../../../../utils/files'
+import { requiredEnum } from '../../../../utils/validation'
+import { writeAuditLog } from '../../../../utils/audit'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024
-const MAX_ACTIVE_FILES_PER_PROJECT = 5
+const TYPES = ['CONTRACT', 'CONVENTION', 'QUOTE', 'INVOICE', 'REPORT', 'ANNEX', 'OTHER'] as const
+const VISIBILITIES = ['ADMIN_ONLY', 'INTERNAL', 'CLIENT_VISIBLE', 'INTERVENOR_VISIBLE'] as const
 
 export default defineEventHandler(async (event) => {
-  const projectId = getRouterParam(event, 'id')
+  const context = await requirePermission(event, PERMISSIONS.PROJECT_WRITE)
+  const projectId = requireRouterId(getRouterParam(event, 'id'), 'Projet')
+  await assertProjectAccess(context, projectId, true)
+  const project = await prisma.project.findFirst({ where: { id: projectId, associationId: context.associationId, archivedAt: null }, select: { id: true } })
+  if (!project) httpError(404, 'Projet introuvable.', 'PROJECT_NOT_FOUND')
 
-  if (!projectId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Project id manquant',
-    })
-  }
-
-  const project = await prisma.project.findFirst({
-    where: {
-      id: projectId,
-      archivedAt: null,
-    },
-    select: {
-      id: true,
-    },
-  })
-
-  if (!project) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Projet introuvable',
-    })
-  }
-
-  const existingDocumentsCount = await prisma.projectDocument.count({
-    where: {
-      projectId,
-      archivedAt: null,
-    },
-  })
-
-  if (existingDocumentsCount >= MAX_ACTIVE_FILES_PER_PROJECT) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Limite de 5 fichiers atteinte pour ce projet',
-    })
-  }
-
-  const formData = await readMultipartFormData(event)
-
-  if (!formData || !formData.length) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Aucune donnée reçue',
-    })
-  }
-
-  const filePart = formData.find((part) => part.name === 'file')
-  const titlePart = formData.find((part) => part.name === 'title')
-  const typePart = formData.find((part) => part.name === 'type')
-  const visibilityPart = formData.find((part) => part.name === 'visibility')
-  const uploadedByUserIdPart = formData.find((part) => part.name === 'uploadedByUserId')
-
-  if (!filePart || !filePart.filename || !filePart.data) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Fichier manquant',
-    })
-  }
-
-  const mimeType = filePart.type || 'application/octet-stream'
-  const originalName = filePart.filename
-  const fileBuffer = filePart.data
-
-  if (mimeType !== 'application/pdf') {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Seuls les fichiers PDF sont autorisés',
-    })
-  }
-
-  if (fileBuffer.length > MAX_FILE_SIZE) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Le fichier dépasse la taille maximale de 10 Mo',
-    })
-  }
-
-  const safeExtension = extname(originalName).toLowerCase() || '.pdf'
-  const storedName = `${randomUUID()}${safeExtension}`
-
-  const uploadDirectory = join(process.cwd(), 'uploads', 'projects', projectId)
-  await mkdir(uploadDirectory, { recursive: true })
-
-  const absoluteFilePath = join(uploadDirectory, storedName)
-  await writeFile(absoluteFilePath, fileBuffer)
-
-  const relativeFilePath = join('uploads', 'projects', projectId, storedName)
+  const parts = await readMultipartFormData(event)
+  const file = parts?.find(part => part.name === 'file')
+  if (!file?.filename || !file.data) httpError(400, 'Fichier PDF manquant.', 'FILE_REQUIRED')
+  const type = requiredEnum(parts?.find(part => part.name === 'type')?.data.toString() || 'OTHER', TYPES, 'Type de document')
+  const visibility = requiredEnum(parts?.find(part => part.name === 'visibility')?.data.toString() || 'ADMIN_ONLY', VISIBILITIES, 'Visibilité')
+  const title = parts?.find(part => part.name === 'title')?.data.toString().trim().slice(0, 255) || null
+  const stored = await storePdf('projects', projectId, file.filename, file.data)
+  const previous = await prisma.projectDocument.findFirst({ where: { projectId, type, archivedAt: null }, orderBy: { version: 'desc' }, select: { version: true } })
 
   const document = await prisma.projectDocument.create({
-    data: {
-      projectId,
-      uploadedByUserId: uploadedByUserIdPart?.data?.toString() || null,
-      type: (typePart?.data?.toString() as any) || 'OTHER',
-      visibility: (visibilityPart?.data?.toString() as any) || 'ADMIN_ONLY',
-      title: titlePart?.data?.toString() || null,
-      originalName,
-      storedName,
-      filePath: relativeFilePath,
-      mimeType,
-      fileSize: fileBuffer.length,
-    },
+    data: { projectId, uploadedByUserId: context.userId, type, visibility, title, version: (previous?.version || 0) + 1, ...stored },
+    select: { id: true, type: true, visibility: true, title: true, originalName: true, fileSize: true, sha256: true, version: true, createdAt: true },
   })
-
-  return {
-    ok: true,
-    message: 'Document ajouté avec succès',
-    data: document,
-  }
+  await writeAuditLog(event, context, { action: 'PROJECT_DOCUMENT_UPLOADED', entityType: 'ProjectDocument', entityId: document.id, metadata: { projectId, type, visibility, sha256: document.sha256 } })
+  return success({ ...document, fileSize: document.fileSize.toString() })
 })
