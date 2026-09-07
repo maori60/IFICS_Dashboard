@@ -28,7 +28,7 @@
 
 ---
 
-## 🧪 Local setup
+## 🧪 Local development
 
 1. Clone the repository.
 2. Create your local environment file:
@@ -38,13 +38,26 @@ cp .env.example .env
 ```
 
 3. Replace every placeholder secret in `.env` with a unique local value.
-4. Start the stack:
+4. Initialize the isolated development stack:
 
 ```bash
-docker compose up --build
+make dev-init
 ```
 
-The application is exposed on `http://localhost:3000` by default. `APP_PORT` can be changed in `.env`.
+The development application is exposed on `http://127.0.0.1:3000` by default. `APP_PORT` can be changed in `.env`.
+
+Daily commands:
+
+```bash
+make dev-up
+make dev-down
+make dev-logs
+make dev-ps
+```
+
+Database migrations and seed operations are explicit. Restarting a container never performs `prisma db push` and never seeds the database automatically.
+
+Full workflow: `docs/development/docker.md`.
 
 > Never commit `.env` or real credentials. Values that appeared in Git history before Milestone 1.2 must be considered compromised and must not be reused.
 
