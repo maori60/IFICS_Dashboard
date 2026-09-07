@@ -3,9 +3,9 @@ import type { ApiSuccess, PublicContent, PublicPartner, PublicProject } from '~/
 
 useHead({ title: 'Agir, transmettre, inclure et innover' })
 
-const { data: projectsResponse } = await useFetch<ApiSuccess<PublicProject[]>>('/api/public/projects', { default: () => ({ ok: true, data: [] }) })
-const { data: newsResponse } = await useFetch<ApiSuccess<PublicContent[]>>('/api/public/content', { query: { kind: 'NEWS' }, default: () => ({ ok: true, data: [] }) })
-const { data: partnersResponse } = await useFetch<ApiSuccess<PublicPartner[]>>('/api/public/partners', { default: () => ({ ok: true, data: [] }) })
+const { data: projectsResponse } = await useFetch<ApiSuccess<PublicProject[]>>('/api/public/projects')
+const { data: newsResponse } = await useFetch<ApiSuccess<PublicContent[]>>('/api/public/content', { query: { kind: 'NEWS' } })
+const { data: partnersResponse } = await useFetch<ApiSuccess<PublicPartner[]>>('/api/public/partners')
 
 const projects = computed(() => (projectsResponse.value?.data ?? []).slice(0, 3))
 const news = computed(() => (newsResponse.value?.data ?? []).slice(0, 3))
@@ -35,9 +35,9 @@ const domains = [
       </div>
     </section>
 
-    <section class="section"><div class="container"><p class="eyebrow">Nos domaines</p><h2 class="section-title">Une approche transversale, du besoin à l’impact.</h2><div class="grid grid-3 domain-grid"><article v-for="domain in domains" :key="domain[0]" class="card card-pad"><span class="domain-number">0{{ domains.indexOf(domain) + 1 }}</span><h3>{{ domain[0] }}</h3><p>{{ domain[1] }}</p></article></div></div></section>
+    <section class="section"><div class="container"><p class="eyebrow">Nos domaines</p><h2 class="section-title">Une approche transversale, du besoin à l’impact.</h2><div class="grid grid-3 domain-grid"><article v-for="(domain, index) in domains" :key="domain[0]" class="card card-pad"><span class="domain-number">0{{ index + 1 }}</span><h3>{{ domain[0] }}</h3><p>{{ domain[1] }}</p></article></div></div></section>
 
-    <section class="section project-section"><div class="container"><div class="section-row"><div><p class="eyebrow">Projets</p><h2 class="section-title">Ce que nous construisons avec nos partenaires.</h2></div><NuxtLink to="/projets" class="btn btn-secondary">Voir les projets</NuxtLink></div><div v-if="projects.length" class="grid grid-3"><article v-for="project in projects" :key="project.id" class="card project-card"><div class="project-image" :style="project.imageUrl ? { backgroundImage: `url(${project.imageUrl})` } : undefined"></div><div class="card-pad"><span class="badge">{{ project.status || 'Projet IFICS' }}</span><h3>{{ project.title }}</h3><p>{{ project.summary }}</p><small>{{ project.territory }}</small></div></article></div><div v-else class="empty-state">Les projets publics validés par IFICS apparaîtront ici.</div></div></section>
+    <section class="section project-section"><div class="container"><div class="section-row"><div><p class="eyebrow">Projets</p><h2 class="section-title">Ce que nous construisons avec nos partenaires.</h2></div><NuxtLink to="/projets" class="btn btn-secondary">Voir les projets</NuxtLink></div><div v-if="projects.length" class="grid grid-3"><article v-for="project in projects" :key="project.id" class="card project-card"><div class="project-image" :style="project.imageUrl ? { backgroundImage: `url(${project.imageUrl})` } : undefined"/><div class="card-pad"><span class="badge">{{ project.status || 'Projet IFICS' }}</span><h3>{{ project.title }}</h3><p>{{ project.summary }}</p><small>{{ project.territory }}</small></div></article></div><div v-else class="empty-state">Les projets publics validés par IFICS apparaîtront ici.</div></div></section>
 
     <section class="section"><div class="container"><div class="section-row"><div><p class="eyebrow">Actualités</p><h2 class="section-title">Suivre les actions et les publications.</h2></div><NuxtLink to="/actualites" class="btn btn-secondary">Toutes les actualités</NuxtLink></div><div v-if="news.length" class="grid grid-3"><article v-for="item in news" :key="item.id" class="card card-pad"><span class="badge badge-muted">Actualité</span><h3>{{ item.title }}</h3><p>{{ item.excerpt }}</p><NuxtLink :to="`/actualites/${item.slug}`">Lire la publication →</NuxtLink></article></div><div v-else class="empty-state">Les actualités publiées par l’équipe communication apparaîtront ici.</div></div></section>
 

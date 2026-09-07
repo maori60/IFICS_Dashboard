@@ -1,0 +1,7 @@
+<script setup lang="ts">
+import type { ApiSuccess } from '~/types/api'
+definePageMeta({layout:'dashboard',middleware:'auth'});useHead({title:'Communication'})
+type Entry={id:string;kind:string;slug:string;titleFr:string;titleEn:string|null;status:string;featured:boolean;publishedAt:string|null;updatedAt:string}
+const {data,error,refresh}=await useFetch<ApiSuccess<Entry[]>>('/api/content');const entries=computed(()=>data.value?.data??[]);const date=(v:string|null)=>v?new Date(v).toLocaleString('fr-FR'):'—'
+</script>
+<template><div><div class="page-head"><div><h1>Communication & CMS</h1><p>Contenus publics soumis au workflow de validation.</p></div><button class="btn btn-secondary" type="button" @click="refresh()">Actualiser</button></div><div v-if="error" class="alert alert-error">Impossible de charger les contenus.</div><div v-else-if="!entries.length" class="empty-state">Aucun contenu enregistré.</div><div v-else class="table-wrap"><table><thead><tr><th>Titre</th><th>Type</th><th>Slug</th><th>Statut</th><th>Publication</th></tr></thead><tbody><tr v-for="entry in entries" :key="entry.id"><td><strong>{{ entry.titleFr }}</strong><br><small v-if="entry.titleEn">EN : {{ entry.titleEn }}</small></td><td>{{ entry.kind }}</td><td>{{ entry.slug }}</td><td><span class="badge">{{ entry.status }}</span></td><td>{{ date(entry.publishedAt) }}</td></tr></tbody></table></div></div></template>

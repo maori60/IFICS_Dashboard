@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import type { ApiSuccess } from '~/types/api'
+definePageMeta({layout:'dashboard',middleware:'auth'});useHead({title:'Partenaires'})
+type Partner={id:string;name:string;category:string;stage:string;publicEnabled:boolean;websiteUrl:string|null;contacts:{id:string;firstName:string;lastName:string;email:string|null;isPrimary:boolean}[];interactions:{id:string;type:string;subject:string|null;occurredAt:string}[];_count:{messages:number}}
+const {data,error,refresh}=await useFetch<ApiSuccess<Partner[]>>('/api/partners');const partners=computed(()=>data.value?.data??[])
+</script>
+<template><div><div class="page-head"><div><h1>Partenaires & CRM</h1><p>Relations institutionnelles, opérationnelles et mécénat.</p></div><button class="btn btn-secondary" type="button" @click="refresh()">Actualiser</button></div><div v-if="error" class="alert alert-error">Impossible de charger les partenaires.</div><div v-else-if="!partners.length" class="empty-state">Aucun partenaire enregistré.</div><div v-else class="grid grid-2"><article v-for="partner in partners" :key="partner.id" class="card card-pad"><div class="actions"><span class="badge">{{ partner.category }}</span><span class="badge badge-muted">{{ partner.stage }}</span><span v-if="partner.publicEnabled" class="badge">Public</span></div><h2>{{ partner.name }}</h2><p class="muted">Contact principal : {{ partner.contacts.find(contact=>contact.isPrimary)?.firstName || '—' }} {{ partner.contacts.find(contact=>contact.isPrimary)?.lastName || '' }}</p><p>{{ partner.interactions.length }} interaction(s) récente(s) · {{ partner._count.messages }} message(s)</p></article></div></div></template>
+<style scoped>h2{margin:14px 0 6px}</style>
