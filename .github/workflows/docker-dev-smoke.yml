@@ -40,6 +40,9 @@ jobs:
       - name: Start PostgreSQL
         run: docker compose -f docker-compose.dev.yml up -d db
 
+      - name: Generate Prisma client
+        run: docker compose -f docker-compose.dev.yml run --rm app npx prisma generate
+
       - name: Apply committed migrations
         run: docker compose -f docker-compose.dev.yml run --rm app npx prisma migrate deploy
 
