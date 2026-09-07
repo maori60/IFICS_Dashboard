@@ -1,8 +1,8 @@
-import { readBody } from 'h3'
-import { requirePermission } from '../../utils/auth'
-import { PERMISSIONS } from '../../utils/constants'
-import { prisma } from '../../utils/prisma'
-import { httpError, jsonSafe, success } from '../../utils/api'
+import { getRouterParam, readBody } from 'h3'
+import { assertProjectAccess, requirePermission } from '../../../utils/auth'
+import { PERMISSIONS } from '../../../utils/constants'
+import { prisma } from '../../../utils/prisma'
+import { httpError, jsonSafe, requireRouterId, success } from '../../../utils/api'
 import {
   optionalDate,
   optionalInteger,
@@ -11,40 +11,36 @@ import {
   requiredEnum,
   requiredString,
   safeObject,
-} from '../../utils/validation'
-import { writeAuditLog } from '../../utils/audit'
+} from '../../../utils/validation'
+import { writeAuditLog } from '../../../utils/audit'
 
 const PROJECT_STATUSES = ['DRAFT', 'VALIDATED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as const
 
 export default defineEventHandler(async (event) => {
   const context = await requirePermission(event, PERMISSIONS.PROJECT_WRITE)
+  const projectId = requireRouterId(getRouterParam(event, 'id'), 'Projet')
+  await assertProjectAccess(context, projectId, true)
+
+  const existing = await prisma.project.findFirst({
+    where: { id: projectId, associationId: context.associationId, archivedAt: null },
+    select: { id: true, status: true },
+  })
+  if (!existing) httpError(404, 'Projet introuvable.', 'PROJECT_NOT_FOUND')
+
   const body = safeObject(await readBody(event))
-  const clientId = requiredString(body.clientId, 'Client', { max: 191 })
   const startDate = optionalDate(body.startDate, 'Date de début')
   const endDate = optionalDate(body.endDate, 'Date de fin')
-
   if (startDate && endDate && endDate < startDate) {
     httpError(400, 'La date de fin doit être postérieure à la date de début.', 'INVALID_DATE_RANGE')
   }
 
-  const client = await prisma.client.findFirst({
-    where: {
-      id: clientId,
-      associationId: context.associationId,
-      archivedAt: null,
-      status: 'ACTIVE',
-    },
-    select: { id: true },
-  })
-  if (!client) httpError(404, 'Client introuvable.', 'CLIENT_NOT_FOUND')
-
-  const project = await prisma.project.create({
+  const project = await prisma.project.update({
+    where: { id: projectId },
     data: {
-      associationId: context.associationId,
       reference: optionalString(body.reference, 'Référence', { max: 50 }),
       title: requiredString(body.title, 'Titre', { max: 255 }),
       description: optionalString(body.description, 'Description'),
-      status: requiredEnum(body.status || 'DRAFT', PROJECT_STATUSES, 'Statut du projet'),
+      status: requiredEnum(body.status || existing.status, PROJECT_STATUSES, 'Statut du projet'),
       internalComments: optionalString(body.internalComments, 'Commentaires internes'),
       startDate,
       endDate,
@@ -58,20 +54,14 @@ export default defineEventHandler(async (event) => {
       actualNetMargin: optionalMoney(body.actualNetMargin, 'Marge réelle'),
       totalSessions: optionalInteger(body.totalSessions, 'Nombre de séances', { min: 0, max: 10000 }),
       sessionUnitPrice: optionalMoney(body.sessionUnitPrice, 'Prix unitaire séance'),
-      projectClients: {
-        create: { clientId, isMainClient: true },
-      },
-    },
-    include: {
-      projectClients: { include: { client: true } },
     },
   })
 
   await writeAuditLog(event, context, {
-    action: 'PROJECT_CREATED',
+    action: 'PROJECT_UPDATED',
     entityType: 'Project',
-    entityId: project.id,
-    metadata: { clientId, status: project.status, reference: project.reference },
+    entityId: projectId,
+    metadata: { previousStatus: existing.status, status: project.status },
   })
 
   return success(jsonSafe(project))

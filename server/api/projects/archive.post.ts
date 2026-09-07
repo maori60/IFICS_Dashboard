@@ -1,38 +1,34 @@
-import { createError, readBody } from 'h3'
+import { readBody } from 'h3'
+import { requirePermission } from '../../utils/auth'
+import { PERMISSIONS } from '../../utils/constants'
 import { prisma } from '../../utils/prisma'
+import { httpError, success } from '../../utils/api'
+import { requiredString, safeObject } from '../../utils/validation'
+import { writeAuditLog } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const projectId = body?.id
+  const context = await requirePermission(event, PERMISSIONS.PROJECT_WRITE)
+  const body = safeObject(await readBody(event))
+  const projectId = requiredString(body.id, 'Projet', { max: 191 })
 
-  if (!projectId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Project id manquant',
-    })
-  }
+  const existing = await prisma.project.findFirst({
+    where: { id: projectId, associationId: context.associationId, archivedAt: null },
+    select: { id: true, title: true },
+  })
+  if (!existing) httpError(404, 'Projet introuvable.', 'PROJECT_NOT_FOUND')
 
-  const existingProject = await prisma.project.findUnique({
+  const project = await prisma.project.update({
     where: { id: projectId },
+    data: { archivedAt: new Date() },
+    select: { id: true, title: true, archivedAt: true },
   })
 
-  if (!existingProject) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Projet introuvable',
-    })
-  }
-
-  const archivedProject = await prisma.project.update({
-    where: { id: projectId },
-    data: {
-      archivedAt: new Date(),
-    },
+  await writeAuditLog(event, context, {
+    action: 'PROJECT_ARCHIVED',
+    entityType: 'Project',
+    entityId: projectId,
+    metadata: { title: existing.title },
   })
 
-  return {
-    ok: true,
-    message: 'Projet archivé avec succès',
-    data: archivedProject,
-  }
+  return success(project)
 })
