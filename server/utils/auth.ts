@@ -92,7 +92,10 @@ export async function createSession(
     maxAge: sessionTtlHours() * 60 * 60,
   })
 
-  const context = await loadSessionContext(event, session.id)
+  // Set-Cookie affects the response, not the cookies of the request currently
+  // being handled. Pass the freshly-issued token explicitly so the context can
+  // be loaded without waiting for the browser's next request.
+  const context = await loadSessionContext(event, session.id, token)
 
   if (!context) {
     throw new Error('Session created but user context could not be loaded.')
@@ -102,8 +105,12 @@ export async function createSession(
   return context
 }
 
-async function loadSessionContext(event: H3Event, expectedSessionId?: string): Promise<AuthContext | null> {
-  const token = getCookie(event, sessionCookieName())
+async function loadSessionContext(
+  event: H3Event,
+  expectedSessionId?: string,
+  issuedToken?: string,
+): Promise<AuthContext | null> {
+  const token = issuedToken || getCookie(event, sessionCookieName())
 
   if (!token) {
     return null
