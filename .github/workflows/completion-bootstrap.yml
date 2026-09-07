@@ -1,5 +1,6 @@
 name: Completion Bootstrap Validation
 
+# Revision 2 validates the authentication and account-management foundation.
 on:
   push:
     branches:
