@@ -6,7 +6,7 @@ Baseline commit: `d992e66d494d1f46e9ab4f5fbd6c0ce9889e9d64`
 
 ## Purpose
 
-This document records the technical state of IFICS Dashboard before the Milestone 1 foundation work. It is intentionally factual and is used as a stable reference for future maintenance, security reviews and audits.
+This document records the technical state of IFICS Dashboard before the Milestone 1 foundation work and tracks the foundation controls added during M1. It is intentionally factual and is used as a stable reference for future maintenance, security reviews and audits.
 
 ## Current stack
 
@@ -16,6 +16,7 @@ This document records the technical state of IFICS Dashboard before the Mileston
 - Prisma ORM with PostgreSQL adapter
 - PostgreSQL 16
 - Docker / Docker Compose
+- ESLint / TypeScript / Vitest quality toolchain
 
 ## Current repository structure
 
@@ -23,10 +24,11 @@ This document records the technical state of IFICS Dashboard before the Mileston
 - `server/api/`: Nitro API routes
 - `server/utils/`: shared server utilities
 - `prisma/`: schema, migrations and development seed
+- `tests/`: automated tests
 - `public/`: public static assets
-- `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh`: production-like local runtime
-- `Dockerfile.dev`, `docker-compose.dev.yml`: isolated development runtime added in M1.3
 - `docs/`: architecture, development and security documentation
+- `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh`: production-like local runtime
+- `Dockerfile.dev`, `docker-compose.dev.yml`: development runtime
 
 ## Existing business capabilities
 
@@ -45,20 +47,19 @@ The current data model and API already cover the foundations of:
 
 ## Security baseline findings
 
-The repository must not be exposed to the public Internet in its current baseline state.
+The repository must not be exposed to the public Internet in its current foundation state.
 
-Critical gaps identified before M1:
+Critical gaps identified before M1 and still applicable where not explicitly remediated:
 
 1. Authentication and secure session management are not implemented.
 2. Server routes do not yet enforce authorization, scopes or data classifications.
 3. Sensitive intervenor data can currently be returned by API routes without authorization enforcement.
-4. Database credentials were stored directly in repository configuration before M1.2. **Remediated in working tree; historical values remain compromised and must never be reused.**
-5. Uploaded documents were stored inside the application container without a dedicated persistent Docker volume. **Development and production-like local stacks now mount dedicated upload volumes in M1.3. Secure document storage design remains scheduled for M1.7.**
-6. File validation trusts the multipart MIME value and requires stronger content validation and malware scanning.
-7. Audit logging is not implemented.
-8. Automated application tests are not yet implemented. A Docker development smoke workflow was introduced in M1.3 as the first machine-verifiable infrastructure test.
-9. Development seed / `prisma db push` ran from the application entrypoint. **Removed in M1.3. Container restart is now non-mutating; Prisma generation, migrations and seed are explicit operations.**
-10. The dependency baseline observed during M1.3 reports **30 npm audit findings (4 low, 6 moderate, 16 high, 4 critical)**. These findings are not being auto-fixed blindly. M1.4 will capture and triage the affected dependency paths before upgrades or mitigations are selected.
+4. Database credentials were stored directly in repository configuration before M1.2; those historical values are considered compromised and must never be reused.
+5. File validation trusts the multipart MIME value and requires stronger content validation and malware scanning.
+6. Audit logging is not implemented.
+7. Existing API behavior still lacks broad regression coverage; this is the purpose of M1.5.
+8. Legacy lint debt exists and is explicitly baselined rather than hidden.
+9. Development-tooling dependency vulnerabilities remain where npm currently offers only a breaking forced Prisma downgrade; see `docs/development/quality.md`.
 
 ## Known defects observed during baseline review
 
@@ -81,30 +82,52 @@ The existing project should be evolved rather than rewritten from scratch becaus
 - a clear Nuxt `app/` / Nitro `server/` separation
 - a Dockerized application and database
 
-## M1.3 architecture decisions
+## M1 controls implemented so far
 
-M1.3 establishes the following Docker rules:
+### M1.1 — Baseline and architecture documentation
 
-1. Development and production-like local execution are separate Compose definitions.
-2. Development services bind to `127.0.0.1` by default to avoid accidental LAN/Internet exposure.
-3. PostgreSQL data and uploaded files use named persistent volumes.
-4. Restarting the application container must not run `prisma db push`, migrations or seed automatically.
-5. Schema changes are applied only through committed Prisma migrations.
-6. Prisma client generation and development seed are explicit bootstrap/operator actions.
-7. The development application source is bind-mounted for Nuxt hot reload while dependencies remain in a named volume.
-8. Generated Prisma client output is excluded from Docker build context so the release image always generates from the versioned schema.
-9. Node.js 22 is the supported runtime for this foundation because current direct/transitive dependencies require Node 22 or newer.
-10. A Docker smoke workflow validates Compose syntax, image build, Prisma generation, migrations, seed, HTTP readiness, non-mutating restart behavior and upload-volume persistence.
+- stable pre-M1 branch and commit reference
+- factual architecture / security inventory
+- known defects recorded before remediation
 
-Detailed operator instructions are in `docs/development/docker.md`.
+### M1.2 — Secrets and environment configuration
 
-## M1.3 test evidence
+- committed `.env.example` contains placeholders only
+- real credentials removed from current repository configuration
+- build-only Prisma placeholder is deliberately non-secret and unreachable
+- historical committed values classified as compromised
 
-The initial smoke test deliberately failed and exposed a stale `package-lock.json` plus Node 20 incompatibility with current dependencies. The lockfile was regenerated in a controlled Node 22 environment and the runtime was aligned to Node 22.
+### M1.3 — Reproducible development Docker environment
 
-A subsequent run successfully validated development image build, PostgreSQL startup and all four committed Prisma migrations. It then exposed a missing generated Prisma client before seed execution; the bootstrap order was corrected to `generate → migrate → seed → start`.
+- Node.js 22 runtime
+- deterministic dependency installation with `npm ci`
+- dedicated development Dockerfile and Compose file
+- persistent PostgreSQL and upload volumes
+- source bind mount for development
+- localhost-only development port exposure
+- explicit Prisma client generation
+- committed migrations applied with `prisma migrate deploy`
+- development seed is explicit and never tied to application restart
+- runtime entrypoint performs no schema mutation or seed
+- Docker smoke test verifies migration, seed, HTTP startup, non-reseeding and upload persistence
 
-The next complete smoke run passed all infrastructure assertions, including HTTP readiness, upload persistence and proof that application recreation does not rerun the seed. A final smoke run is used after M1.3's last Docker-context changes so the final tested commit remains auditable.
+See `docs/development/docker.md`.
+
+### M1.4 — Quality and test foundation
+
+- Nuxt ESLint enabled
+- current 37-warning legacy lint baseline recorded and capped with `--max-warnings=37`
+- Nuxt TypeScript typecheck is blocking
+- Vitest + V8 coverage enabled
+- first three unit tests cover required environment-variable validation
+- coverage thresholds are blocking and the initial utility has 100% coverage
+- permanent pull-request `Quality Gate` workflow added
+- dependency tree remediated without `npm audit fix --force`
+- critical dependency findings removed from the accepted production gate
+- Prisma CLI classified as development tooling rather than an application runtime dependency
+- complete audit output retained for review
+
+See `docs/development/quality.md`.
 
 ## Milestone 1 rule
 
@@ -118,10 +141,10 @@ No M1 capability is considered complete until it has:
 
 ## Planned M1 sequence
 
-1. M1.1 — baseline and architecture documentation
-2. M1.2 — secrets and environment configuration
-3. M1.3 — clean development Docker environment
-4. M1.4 — lint, typecheck and test foundation
+1. M1.1 — baseline and architecture documentation ✅
+2. M1.2 — secrets and environment configuration ✅
+3. M1.3 — clean development Docker environment ✅
+4. M1.4 — lint, typecheck and test foundation — final CI acceptance pending
 5. M1.5 — regression tests for existing API
 6. M1.6 — validation and error-handling foundation
 7. M1.7 — persistent and secure document storage
@@ -131,6 +154,6 @@ No M1 capability is considered complete until it has:
 11. M1.11 — MFA and recovery
 12. M1.12 — audit log
 13. M1.13 — rate limiting and security protections
-14. M1.14 — CI hardening and deployment gates
+14. M1.14 — CI
 15. M1.15 — staging
 16. M1.16 — security/audit baseline
