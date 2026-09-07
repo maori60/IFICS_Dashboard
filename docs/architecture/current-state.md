@@ -12,7 +12,7 @@ This document records the technical state of IFICS Dashboard before the Mileston
 
 - Nuxt 4 / Vue 3
 - Nitro server API
-- Node.js 20 container image
+- Node.js 22 container image
 - Prisma ORM with PostgreSQL adapter
 - PostgreSQL 16
 - Docker / Docker Compose
@@ -57,7 +57,8 @@ Critical gaps identified before M1:
 6. File validation trusts the multipart MIME value and requires stronger content validation and malware scanning.
 7. Audit logging is not implemented.
 8. Automated application tests are not yet implemented. A Docker development smoke workflow was introduced in M1.3 as the first machine-verifiable infrastructure test.
-9. Development seed / `prisma db push` ran from the application entrypoint. **Removed in M1.3. Container restart is now non-mutating; migrations and seed are explicit operations.**
+9. Development seed / `prisma db push` ran from the application entrypoint. **Removed in M1.3. Container restart is now non-mutating; Prisma generation, migrations and seed are explicit operations.**
+10. The dependency baseline observed during M1.3 reports **30 npm audit findings (4 low, 6 moderate, 16 high, 4 critical)**. These findings are not being auto-fixed blindly. M1.4 will capture and triage the affected dependency paths before upgrades or mitigations are selected.
 
 ## Known defects observed during baseline review
 
@@ -89,11 +90,21 @@ M1.3 establishes the following Docker rules:
 3. PostgreSQL data and uploaded files use named persistent volumes.
 4. Restarting the application container must not run `prisma db push`, migrations or seed automatically.
 5. Schema changes are applied only through committed Prisma migrations.
-6. Development seed is an explicit operator action.
+6. Prisma client generation and development seed are explicit bootstrap/operator actions.
 7. The development application source is bind-mounted for Nuxt hot reload while dependencies remain in a named volume.
-8. A Docker smoke workflow validates Compose syntax, image build, migrations, seed, HTTP readiness and upload-volume persistence.
+8. Generated Prisma client output is excluded from Docker build context so the release image always generates from the versioned schema.
+9. Node.js 22 is the supported runtime for this foundation because current direct/transitive dependencies require Node 22 or newer.
+10. A Docker smoke workflow validates Compose syntax, image build, Prisma generation, migrations, seed, HTTP readiness, non-mutating restart behavior and upload-volume persistence.
 
 Detailed operator instructions are in `docs/development/docker.md`.
+
+## M1.3 test evidence
+
+The initial smoke test deliberately failed and exposed a stale `package-lock.json` plus Node 20 incompatibility with current dependencies. The lockfile was regenerated in a controlled Node 22 environment and the runtime was aligned to Node 22.
+
+A subsequent run successfully validated development image build, PostgreSQL startup and all four committed Prisma migrations. It then exposed a missing generated Prisma client before seed execution; the bootstrap order was corrected to `generate → migrate → seed → start`.
+
+The next complete smoke run passed all infrastructure assertions, including HTTP readiness, upload persistence and proof that application recreation does not rerun the seed. A final smoke run is used after M1.3's last Docker-context changes so the final tested commit remains auditable.
 
 ## Milestone 1 rule
 
