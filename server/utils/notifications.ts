@@ -15,9 +15,7 @@ export async function notifyUser(userId: string, input: NotificationInput): Prom
     select: { id: true, email: true, status: true },
   })
 
-  if (!user || user.status !== 'ACTIVE') {
-    return
-  }
+  if (!user || user.status !== 'ACTIVE') return
 
   await prisma.notification.create({
     data: {
@@ -39,28 +37,25 @@ export async function notifyUser(userId: string, input: NotificationInput): Prom
     }
     catch (error) {
       console.error(JSON.stringify({
-        level: 'error',
-        event: 'notification_email_failed',
-        userId,
+        level: 'error', event: 'notification_email_failed', userId,
         error: error instanceof Error ? error.message : String(error),
       }))
     }
   }
 }
 
-export async function notifyRoles(
-  associationId: string,
-  roleCodes: string[],
-  input: NotificationInput,
-): Promise<void> {
+export async function notifyRoles(associationId: string, roleCodes: string[], input: NotificationInput): Promise<void> {
   const users = await prisma.user.findMany({
-    where: {
-      associationId,
-      status: 'ACTIVE',
-      role: { code: { in: roleCodes } },
-    },
+    where: { associationId, status: 'ACTIVE', role: { code: { in: roleCodes } } },
     select: { id: true },
   })
+  await Promise.all(users.map(user => notifyUser(user.id, input)))
+}
 
+export async function notifyClientUsers(clientId: string, input: NotificationInput): Promise<void> {
+  const users = await prisma.user.findMany({
+    where: { clientId, status: 'ACTIVE' },
+    select: { id: true },
+  })
   await Promise.all(users.map(user => notifyUser(user.id, input)))
 }
