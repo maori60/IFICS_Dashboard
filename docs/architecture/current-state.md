@@ -24,7 +24,9 @@ This document records the technical state of IFICS Dashboard before the Mileston
 - `server/utils/`: shared server utilities
 - `prisma/`: schema, migrations and development seed
 - `public/`: public static assets
-- `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh`: container runtime
+- `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh`: production-like local runtime
+- `Dockerfile.dev`, `docker-compose.dev.yml`: isolated development runtime added in M1.3
+- `docs/`: architecture, development and security documentation
 
 ## Existing business capabilities
 
@@ -50,12 +52,12 @@ Critical gaps identified before M1:
 1. Authentication and secure session management are not implemented.
 2. Server routes do not yet enforce authorization, scopes or data classifications.
 3. Sensitive intervenor data can currently be returned by API routes without authorization enforcement.
-4. Database credentials were stored directly in repository configuration before M1.2.
-5. Uploaded documents are stored inside the application container without a dedicated persistent Docker volume.
+4. Database credentials were stored directly in repository configuration before M1.2. **Remediated in working tree; historical values remain compromised and must never be reused.**
+5. Uploaded documents were stored inside the application container without a dedicated persistent Docker volume. **Development and production-like local stacks now mount dedicated upload volumes in M1.3. Secure document storage design remains scheduled for M1.7.**
 6. File validation trusts the multipart MIME value and requires stronger content validation and malware scanning.
 7. Audit logging is not implemented.
-8. Automated tests and CI security gates are not implemented.
-9. Development seed / `prisma db push` currently run from the application entrypoint and must not remain the production migration strategy.
+8. Automated application tests are not yet implemented. A Docker development smoke workflow was introduced in M1.3 as the first machine-verifiable infrastructure test.
+9. Development seed / `prisma db push` ran from the application entrypoint. **Removed in M1.3. Container restart is now non-mutating; migrations and seed are explicit operations.**
 
 ## Known defects observed during baseline review
 
@@ -77,6 +79,21 @@ The existing project should be evolved rather than rewritten from scratch becaus
 - soft-archive behavior for some business entities
 - a clear Nuxt `app/` / Nitro `server/` separation
 - a Dockerized application and database
+
+## M1.3 architecture decisions
+
+M1.3 establishes the following Docker rules:
+
+1. Development and production-like local execution are separate Compose definitions.
+2. Development services bind to `127.0.0.1` by default to avoid accidental LAN/Internet exposure.
+3. PostgreSQL data and uploaded files use named persistent volumes.
+4. Restarting the application container must not run `prisma db push`, migrations or seed automatically.
+5. Schema changes are applied only through committed Prisma migrations.
+6. Development seed is an explicit operator action.
+7. The development application source is bind-mounted for Nuxt hot reload while dependencies remain in a named volume.
+8. A Docker smoke workflow validates Compose syntax, image build, migrations, seed, HTTP readiness and upload-volume persistence.
+
+Detailed operator instructions are in `docs/development/docker.md`.
 
 ## Milestone 1 rule
 
@@ -103,6 +120,6 @@ No M1 capability is considered complete until it has:
 11. M1.11 — MFA and recovery
 12. M1.12 — audit log
 13. M1.13 — rate limiting and security protections
-14. M1.14 — CI
+14. M1.14 — CI hardening and deployment gates
 15. M1.15 — staging
 16. M1.16 — security/audit baseline
