@@ -9,7 +9,7 @@ It provides a reproducible local environment with:
 - PostgreSQL 16
 - persistent development database volume
 - persistent development upload volume
-- explicit database migrations and seed operations
+- explicit Prisma client generation, migrations and seed operations
 - services bound to `127.0.0.1` by default
 
 ## Files
@@ -19,6 +19,7 @@ It provides a reproducible local environment with:
 - `Dockerfile`: production-like application image
 - `docker-compose.yml`: production-like local smoke-test stack; it is not the final production deployment
 - `.env.example`: documented environment template
+- `.github/workflows/docker-dev-smoke.yml`: machine-verifiable Docker smoke test
 
 ## First start
 
@@ -39,9 +40,10 @@ make dev-init
 
 1. build the development application image
 2. start PostgreSQL
-3. apply committed Prisma migrations with `prisma migrate deploy`
-4. run the development seed explicitly
-5. start Nuxt
+3. generate the Prisma client with `prisma generate`
+4. apply committed Prisma migrations with `prisma migrate deploy`
+5. run the development seed explicitly
+6. start Nuxt
 
 No schema mutation or seed is performed merely because a container restarts.
 
@@ -61,11 +63,19 @@ When committed migrations are added:
 make dev-migrate
 ```
 
+To regenerate the Prisma client manually:
+
+```bash
+make dev-generate
+```
+
 To rerun the development seed:
 
 ```bash
 make dev-seed
 ```
+
+`dev-seed` regenerates the Prisma client first so it does not depend on a previous app start.
 
 ## Destructive development reset
 
@@ -73,7 +83,8 @@ make dev-seed
 make dev-reset
 ```
 
-This command is for development only. It destroys and recreates the development database.
+This command is for development only. It destroys and recreates the development database,
+regenerates the Prisma client, and then reapplies the development seed.
 
 To remove all IFICS development containers and named development volumes:
 
@@ -105,7 +116,23 @@ Defaults:
 
 Both host ports can be changed in `.env`.
 
-## Validation checklist
+## Automated smoke validation
+
+The `Docker Dev Smoke` GitHub Actions workflow validates the infrastructure on pull requests.
+It checks:
+
+1. development Compose syntax
+2. development image build with `npm ci`
+3. PostgreSQL health
+4. Prisma client generation
+5. committed migration application
+6. explicit seed execution
+7. Nuxt HTTP readiness
+8. upload-volume persistence across application recreation
+9. absence of automatic reseeding during application recreation
+10. production-like Compose syntax and application image build
+
+## Local validation checklist
 
 After `make dev-init`:
 
@@ -120,11 +147,11 @@ Expected state:
 - `app` is healthy
 - Nuxt answers HTTP requests
 - Prisma can query PostgreSQL
-- restarting `app` does not alter or reseed the database
+- restarting/recreating `app` does not alter or reseed the database
 - recreating `app` does not delete uploaded files because `uploads_dev` is persistent
 
-## Current limitation
+## Next testing layer
 
-At Milestone M1.3, automated CI has not yet been added. The commands above therefore remain
-part of the manual acceptance test. M1.4 will add linting, type checking, automated tests, and
-machine-verifiable build checks.
+M1.3 provides infrastructure smoke testing only. M1.4 adds linting, TypeScript checks,
+unit/integration test tooling, and dependency/security checks. M1.5 then adds regression tests
+for the existing API behavior.
