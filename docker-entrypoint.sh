@@ -1,21 +1,14 @@
 #!/bin/sh
-set -e
+set -eu
 
-echo "Waiting for PostgreSQL..."
+# Runtime entrypoint intentionally performs no schema mutation and no seed.
+# Database migrations are explicit deployment operations and are never tied to a
+# container restart.
 
-until npx prisma db push >/dev/null 2>&1
-do
-  echo "PostgreSQL is unavailable - retrying in 2 seconds..."
-  sleep 2
-done
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "DATABASE_URL is required" >&2
+  exit 1
+fi
 
-echo "Database is ready."
-
-echo "Generating Prisma client..."
-npx prisma generate
-
-echo "Seeding database..."
-npx prisma db seed
-
-echo "Starting Nuxt..."
-npm run start
+echo "Starting IFICS application..."
+exec npm run start
