@@ -1,0 +1,12 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Dependencies are baked into the development image. The source tree is bind-mounted
+# by docker-compose.dev.yml so local edits are picked up by Nuxt hot reload.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
