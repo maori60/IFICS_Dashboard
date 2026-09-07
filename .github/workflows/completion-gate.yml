@@ -12,7 +12,7 @@ permissions:
 jobs:
   completion:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       DATABASE_URL: postgresql://build_only:unused@127.0.0.1:5432/build_only?schema=public
       NODE_ENV: development
@@ -29,16 +29,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Validate Prisma schema
+        if: always()
         run: npx prisma validate
       - name: Generate Prisma client
+        if: always()
         run: npx prisma generate
       - name: Lint
+        if: always()
         run: npm run lint
       - name: Typecheck
+        if: always()
         run: npm run typecheck
       - name: Unit tests
+        if: always()
         run: npm run test:coverage
       - name: Block critical production dependency vulnerabilities
+        if: always()
         run: npm run security:audit
       - name: Build
+        if: always()
         run: npm run build
