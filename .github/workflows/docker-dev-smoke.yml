@@ -1,0 +1,93 @@
+name: Docker Dev Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile.dev'
+      - 'docker-compose.dev.yml'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'docker-entrypoint.sh'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'prisma/**'
+      - 'prisma.config.ts'
+      - '.github/workflows/docker-dev-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  docker-dev-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      POSTGRES_USER: ifics_ci
+      POSTGRES_PASSWORD: ci_only_not_a_secret
+      POSTGRES_DB: ifics_ci
+      DATABASE_URL: postgresql://ifics_ci:ci_only_not_a_secret@db:5432/ifics_ci?schema=public
+      APP_PORT: '3000'
+      POSTGRES_PORT: '5432'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: docker compose -f docker-compose.dev.yml config --quiet
+
+      - name: Build development image
+        run: docker compose -f docker-compose.dev.yml build app
+
+      - name: Start PostgreSQL
+        run: docker compose -f docker-compose.dev.yml up -d db
+
+      - name: Apply committed migrations
+        run: docker compose -f docker-compose.dev.yml run --rm app npx prisma migrate deploy
+
+      - name: Seed development data explicitly
+        run: docker compose -f docker-compose.dev.yml run --rm app npm run db:seed
+
+      - name: Start application
+        run: docker compose -f docker-compose.dev.yml up -d app
+
+      - name: Wait for HTTP readiness
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f docker-compose.dev.yml ps
+          docker compose -f docker-compose.dev.yml logs app
+          exit 1
+
+      - name: Verify database seed
+        run: |
+          count=$(docker compose -f docker-compose.dev.yml exec -T db \
+            psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc 'SELECT COUNT(*) FROM "Association";')
+          test "$count" -ge 1
+
+      - name: Verify upload volume survives app recreation
+        run: |
+          docker compose -f docker-compose.dev.yml exec -T app \
+            sh -c 'mkdir -p /app/uploads/smoke && printf persistent > /app/uploads/smoke/marker.txt'
+          docker compose -f docker-compose.dev.yml up -d --force-recreate app
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/ >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          test "$(docker compose -f docker-compose.dev.yml exec -T app cat /app/uploads/smoke/marker.txt)" = "persistent"
+
+      - name: Show final service state
+        if: always()
+        run: docker compose -f docker-compose.dev.yml ps
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.dev.yml logs
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down -v
