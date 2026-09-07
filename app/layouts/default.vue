@@ -1,504 +1,76 @@
 <script setup lang="ts">
 const route = useRoute()
-const isMobileMenuOpen = ref(false)
+const menuOpen = ref(false)
 
-type NavigationItem = {
-  label: string
-  to: string
-  disabled?: boolean
-}
-
-type NavigationSection = {
-  title: string
-  items: NavigationItem[]
-}
-
-function closeMobileMenu() {
-  isMobileMenuOpen.value = false
-}
-
-const navigationSections: NavigationSection[] = [
-  {
-    title: 'Vue générale',
-    items: [
-      { label: 'Dashboard', to: '/' },
-    ],
-  },
-  {
-    title: 'Gestion',
-    items: [
-      { label: 'Clients', to: '/clients' },
-      { label: 'Projets', to: '/projects' },
-      { label: 'Intervenants', to: '/intervenors' },
-    ],
-  },
-  {
-    title: 'À venir',
-    items: [
-      { label: 'Documents', to: '/documents', disabled: true },
-      { label: 'Bilans', to: '/reports', disabled: true },
-      { label: 'Factures', to: '/invoices', disabled: true },
-      { label: 'Paramètres', to: '/settings', disabled: true },
-    ],
-  },
+const links = [
+  { label: 'Association', to: '/association' },
+  { label: 'Nos actions', to: '/actions' },
+  { label: 'Projets', to: '/projets' },
+  { label: 'Actualités', to: '/actualites' },
+  { label: 'Partenaires', to: '/partenaires' },
+  { label: 'Innovation & R&D', to: '/innovation' },
+  { label: 'Logiciels gratuits', to: '/logiciels' },
+  { label: 'Nous rejoindre', to: '/rejoindre' },
 ]
 
-function isActiveLink(to: string) {
-  if (to === '/') {
-    return route.path === '/'
-  }
-
-  return route.path === to || route.path.startsWith(`${to}/`)
-}
+watch(() => route.fullPath, () => { menuOpen.value = false })
 </script>
 
 <template>
-  <div class="app-layout">
-    <button class="mobile-menu-button" @click="isMobileMenuOpen = true">
-      ☰
-    </button>
-
-    <div
-      v-if="isMobileMenuOpen"
-      class="mobile-overlay"
-      @click="closeMobileMenu"
-    />
-
-    <aside
-      class="sidebar"
-      :class="{ 'sidebar-open': isMobileMenuOpen }"
-    >
-      <div class="sidebar-top">
-        <div class="brand">
-          <div class="brand-badge">I</div>
-
-          <div class="brand-text">
-            <h2 class="logo">IFICS</h2>
-            <p class="logo-subtitle">Dashboard associatif</p>
-          </div>
-        </div>
-
-        <button class="mobile-close-button" @click="closeMobileMenu">
-          ✕
+  <div class="public-shell">
+    <a class="skip-link" href="#main-content">Aller au contenu</a>
+    <header class="public-header">
+      <div class="container header-inner">
+        <NuxtLink to="/" class="public-brand" aria-label="IFICS — accueil">
+          <span class="brand-mark" aria-hidden="true">I</span>
+          <span><strong>IFICS</strong><small>Institut de formation, d'insertion, de culture et de sport</small></span>
+        </NuxtLink>
+        <button class="menu-button" type="button" :aria-expanded="menuOpen" aria-controls="public-navigation" @click="menuOpen = !menuOpen">
+          Menu
         </button>
+        <nav id="public-navigation" class="public-nav" :class="{ open: menuOpen }" aria-label="Navigation principale">
+          <NuxtLink v-for="link in links" :key="link.to" :to="link.to">{{ link.label }}</NuxtLink>
+          <NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet</NuxtLink>
+          <NuxtLink to="/login" class="btn btn-secondary">Espace IFICS</NuxtLink>
+        </nav>
       </div>
-
-      <div class="workspace-card">
-        <span class="workspace-label">Installation</span>
-        <strong class="workspace-name">Association principale</strong>
-        <span class="workspace-meta">Version métier V1</span>
+    </header>
+    <main id="main-content"><slot /></main>
+    <footer class="public-footer">
+      <div class="container footer-grid">
+        <div><strong class="footer-logo">IFICS</strong><p>Éducation · Sport · Culture · Numérique · Insertion · Innovation</p></div>
+        <div><strong>Agir avec nous</strong><NuxtLink to="/proposer-un-projet">Proposer un projet</NuxtLink><NuxtLink to="/partenaires">Devenir partenaire</NuxtLink><NuxtLink to="/contact">Contact</NuxtLink></div>
+        <div><strong>Accès</strong><NuxtLink to="/login">Espace IFICS</NuxtLink><span>France · Europe/Paris</span></div>
       </div>
-
-      <nav class="nav">
-        <div
-          v-for="section in navigationSections"
-          :key="section.title"
-          class="nav-section"
-        >
-          <p class="nav-section-title">{{ section.title }}</p>
-
-          <div class="nav-links">
-            <template v-for="item in section.items" :key="item.to">
-              <span
-                v-if="item.disabled"
-                class="nav-link nav-link-disabled"
-              >
-                {{ item.label }}
-                <span class="soon-badge">Bientôt</span>
-              </span>
-
-              <NuxtLink
-                v-else
-                :to="item.to"
-                class="nav-link"
-                :class="{ 'nav-link-active': isActiveLink(item.to) }"
-                @click="closeMobileMenu"
-              >
-                {{ item.label }}
-              </NuxtLink>
-            </template>
-          </div>
-        </div>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="user-card">
-          <div class="user-avatar">A</div>
-
-          <div class="user-content">
-            <strong class="user-name">Administrateur</strong>
-            <span class="user-role">Accès complet</span>
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <div class="main-shell">
-      <header class="topbar">
-        <div>
-          <p class="topbar-eyebrow">Plateforme de gestion</p>
-          <h1 class="topbar-title">IFICS</h1>
-        </div>
-
-        <div class="topbar-actions">
-          <span class="status-pill">En ligne</span>
-        </div>
-      </header>
-
-      <main class="content">
-        <slot />
-      </main>
-    </div>
+    </footer>
   </div>
 </template>
 
 <style scoped>
-.app-layout {
-  display: flex;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(96, 165, 250, 0.10), transparent 24%),
-    #f5f7fb;
-  color: #1f2937;
-}
-
-.sidebar {
-  width: 280px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  border-right: 1px solid #e5e7eb;
-  padding: 24px 18px;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-text {
-  min-width: 0;
-}
-
-.brand-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
-  flex-shrink: 0;
-}
-
-.logo {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 800;
-  color: #111827;
-}
-
-.logo-subtitle {
-  margin: 2px 0 0;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.workspace-card {
-  border: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
-  border-radius: 18px;
-  padding: 16px;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.workspace-label {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: #6b7280;
-}
-
-.workspace-name {
-  color: #111827;
-  font-size: 15px;
-}
-
-.workspace-meta {
-  color: #6b7280;
-  font-size: 13px;
-}
-
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  flex: 1;
-}
-
-.nav-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.nav-section-title {
-  margin: 0;
-  padding: 0 6px;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #9ca3af;
-}
-
-.nav-links {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.nav-link {
-  text-decoration: none;
-  color: #374151;
-  padding: 12px 14px;
-  border-radius: 12px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.nav-link:hover {
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.nav-link-active {
-  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
-  color: #1d4ed8;
-  box-shadow: inset 0 0 0 1px #bfdbfe;
-}
-
-.nav-link-disabled {
-  color: #9ca3af;
-  background: #f9fafb;
-  border: 1px dashed #e5e7eb;
-  cursor: not-allowed;
-}
-
-.soon-badge {
-  font-size: 10px;
-  font-weight: 800;
-  border-radius: 999px;
-  padding: 4px 8px;
-  background: #f3f4f6;
-  color: #6b7280;
-}
-
-.sidebar-footer {
-  margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  padding: 12px 14px;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: #111827;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.user-content {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.user-name {
-  color: #111827;
-  font-size: 14px;
-}
-
-.user-role {
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.main-shell {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.topbar {
-  height: 84px;
-  padding: 20px 32px;
-  border-bottom: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(10px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.topbar-eyebrow {
-  margin: 0 0 4px;
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.topbar-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 800;
-  color: #111827;
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.status-pill {
-  border-radius: 999px;
-  padding: 8px 12px;
-  background: #ecfdf5;
-  color: #047857;
-  font-size: 12px;
-  font-weight: 800;
-  border: 1px solid #a7f3d0;
-}
-
-.content {
-  flex: 1;
-  padding: 32px;
-  min-width: 0;
-}
-
-.mobile-menu-button {
-  display: none;
-}
-
-.mobile-close-button {
-  display: none;
-}
-
-.mobile-overlay {
-  display: none;
-}
-
-@media (max-width: 900px) {
-  .mobile-menu-button {
-    display: flex;
-    position: fixed;
-    top: 14px;
-    left: 14px;
-    z-index: 1100;
-    width: 44px;
-    height: 44px;
-    border: none;
-    border-radius: 12px;
-    background: white;
-    color: #111827;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-    font-size: 20px;
-    cursor: pointer;
-  }
-
-  .mobile-close-button {
-    display: flex;
-    width: 38px;
-    height: 38px;
-    border: none;
-    border-radius: 10px;
-    background: #f3f4f6;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #111827;
-    flex-shrink: 0;
-  }
-
-  .mobile-overlay {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.35);
-    z-index: 999;
-  }
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 1000;
-    width: 280px;
-    max-width: 85vw;
-    transform: translateX(-100%);
-    transition: transform 0.25s ease;
-    overflow-y: auto;
-  }
-
-  .sidebar.sidebar-open {
-    transform: translateX(0);
-  }
-
-  .topbar {
-    min-height: 84px;
-    height: auto;
-    padding: 18px 16px 18px 72px;
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .content {
-    width: 100%;
-    padding: 20px 16px 24px;
-  }
+.public-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.skip-link { position: fixed; left: 12px; top: -60px; z-index: 9999; background: #fff; padding: 10px 14px; border-radius: 10px; }
+.skip-link:focus { top: 12px; }
+.public-header { position: sticky; top: 0; z-index: 100; background: rgba(246,248,246,.94); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(223,231,226,.85); }
+.header-inner { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 22px; }
+.public-brand { display: flex; align-items: center; gap: 11px; text-decoration: none; min-width: 225px; }
+.public-brand > span:last-child { display: flex; flex-direction: column; line-height: 1.15; }
+.public-brand strong { font-size: 1.2rem; letter-spacing: .04em; }
+.public-brand small { color: var(--ifics-muted); font-size: .64rem; max-width: 210px; margin-top: 3px; }
+.brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: var(--ifics-green-900); color: #fff; font-weight: 900; }
+.public-nav { display: flex; align-items: center; gap: 17px; }
+.public-nav > a:not(.btn) { text-decoration: none; font-size: .86rem; font-weight: 700; color: #425149; }
+.public-nav > a:not(.btn):hover { color: var(--ifics-green-700); }
+.menu-button { display: none; border: 1px solid var(--ifics-border); background: #fff; border-radius: 10px; padding: 9px 12px; font-weight: 750; }
+.public-footer { margin-top: auto; padding: 52px 0; background: var(--ifics-green-950); color: #eaf4ee; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 35px; }
+.footer-grid > div { display: flex; flex-direction: column; gap: 9px; }
+.footer-grid a { color: #d6e7dc; text-decoration: none; }
+.footer-grid p, .footer-grid span { color: #a8bdb0; margin: 0; }
+.footer-logo { font-size: 1.5rem; letter-spacing: .06em; }
+@media (max-width: 1050px) {
+  .menu-button { display: inline-flex; }
+  .public-nav { position: absolute; top: 76px; left: 20px; right: 20px; display: none; flex-direction: column; align-items: stretch; background: #fff; padding: 18px; border: 1px solid var(--ifics-border); border-radius: 16px; box-shadow: var(--ifics-shadow); }
+  .public-nav.open { display: flex; }
+  .footer-grid { grid-template-columns: 1fr; }
 }
 </style>

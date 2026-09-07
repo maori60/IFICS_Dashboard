@@ -1,562 +1,69 @@
 <script setup lang="ts">
-const { data: clientsData, pending: clientsPending, refresh: refreshClients } = useFetch('/api/clients', {
-  server: false,
-})
+import type { ApiSuccess, PublicContent, PublicPartner, PublicProject } from '~/types/api'
 
-const { data: projectsData, pending: projectsPending, refresh: refreshProjects } = useFetch('/api/projects', {
-  server: false,
-})
+useHead({ title: 'Agir, transmettre, inclure et innover' })
 
-const clients = computed(() => clientsData.value?.data || [])
-const projects = computed(() => projectsData.value?.data || [])
+const { data: projectsResponse } = await useFetch<ApiSuccess<PublicProject[]>>('/api/public/projects', { default: () => ({ ok: true, data: [] }) })
+const { data: newsResponse } = await useFetch<ApiSuccess<PublicContent[]>>('/api/public/content', { query: { kind: 'NEWS' }, default: () => ({ ok: true, data: [] }) })
+const { data: partnersResponse } = await useFetch<ApiSuccess<PublicPartner[]>>('/api/public/partners', { default: () => ({ ok: true, data: [] }) })
 
-const totalClients = computed(() => clients.value.length)
-const totalProjects = computed(() => projects.value.length)
+const projects = computed(() => (projectsResponse.value?.data ?? []).slice(0, 3))
+const news = computed(() => (newsResponse.value?.data ?? []).slice(0, 3))
+const partners = computed(() => (partnersResponse.value?.data ?? []).slice(0, 8))
 
-const draftProjects = computed(() =>
-  projects.value.filter((project: any) => project.status === 'DRAFT').length,
-)
-
-const inProgressProjects = computed(() =>
-  projects.value.filter((project: any) =>
-    ['IN_PROGRESS', 'VALIDATED'].includes(project.status),
-  ).length,
-)
-
-const projectsWithoutDescription = computed(() =>
-  projects.value.filter((project: any) => !project.description?.trim()).length,
-)
-
-const recentProjects = computed(() => projects.value.slice(0, 5))
-
-function getMainClient(project: any) {
-  const mainClient = project.projectClients?.find((item: any) => item.isMainClient)
-  return mainClient?.client?.name || 'Client non renseigné'
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case 'DRAFT':
-      return 'Brouillon'
-    case 'VALIDATED':
-      return 'Validé'
-    case 'IN_PROGRESS':
-      return 'En cours'
-    case 'COMPLETED':
-      return 'Terminé'
-    case 'CANCELLED':
-      return 'Annulé'
-    default:
-      return status || 'Non défini'
-  }
-}
-
-function getStatusClass(status: string) {
-  switch (status) {
-    case 'DRAFT':
-      return 'badge-draft'
-    case 'VALIDATED':
-      return 'badge-validated'
-    case 'IN_PROGRESS':
-      return 'badge-progress'
-    case 'COMPLETED':
-      return 'badge-completed'
-    case 'CANCELLED':
-      return 'badge-cancelled'
-    default:
-      return 'badge-default'
-  }
-}
-
-async function refreshAll() {
-  await Promise.all([refreshClients(), refreshProjects()])
-}
+const domains = [
+  ['Éducation', 'Concevoir des actions pédagogiques qui donnent confiance et développent l’autonomie.'],
+  ['Sport', 'Faire du mouvement un outil de santé, de transmission, de discipline et de lien social.'],
+  ['Culture', 'Créer des espaces d’expression, de découverte et de rencontre entre les publics.'],
+  ['Numérique', 'Rendre les outils numériques compréhensibles, utiles et accessibles au plus grand nombre.'],
+  ['Insertion', 'Renforcer les compétences et les passerelles vers l’emploi et la participation citoyenne.'],
+  ['Innovation & R&D', 'Expérimenter, documenter et transformer des idées en solutions réutilisables.'],
+]
 </script>
 
 <template>
-  <div class="dashboard-page">
-    <PageHeader
-      title="Dashboard"
-      subtitle="Vue d’ensemble de l’activité associative et des projets en cours."
-    >
-      <BaseButton variant="secondary" @click="refreshAll()">
-        Actualiser
-      </BaseButton>
-    </PageHeader>
-
-    <ClientOnly>
-      <div class="dashboard-content">
-        <div class="stats-grid">
-          <article class="stat-card">
-            <span class="stat-label">Clients</span>
-            <strong class="stat-value">
-              {{ clientsPending ? '...' : totalClients }}
-            </strong>
-            <p class="stat-helper">Structures suivies dans l’application</p>
-          </article>
-
-          <article class="stat-card">
-            <span class="stat-label">Projets</span>
-            <strong class="stat-value">
-              {{ projectsPending ? '...' : totalProjects }}
-            </strong>
-            <p class="stat-helper">Projets enregistrés</p>
-          </article>
-
-          <article class="stat-card">
-            <span class="stat-label">Projets en brouillon</span>
-            <strong class="stat-value">
-              {{ projectsPending ? '...' : draftProjects }}
-            </strong>
-            <p class="stat-helper">À compléter ou valider</p>
-          </article>
-
-          <article class="stat-card">
-            <span class="stat-label">Projets en cours</span>
-            <strong class="stat-value">
-              {{ projectsPending ? '...' : inProgressProjects }}
-            </strong>
-            <p class="stat-helper">Projets actifs ou prêts à démarrer</p>
-          </article>
+  <div>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <p class="eyebrow">Association IFICS · France</p>
+          <h1 class="display-title">Agir sur le terrain. Transmettre durablement.</h1>
+          <p class="lead">IFICS développe des projets d’éducation, de sport, de culture, de numérique, d’insertion et d’innovation avec les collectivités, les partenaires et les acteurs de terrain.</p>
+          <div class="hero-actions"><NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet</NuxtLink><NuxtLink to="/actions" class="btn btn-secondary">Découvrir nos actions</NuxtLink></div>
         </div>
-
-        <div class="dashboard-grid">
-          <section class="panel panel-large">
-            <div class="panel-header">
-              <div>
-                <h2 class="panel-title">Projets récents</h2>
-                <p class="panel-subtitle">Les derniers projets créés dans l’outil</p>
-              </div>
-            </div>
-
-            <div v-if="projectsPending" class="empty-state">
-              Chargement des projets...
-            </div>
-
-            <div v-else-if="!recentProjects.length" class="empty-state">
-              Aucun projet disponible pour le moment.
-            </div>
-
-            <div v-else class="project-list">
-              <article
-                v-for="project in recentProjects"
-                :key="project.id"
-                class="project-row"
-              >
-                <div class="project-row-main">
-                  <div class="project-row-top">
-                    <h3 class="project-title">{{ project.title }}</h3>
-                    <span class="badge" :class="getStatusClass(project.status)">
-                      {{ getStatusLabel(project.status) }}
-                    </span>
-                  </div>
-
-                  <p class="project-meta">
-                    Client principal : <strong>{{ getMainClient(project) }}</strong>
-                  </p>
-
-                  <p class="project-description">
-                    {{ project.description || 'Description non renseignée.' }}
-                  </p>
-                </div>
-              </article>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-header">
-              <div>
-                <h2 class="panel-title">À compléter</h2>
-                <p class="panel-subtitle">Éléments qui méritent ton attention</p>
-              </div>
-            </div>
-
-            <div class="attention-list">
-              <div class="attention-item">
-                <span class="attention-label">Projets sans description</span>
-                <strong class="attention-value">
-                  {{ projectsPending ? '...' : projectsWithoutDescription }}
-                </strong>
-              </div>
-
-              <div class="attention-item">
-                <span class="attention-label">Projets en brouillon</span>
-                <strong class="attention-value">
-                  {{ projectsPending ? '...' : draftProjects }}
-                </strong>
-              </div>
-
-              <div class="attention-item">
-                <span class="attention-label">Clients enregistrés</span>
-                <strong class="attention-value">
-                  {{ clientsPending ? '...' : totalClients }}
-                </strong>
-              </div>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-header">
-              <div>
-                <h2 class="panel-title">Vue métier rapide</h2>
-                <p class="panel-subtitle">Lecture synthétique de la situation</p>
-              </div>
-            </div>
-
-            <div class="summary-box">
-              <p>
-                Tu as actuellement
-                <strong>{{ totalProjects }}</strong>
-                projet<span v-if="totalProjects > 1">s</span>
-                enregistré<span v-if="totalProjects > 1">s</span>,
-                dont
-                <strong>{{ inProgressProjects }}</strong>
-                en activité potentielle et
-                <strong>{{ draftProjects }}</strong>
-                encore à finaliser.
-              </p>
-
-              <p>
-                La base client contient
-                <strong>{{ totalClients }}</strong>
-                structure<span v-if="totalClients > 1">s</span>.
-              </p>
-
-              <p>
-                Cette vue sera ensuite enrichie avec les intervenants, les séances,
-                les documents, les bilans et les échéances.
-              </p>
-            </div>
-          </section>
-        </div>
+        <div class="hero-panel" aria-label="Domaines d'intervention IFICS"><span>Éducation</span><span>Sport</span><span>Culture</span><span>Numérique</span><span>Insertion</span><span>Innovation</span><strong>Des projets conçus avec les territoires.</strong></div>
       </div>
+    </section>
 
-      <template #fallback>
-        <div class="dashboard-content">
-          <div class="stats-grid">
-            <article class="stat-card">
-              <span class="stat-label">Clients</span>
-              <strong class="stat-value">...</strong>
-              <p class="stat-helper">Chargement en cours</p>
-            </article>
+    <section class="section"><div class="container"><p class="eyebrow">Nos domaines</p><h2 class="section-title">Une approche transversale, du besoin à l’impact.</h2><div class="grid grid-3 domain-grid"><article v-for="domain in domains" :key="domain[0]" class="card card-pad"><span class="domain-number">0{{ domains.indexOf(domain) + 1 }}</span><h3>{{ domain[0] }}</h3><p>{{ domain[1] }}</p></article></div></div></section>
 
-            <article class="stat-card">
-              <span class="stat-label">Projets</span>
-              <strong class="stat-value">...</strong>
-              <p class="stat-helper">Chargement en cours</p>
-            </article>
+    <section class="section project-section"><div class="container"><div class="section-row"><div><p class="eyebrow">Projets</p><h2 class="section-title">Ce que nous construisons avec nos partenaires.</h2></div><NuxtLink to="/projets" class="btn btn-secondary">Voir les projets</NuxtLink></div><div v-if="projects.length" class="grid grid-3"><article v-for="project in projects" :key="project.id" class="card project-card"><div class="project-image" :style="project.imageUrl ? { backgroundImage: `url(${project.imageUrl})` } : undefined"></div><div class="card-pad"><span class="badge">{{ project.status || 'Projet IFICS' }}</span><h3>{{ project.title }}</h3><p>{{ project.summary }}</p><small>{{ project.territory }}</small></div></article></div><div v-else class="empty-state">Les projets publics validés par IFICS apparaîtront ici.</div></div></section>
 
-            <article class="stat-card">
-              <span class="stat-label">Projets en brouillon</span>
-              <strong class="stat-value">...</strong>
-              <p class="stat-helper">Chargement en cours</p>
-            </article>
+    <section class="section"><div class="container"><div class="section-row"><div><p class="eyebrow">Actualités</p><h2 class="section-title">Suivre les actions et les publications.</h2></div><NuxtLink to="/actualites" class="btn btn-secondary">Toutes les actualités</NuxtLink></div><div v-if="news.length" class="grid grid-3"><article v-for="item in news" :key="item.id" class="card card-pad"><span class="badge badge-muted">Actualité</span><h3>{{ item.title }}</h3><p>{{ item.excerpt }}</p><NuxtLink :to="`/actualites/${item.slug}`">Lire la publication →</NuxtLink></article></div><div v-else class="empty-state">Les actualités publiées par l’équipe communication apparaîtront ici.</div></div></section>
 
-            <article class="stat-card">
-              <span class="stat-label">Projets en cours</span>
-              <strong class="stat-value">...</strong>
-              <p class="stat-helper">Chargement en cours</p>
-            </article>
-          </div>
-
-          <div class="dashboard-grid">
-            <section class="panel panel-large">
-              <div class="panel-header">
-                <div>
-                  <h2 class="panel-title">Projets récents</h2>
-                  <p class="panel-subtitle">Chargement des données...</p>
-                </div>
-              </div>
-
-              <div class="empty-state">
-                Chargement du dashboard...
-              </div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-header">
-                <div>
-                  <h2 class="panel-title">À compléter</h2>
-                  <p class="panel-subtitle">Chargement des données...</p>
-                </div>
-              </div>
-
-              <div class="empty-state">
-                Chargement...
-              </div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-header">
-                <div>
-                  <h2 class="panel-title">Vue métier rapide</h2>
-                  <p class="panel-subtitle">Chargement des données...</p>
-                </div>
-              </div>
-
-              <div class="empty-state">
-                Chargement...
-              </div>
-            </section>
-          </div>
-        </div>
-      </template>
-    </ClientOnly>
+    <section class="section partner-section"><div class="container"><p class="eyebrow">Partenaires</p><h2 class="section-title">La coopération est au cœur de notre méthode.</h2><div v-if="partners.length" class="partner-list"><a v-for="partner in partners" :key="partner.id" :href="partner.websiteUrl || undefined" class="partner-chip" :aria-label="partner.websiteUrl ? `Site de ${partner.name}` : partner.name"><img v-if="partner.logoUrl" :src="partner.logoUrl" alt=""><span>{{ partner.name }}</span></a></div><p v-else class="lead">Collectivités, associations, entreprises, mécènes et partenaires opérationnels peuvent construire une action avec IFICS.</p><div class="hero-actions"><NuxtLink to="/partenaires" class="btn btn-primary">Devenir partenaire</NuxtLink><NuxtLink to="/contact" class="btn btn-secondary">Nous contacter</NuxtLink></div></div></section>
   </div>
 </template>
 
 <style scoped>
-.dashboard-page {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.dashboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.stat-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
-  border: 1px solid #e5e7eb;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stat-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.stat-value {
-  font-size: 32px;
-  line-height: 1;
-  color: #111827;
-}
-
-.stat-helper {
-  margin: 0;
-  color: #6b7280;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
-  gap: 16px;
-}
-
-.panel {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.panel-large {
-  grid-row: span 2;
-}
-
-.panel-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.panel-title {
-  margin: 0;
-  font-size: 20px;
-  color: #111827;
-}
-
-.panel-subtitle {
-  margin: 4px 0 0;
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.project-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.project-row {
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 16px;
-  background: #fbfdff;
-}
-
-.project-row-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.project-title {
-  margin: 0;
-  font-size: 18px;
-  color: #111827;
-}
-
-.project-meta {
-  margin: 0 0 8px;
-  color: #4b5563;
-  font-size: 14px;
-}
-
-.project-description {
-  margin: 0;
-  color: #6b7280;
-  line-height: 1.5;
-  font-size: 14px;
-}
-
-.badge {
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  border: 1px solid transparent;
-}
-
-.badge-draft {
-  background: #f3f4f6;
-  color: #4b5563;
-  border-color: #e5e7eb;
-}
-
-.badge-validated {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-color: #bfdbfe;
-}
-
-.badge-progress {
-  background: #ecfeff;
-  color: #0f766e;
-  border-color: #99f6e4;
-}
-
-.badge-completed {
-  background: #ecfdf5;
-  color: #047857;
-  border-color: #a7f3d0;
-}
-
-.badge-cancelled {
-  background: #fef2f2;
-  color: #b91c1c;
-  border-color: #fecaca;
-}
-
-.badge-default {
-  background: #f9fafb;
-  color: #6b7280;
-  border-color: #e5e7eb;
-}
-
-.attention-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.attention-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-}
-
-.attention-label {
-  color: #4b5563;
-  font-weight: 600;
-}
-
-.attention-value {
-  color: #111827;
-  font-size: 18px;
-}
-
-.summary-box {
-  border-radius: 16px;
-  background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
-  border: 1px solid #e5e7eb;
-  padding: 18px;
-}
-
-.summary-box p {
-  margin: 0 0 12px;
-  color: #4b5563;
-  line-height: 1.6;
-}
-
-.summary-box p:last-child {
-  margin-bottom: 0;
-}
-
-.empty-state {
-  background: #f9fafb;
-  border: 1px dashed #d1d5db;
-  border-radius: 16px;
-  padding: 24px;
-  text-align: center;
-  color: #6b7280;
-}
-
-@media (max-width: 1100px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .panel-large {
-    grid-row: auto;
-  }
-}
-
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .project-row-top {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
+.hero { padding: 90px 0 72px; overflow: hidden; background: radial-gradient(circle at 85% 15%, #d9eee0 0, transparent 35%), linear-gradient(180deg, #f8fbf8 0, #eef5f0 100%); }
+.hero-grid { display: grid; grid-template-columns: 1.45fr .55fr; gap: 60px; align-items: center; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+.hero-panel { min-height: 390px; border-radius: 32px; padding: 28px; background: var(--ifics-green-900); color: #fff; box-shadow: var(--ifics-shadow); display: flex; align-content: flex-start; flex-wrap: wrap; gap: 10px; position: relative; }
+.hero-panel span { border: 1px solid #3f6c55; background: #183f2d; border-radius: 999px; padding: 8px 11px; font-size: .82rem; }
+.hero-panel strong { align-self: flex-end; width: 100%; margin-top: auto; font-size: 2rem; line-height: 1.05; letter-spacing: -.035em; }
+.domain-grid h3 { margin: 8px 0 6px; font-size: 1.35rem; }
+.domain-grid p { color: var(--ifics-muted); margin: 0; }
+.domain-number { color: var(--ifics-gold); font-weight: 900; }
+.project-section { background: #eef3ef; }
+.section-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+.project-card { overflow: hidden; }
+.project-image { height: 180px; background: linear-gradient(135deg, #b8d6c2, #214f39); background-size: cover; background-position: center; }
+.project-card h3 { margin-bottom: 6px; }
+.project-card p, .project-card small { color: var(--ifics-muted); }
+.partner-section { background: #fff; }
+.partner-list { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0; }
+.partner-chip { min-height: 62px; padding: 10px 16px; border: 1px solid var(--ifics-border); border-radius: 14px; display: flex; align-items: center; gap: 10px; text-decoration: none; background: #fff; }
+.partner-chip img { width: 42px; height: 42px; object-fit: contain; }
+@media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } .hero-panel { min-height: 260px; } .section-row { align-items: flex-start; flex-direction: column; } }
 </style>
