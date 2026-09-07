@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: ifics-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
@@ -14,11 +13,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 5s
 
   app:
     build:
       context: .
-    container_name: ifics-app
     restart: unless-stopped
     depends_on:
       db:
@@ -27,7 +26,10 @@ services:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       NODE_ENV: production
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    volumes:
+      - uploads_data:/app/uploads
 
 volumes:
   postgres_data:
+  uploads_data:
