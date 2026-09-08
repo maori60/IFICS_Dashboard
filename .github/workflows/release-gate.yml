@@ -32,6 +32,8 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
+      POSTGRES_USER: ifics_ci
+      POSTGRES_DB: ifics_ci
       DATABASE_URL: postgresql://ifics_ci@127.0.0.1:5432/ifics_ci?schema=public
       APP_BASE_URL: http://127.0.0.1:3000
       SESSION_COOKIE_NAME: ifics_ci_session
@@ -74,7 +76,7 @@ jobs:
           sh -n scripts/backup.sh
           sh -n scripts/restore.sh
           sh -n scripts/run-document-expiry.sh
-          APP_ENCRYPTION_KEY="$APP_ENCRYPTION_KEY" IP_HASH_PEPPER="$IP_HASH_PEPPER" INTERNAL_JOB_TOKEN="$INTERNAL_JOB_TOKEN" POSTGRES_PASSWORD=ci-placeholder docker compose config --quiet
+          POSTGRES_PASSWORD=ci-placeholder docker compose config --quiet
       - name: Runtime smoke test
         run: |
           set -eu
