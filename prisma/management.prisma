@@ -127,6 +127,14 @@ model HrEmploymentDetail {
   grossMonthlySalary   Decimal?       @db.Decimal(12, 2)
   probationPeriod      String?        @db.VarChar(180)
   contractReference    String?        @db.VarChar(100)
+  addressLine1         String?        @db.VarChar(255)
+  addressLine2         String?        @db.VarChar(255)
+  postalCode           String?        @db.VarChar(20)
+  city                 String?        @db.VarChar(120)
+  country              String?        @db.VarChar(100)
+  birthDate            DateTime?
+  birthPlace           String?        @db.VarChar(150)
+  nationality          String?        @db.VarChar(100)
   additionalConditions String?
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
