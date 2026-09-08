@@ -22,7 +22,8 @@ const navigation = computed(() => [
   { label: 'Parc IT', to: '/dashboard/assets', visible: can('it:read') },
   { label: 'RH', to: '/dashboard/hr', visible: can('hr:read') },
   { label: 'Système', to: '/dashboard/system', visible: can('audit:read') },
-  { label: 'Administration', to: '/dashboard/admin', visible: can('user:manage') || can('settings:manage') || can('audit:read') },
+  { label: 'Administration', to: '/dashboard/admin', visible: can('user:manage') || can('audit:read') },
+  { label: 'Paramètres', to: '/dashboard/settings', visible: can('settings:manage') },
 ].filter(item => item.visible))
 
 function active(to: string) {
