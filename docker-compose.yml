@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
@@ -14,6 +14,8 @@ services:
       timeout: 5s
       retries: 20
       start_period: 5s
+    security_opt:
+      - no-new-privileges:true
 
   app:
     build:
@@ -25,10 +27,35 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       NODE_ENV: production
+      APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL is required}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-ifics_session}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
+      MFA_ISSUER: ${MFA_ISSUER:-IFICS}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY is required}
+      IP_HASH_PEPPER: ${IP_HASH_PEPPER:?IP_HASH_PEPPER is required}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+      INTERNAL_JOB_TOKEN: ${INTERNAL_JOB_TOKEN:?INTERNAL_JOB_TOKEN is required}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-IFICS <no-reply@example.invalid>}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
     volumes:
       - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   postgres_data:
