@@ -49,7 +49,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
       <div class="sidebar-bottom">
         <div class="identity"><strong>{{ session?.user.firstName }} {{ session?.user.lastName }}</strong><span>{{ session?.user.email }}</span></div>
         <button type="button" class="logout" @click="logout">Se déconnecter</button>
-        <NuxtLink to="/" class="site-link">Voir le site public</NuxtLink>
+        <a href="/" target="_blank" rel="noopener" class="site-link">Voir le site public</a>
       </div>
     </aside>
     <div class="dash-main">
