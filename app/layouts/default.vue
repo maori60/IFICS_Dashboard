@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import type { ApiSuccess, SessionPayload } from '~/types/api'
+
 const route = useRoute()
 const menuOpen = ref(false)
+const sessionState = ref<'loading' | 'authenticated' | 'anonymous'>('loading')
 
 const links = [
   { label: 'Association', to: '/association' },
@@ -12,6 +15,21 @@ const links = [
   { label: 'Logiciels gratuits', to: '/logiciels' },
   { label: 'Nous rejoindre', to: '/rejoindre' },
 ]
+
+const spaceTarget = computed(() => sessionState.value === 'authenticated' ? '/dashboard' : '/login')
+const spaceLabel = computed(() => sessionState.value === 'authenticated' ? 'Retour espace IFICS' : 'Espace IFICS')
+
+onMounted(async () => {
+  try {
+    const response = await $fetch<ApiSuccess<SessionPayload>>('/api/auth/me')
+    sessionState.value = response.data.mfa.setupRequired || (response.data.mfa.enabled && !response.data.mfa.verified)
+      ? 'anonymous'
+      : 'authenticated'
+  }
+  catch {
+    sessionState.value = 'anonymous'
+  }
+})
 
 watch(() => route.fullPath, () => { menuOpen.value = false })
 </script>
@@ -31,7 +49,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
         <nav id="public-navigation" class="public-nav" :class="{ open: menuOpen }" aria-label="Navigation principale">
           <NuxtLink v-for="link in links" :key="link.to" :to="link.to">{{ link.label }}</NuxtLink>
           <NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet</NuxtLink>
-          <NuxtLink to="/login" class="btn btn-secondary">Espace IFICS</NuxtLink>
+          <NuxtLink :to="spaceTarget" class="btn btn-secondary">{{ spaceLabel }}</NuxtLink>
         </nav>
       </div>
     </header>
@@ -40,7 +58,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
       <div class="container footer-grid">
         <div><strong class="footer-logo">IFICS</strong><p>Éducation · Sport · Culture · Numérique · Insertion · Innovation</p></div>
         <div><strong>Agir avec nous</strong><NuxtLink to="/proposer-un-projet">Proposer un projet</NuxtLink><NuxtLink to="/partenaires">Devenir partenaire</NuxtLink><NuxtLink to="/contact">Contact</NuxtLink></div>
-        <div><strong>Accès</strong><NuxtLink to="/login">Espace IFICS</NuxtLink><span>France · Europe/Paris</span></div>
+        <div><strong>Accès</strong><NuxtLink :to="spaceTarget">{{ spaceLabel }}</NuxtLink><span>France · Europe/Paris</span></div>
       </div>
     </footer>
   </div>
