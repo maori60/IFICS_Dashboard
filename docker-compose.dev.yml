@@ -2,7 +2,7 @@ name: ifics-dev
 
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
@@ -29,9 +29,27 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      SHADOW_DATABASE_URL: ${SHADOW_DATABASE_URL:-}
       NODE_ENV: development
       NUXT_HOST: 0.0.0.0
       NUXT_PORT: 3000
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-ifics_session}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
+      MFA_ISSUER: ${MFA_ISSUER:-IFICS Dev}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY is required}
+      IP_HASH_PEPPER: ${IP_HASH_PEPPER:?IP_HASH_PEPPER is required}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+      INTERNAL_JOB_TOKEN: ${INTERNAL_JOB_TOKEN:?INTERNAL_JOB_TOKEN is required}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-IFICS <no-reply@example.invalid>}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
     volumes:
@@ -40,7 +58,7 @@ services:
       - uploads_dev:/app/uploads
     command: ["sh", "-c", "npx prisma generate && npm run dev -- --host 0.0.0.0"]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/ready >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12
