@@ -33,11 +33,11 @@ async function submit() {
       <div class="container split-section reverse">
         <div class="split-copy">
           <p class="eyebrow">Proposer un projet</p>
-          <h1 class="display-title">Décrivez le besoin avant de parler solution.</h1>
-          <p class="lead">Un bon projet commence par un contexte clair : qui est concerné, sur quel territoire, pour quel objectif et avec quelles contraintes. IFICS peut ensuite qualifier la demande avec vous.</p>
-          <ul class="feature-list"><li><span><strong>Pas de ressaisie inutile</strong><br>Une proposition retenue peut être transformée en projet interne.</span></li><li><span><strong>Pas de solution imposée</strong><br>Le format est construit après analyse du besoin.</span></li><li><span><strong>Un interlocuteur humain</strong><br>L’équipe peut vous recontacter pour approfondir les informations utiles.</span></li></ul>
+          <h1 class="display-title">Présentez le besoin, le public et le contexte.</h1>
+          <p class="lead">Un projet pertinent commence par une compréhension claire du terrain. IFICS peut ensuite qualifier la demande et construire une réponse adaptée avec vous.</p>
+          <ul class="feature-list"><li><span><strong>Une demande structurée</strong><br>Les informations utiles sont centralisées dès le départ.</span></li><li><span><strong>Une réponse construite après analyse</strong><br>Le format n’est pas imposé avant d’avoir compris le besoin.</span></li><li><span><strong>Un interlocuteur identifié</strong><br>L’équipe peut vous recontacter pour approfondir certains points.</span></li></ul>
         </div>
-        <div class="split-media"><img :src="publicVisuals.education" alt="Échange autour d'un projet éducatif à construire avec un territoire"></div>
+        <div class="split-media"><img :src="publicVisuals.proposal" alt="Préparation structurée d’une proposition de projet"></div>
       </div>
     </section>
 
@@ -57,7 +57,7 @@ async function submit() {
 
 <style scoped>
 .proposal-hero { background: #fff; }
-.proposal-form-section { background: #f1f5f2; border-block: 1px solid #e5ece7; }
+.proposal-form-section { background: #f3f6f4; border-block: 1px solid #e5ece7; }
 .proposal { display: grid; grid-template-columns: .72fr 1.28fr; gap: 48px; align-items: start; }
 .proposal-intro { position: sticky; top: 110px; }
 form { display: flex; flex-direction: column; gap: 20px; }
