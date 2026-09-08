@@ -212,7 +212,7 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
   }
 
   if (!logoWidth) {
-    page.drawRectangle({ x: MARGIN, y: y - 45, width: 45, height: 45, color: COLORS.green, borderRadius: 10 })
+    page.drawRectangle({ x: MARGIN, y: y - 45, width: 45, height: 45, color: COLORS.green })
     page.drawText('I', { x: MARGIN + 18, y: y - 31, size: 22, font: bold, color: COLORS.white })
     page.drawText('IFICS', { x: MARGIN + 56, y: y - 18, size: 18, font: bold, color: COLORS.green })
     page.drawText('Association', { x: MARGIN + 56, y: y - 34, size: 8, font: regular, color: COLORS.muted })
@@ -274,7 +274,6 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
     color: COLORS.surface,
     borderColor: COLORS.border,
     borderWidth: 1,
-    borderRadius: 8,
   })
 
   let clientY = issuerTop - 6
@@ -292,7 +291,7 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
 
   const metadataHeight = 46
   ensureSpace(metadataHeight + 25)
-  page.drawRectangle({ x: MARGIN, y: y - metadataHeight + 10, width: CONTENT_WIDTH, height: metadataHeight, color: COLORS.greenSoft, borderRadius: 7 })
+  page.drawRectangle({ x: MARGIN, y: y - metadataHeight + 10, width: CONTENT_WIDTH, height: metadataHeight, color: COLORS.greenSoft })
   const metaTop = y - 5
   const metaColumns = [
     { label: 'DATE D’ÉMISSION', value: formatDate(input.issueDate), x: MARGIN + 14 },
@@ -360,7 +359,7 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
 
   const totalsWidth = 202
   const totalsX = PAGE_WIDTH - MARGIN - totalsWidth
-  page.drawRectangle({ x: totalsX, y: y - 91, width: totalsWidth, height: 98, color: COLORS.surface, borderColor: COLORS.border, borderWidth: 1, borderRadius: 8 })
+  page.drawRectangle({ x: totalsX, y: y - 91, width: totalsWidth, height: 98, color: COLORS.surface, borderColor: COLORS.border, borderWidth: 1 })
 
   const totals = [
     ['Total HT', formatMoney(input.subtotal, input.currency)],
@@ -373,7 +372,7 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
     totalY -= 20
   })
 
-  page.drawRectangle({ x: totalsX, y: y - 91, width: totalsWidth, height: 37, color: COLORS.green, borderRadius: 8 })
+  page.drawRectangle({ x: totalsX, y: y - 91, width: totalsWidth, height: 37, color: COLORS.green })
   page.drawText('TOTAL TTC', { x: totalsX + 14, y: y - 77, size: 9, font: bold, color: COLORS.white })
   drawRightAligned(page, formatMoney(input.total, input.currency), totalsX + totalsWidth - 14, y - 78, bold, 12, COLORS.white)
 
@@ -403,7 +402,7 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
     y -= 16
     const paymentBoxTop = y
     const paymentHeight = Math.max(58, paymentData.length * 12 + (input.finance?.paymentTerms ? 42 : 10))
-    page.drawRectangle({ x: MARGIN, y: paymentBoxTop - paymentHeight + 8, width: CONTENT_WIDTH, height: paymentHeight, color: COLORS.greenSoft, borderRadius: 8 })
+    page.drawRectangle({ x: MARGIN, y: paymentBoxTop - paymentHeight + 8, width: CONTENT_WIDTH, height: paymentHeight, color: COLORS.greenSoft })
 
     let paymentY = paymentBoxTop - 8
     if (paymentData.length) {
