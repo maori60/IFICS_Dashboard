@@ -17,12 +17,12 @@ function configuredAdmin(): { email: string; password: string; firstName: string
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase()
   const password = process.env.ADMIN_PASSWORD || ''
 
-  if (!email || !password || email.endsWith('.invalid') || password.startsWith('CHANGE_ME')) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be configured with non-placeholder values before the production seed is run.')
-    }
-
+  if (!email && !password) {
     return null
+  }
+
+  if (!email || !password || email.endsWith('.invalid') || password.startsWith('CHANGE_ME')) {
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must both be configured with non-placeholder values when bootstrapping an administrator.')
   }
 
   validatePasswordPolicy(password, 16)
@@ -115,7 +115,7 @@ async function main() {
     }
   }
   else {
-    console.log('Aucun compte administrateur bootstrap créé (variables ADMIN_* non configurées).')
+    console.log('Aucun compte administrateur bootstrap demandé ; association et rôles uniquement.')
   }
 
   console.log(`Association prête : ${association.name} (${association.id})`)
