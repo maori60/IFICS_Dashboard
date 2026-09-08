@@ -38,6 +38,7 @@ const canCreate = computed(() => hasPermission('project:write'))
 const canAssign = computed(() => hasPermission('project:assign'))
 const canCreateIntervenor = computed(() => hasPermission('intervenor:write'))
 const created = computed(() => route.query.created === '1')
+const archived = computed(() => route.query.archived === '1')
 const date = (value: string | null) => value ? new Date(value).toLocaleDateString('fr-FR') : '—'
 
 const { data: intervenorOptionsData } = await useFetch<ApiSuccess<IntervenorOption[]>>('/api/intervenors/options', {
@@ -100,6 +101,9 @@ async function assignIntervenor(project: Project) {
     <div v-if="created" class="alert alert-success" style="margin-bottom: 18px">
       Le projet a été créé avec succès.
     </div>
+    <div v-if="archived" class="alert alert-success" style="margin-bottom: 18px">
+      Le projet a été archivé.
+    </div>
     <div v-if="assignmentSuccess" class="alert alert-success" style="margin-bottom: 18px">
       {{ assignmentSuccess }}
     </div>
@@ -120,9 +124,12 @@ async function assignIntervenor(project: Project) {
 
     <div v-else class="grid grid-2">
       <article v-for="project in projects" :key="project.id" class="card card-pad">
-        <div class="actions">
-          <span class="badge">{{ project.status }}</span>
-          <span v-if="project.reference" class="badge badge-muted">{{ project.reference }}</span>
+        <div class="project-topline">
+          <div class="actions">
+            <span class="badge">{{ project.status }}</span>
+            <span v-if="project.reference" class="badge badge-muted">{{ project.reference }}</span>
+          </div>
+          <NuxtLink class="btn btn-secondary btn-small" :to="`/dashboard/projects/${project.id}`">Ouvrir / modifier</NuxtLink>
         </div>
         <h2>{{ project.title }}</h2>
         <p class="muted">{{ date(project.startDate) }} → {{ date(project.endDate) }}</p>
@@ -173,9 +180,11 @@ async function assignIntervenor(project: Project) {
 <style scoped>
 h2 { margin: 14px 0 6px; }
 .empty-state p { margin-top: 0; }
+.project-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.btn-small { padding: 8px 12px; white-space: nowrap; }
 .assignment-list { display: grid; gap: 8px; margin-top: 16px; }
 .assignment-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 11px; border-radius: 10px; background: #f6f8f6; }
 .assignment-box { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--ifics-border); }
 .assignment-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin-top: 8px; }
-@media (max-width: 700px) { .assignment-controls { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .assignment-controls { grid-template-columns: 1fr; } .project-topline { align-items: flex-start; flex-direction: column; } }
 </style>
