@@ -17,10 +17,10 @@ const values = [
       <div class="container split-section reverse">
         <div class="split-copy">
           <p class="eyebrow">L'association IFICS</p>
-          <h1 class="display-title">Créer des passerelles entre les savoirs, les personnes et les territoires.</h1>
-          <p class="lead">IFICS conçoit et conduit des actions éducatives, sportives, culturelles, numériques, d’insertion et d’innovation. Notre point de départ reste le même : comprendre le besoin réel et construire une réponse utile avec les partenaires concernés.</p>
+          <h1 class="display-title">Une association qui relie les compétences, les publics et les territoires.</h1>
+          <p class="lead">IFICS conçoit et conduit des actions éducatives, sportives, culturelles, numériques, d’insertion et d’innovation. Chaque projet part d’un besoin identifié et se construit avec les partenaires concernés.</p>
         </div>
-        <div class="split-media"><img :src="publicVisuals.culture" alt="Atelier culturel intergénérationnel organisé dans un territoire" loading="eager"></div>
+        <div class="split-media"><img :src="publicVisuals.association" alt="Coopération entre plusieurs acteurs autour d’un projet IFICS" loading="eager"></div>
       </div>
     </section>
 
@@ -36,12 +36,12 @@ const values = [
       <div class="container split-section">
         <div class="split-copy">
           <p class="eyebrow">Nos valeurs</p>
-          <h2 class="section-title">Une exigence simple : être utile sans perdre l'humain.</h2>
+          <h2 class="section-title">Être utile, exigeant et attentif aux personnes.</h2>
           <div class="values-grid">
             <div v-for="value in values" :key="value[0]" class="value-item"><strong>{{ value[0] }}</strong><p>{{ value[1] }}</p></div>
           </div>
         </div>
-        <div class="split-media"><img :src="publicVisuals.education" alt="Accompagnement éducatif collectif et bienveillant" loading="lazy"></div>
+        <div class="split-media"><img :src="publicVisuals.education" alt="Transmission de méthodes et accompagnement éducatif" loading="lazy"></div>
       </div>
     </section>
 
@@ -63,14 +63,14 @@ const values = [
 
 <style scoped>
 .association-hero { background: #fff; }
-.principles-section { background: #eff4f0; border-top: 1px solid #e5ece7; border-bottom: 1px solid #e5ece7; }
-.principles-section h2 { margin: 9px 0; font-size: 1.24rem; }
+.principles-section { background: #f3f6f4; border-top: 1px solid #e5ece7; border-bottom: 1px solid #e5ece7; }
+.principles-section h2 { margin: 9px 0; font-size: 1.12rem; }
 .principles-section p, .governance-section p { color: var(--ifics-muted); margin-bottom: 0; }
 .values-grid { display: grid; gap: 20px; margin-top: 28px; }
 .value-item { padding-bottom: 18px; border-bottom: 1px solid var(--ifics-border); }
 .value-item:last-child { border-bottom: 0; }
-.value-item strong { font-size: 1.08rem; }
+.value-item strong { font-size: 1rem; }
 .value-item p { margin: 5px 0 0; color: var(--ifics-muted); }
-.governance-section { background: #f9fbf9; }
+.governance-section { background: #fafcfa; }
 .association-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
 </style>
