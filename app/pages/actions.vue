@@ -1,3 +1,65 @@
-<script setup lang="ts">useHead({title:'Nos actions'});const actions=[['Éducation','Ateliers pédagogiques, accompagnement, transmission de méthodes et développement de l’autonomie.'],['Sport','Pratiques sportives comme leviers de santé, de discipline, de confiance et de cohésion.'],['Culture','Création, expression, découverte artistique et mise en valeur des parcours et des territoires.'],['Numérique','Inclusion numérique, compréhension des outils, développement logiciel et accompagnement aux usages.'],['Insertion','Compétences, orientation, professionnalisation et projets favorisant l’accès à l’activité.'],['Citoyenneté & lien social','Actions collectives favorisant le partage, la coopération et la participation.'],['Innovation & R&D','Expérimentation pédagogique et technique, prototypes, recherche appliquée et ressources ouvertes.']]</script>
-<template><section class="section"><div class="container"><p class="eyebrow">Nos actions</p><h1 class="display-title">Plusieurs disciplines, une même ambition : rendre les personnes actrices.</h1><p class="lead">Chaque action est adaptée au public, au territoire et aux objectifs du partenaire. Les formats peuvent être ponctuels, réguliers, expérimentaux ou intégrés à un projet plus large.</p><div class="grid grid-3 action-grid"><article v-for="(action,index) in actions" :key="action[0]" class="card card-pad"><span class="eyebrow">0{{index+1}}</span><h2>{{action[0]}}</h2><p>{{action[1]}}</p></article></div><div class="cta card card-pad"><div><h2>Vous avez un besoin sur votre territoire ?</h2><p>Décrivez le contexte et les publics concernés. L’équipe IFICS qualifiera la demande avant toute création de projet interne.</p></div><NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet</NuxtLink></div></div></section></template>
-<style scoped>.action-grid{margin-top:38px}.action-grid h2{font-size:1.25rem}.action-grid p{color:var(--ifics-muted)}.cta{margin-top:36px;display:flex;justify-content:space-between;gap:25px;align-items:center}.cta h2,.cta p{margin:0}.cta p{color:var(--ifics-muted);margin-top:5px}@media(max-width:750px){.cta{align-items:flex-start;flex-direction:column}}</style>
+<script setup lang="ts">
+import { publicVisuals } from '~/utils/publicVisuals'
+
+useHead({ title: 'Nos actions' })
+
+const actions = [
+  { title: 'Éducation', text: 'Ateliers pédagogiques, accompagnement, transmission de méthodes et développement de l’autonomie.', image: publicVisuals.education },
+  { title: 'Sport', text: 'Pratiques sportives comme leviers de santé, de discipline, de confiance et de cohésion.', image: publicVisuals.sport },
+  { title: 'Culture', text: 'Création, expression, découverte artistique et mise en valeur des parcours et des territoires.', image: publicVisuals.culture },
+  { title: 'Numérique', text: 'Inclusion numérique, compréhension des outils, développement logiciel et accompagnement aux usages.', image: publicVisuals.numerique },
+  { title: 'Insertion', text: 'Compétences, orientation, professionnalisation et projets favorisant l’accès à l’activité.', image: publicVisuals.insertion },
+  { title: 'Citoyenneté & lien social', text: 'Actions collectives favorisant le partage, la coopération et la participation.', image: publicVisuals.citoyennete },
+  { title: 'Innovation & R&D', text: 'Expérimentation pédagogique et technique, prototypes, recherche appliquée et ressources ouvertes.', image: publicVisuals.innovation },
+]
+</script>
+
+<template>
+  <div>
+    <section class="section actions-hero">
+      <div class="container split-section">
+        <div class="split-copy">
+          <p class="eyebrow">Nos actions</p>
+          <h1 class="display-title">Plusieurs disciplines.<br>Une même ambition.</h1>
+          <p class="lead">Rendre les personnes actrices de leur parcours en mobilisant le bon levier au bon moment : apprendre, bouger, créer, comprendre, s’insérer et coopérer.</p>
+          <ul class="feature-list">
+            <li><span><strong>Des formats adaptables</strong><br>Atelier ponctuel, cycle régulier, stage ou projet long.</span></li>
+            <li><span><strong>Un cadre co-construit</strong><br>Le public, les objectifs et les contraintes du territoire guident le dispositif.</span></li>
+            <li><span><strong>Un suivi utile</strong><br>Chaque action peut être documentée et évaluée avec le partenaire.</span></li>
+          </ul>
+        </div>
+        <div class="split-media"><img :src="publicVisuals.sport" alt="Activité sportive inclusive réunissant plusieurs publics"></div>
+      </div>
+    </section>
+
+    <section class="section action-list-section">
+      <div class="container">
+        <p class="eyebrow">Domaines d’intervention</p>
+        <h2 class="section-title">Des expertises qui peuvent se combiner dans un même projet.</h2>
+        <div class="grid grid-3 theme-grid">
+          <article v-for="(action, index) in actions" :key="action.title" class="card theme-card">
+            <img :src="action.image" :alt="`Illustration ${action.title}`" loading="lazy">
+            <div class="theme-card-content">
+              <span class="theme-card-index">0{{ index + 1 }}</span>
+              <h2>{{ action.title }}</h2>
+              <p>{{ action.text }}</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-compact">
+      <div class="container cta-panel">
+        <div><h2>Vous avez un besoin sur votre territoire ?</h2><p>Décrivez le contexte, le public et l’objectif. L’équipe IFICS qualifiera la demande avec vous avant de construire la solution.</p></div>
+        <NuxtLink to="/proposer-un-projet" class="btn btn-secondary">Proposer un projet</NuxtLink>
+      </div>
+    </section>
+  </div>
+</template>
+
+<style scoped>
+.actions-hero { background: linear-gradient(180deg, #f7faf8 0, #fff 100%); }
+.action-list-section { background: #f1f5f2; }
+@media (max-width: 640px) { .actions-hero { padding-top: 44px; } }
+</style>
