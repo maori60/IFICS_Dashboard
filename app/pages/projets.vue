@@ -13,11 +13,11 @@ const projects = computed(() => data.value?.data ?? [])
       <div class="container split-section">
         <div class="split-copy">
           <p class="eyebrow">Projets IFICS</p>
-          <h1 class="display-title">Des projets construits avec les territoires.</h1>
-          <p class="lead">Cette page présente uniquement les projets autorisés à la publication. Chaque fiche publique se concentre sur l’objectif, le public et l’impact, sans afficher les informations administratives ou financières internes.</p>
+          <h1 class="display-title">Des projets suivis, documentés et construits avec les territoires.</h1>
+          <p class="lead">Cette page présente uniquement les projets autorisés à la publication. Les informations internes, administratives et financières restent protégées dans l’espace IFICS.</p>
           <div class="hero-actions"><NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet</NuxtLink><NuxtLink to="/contact" class="btn btn-secondary">Échanger avec IFICS</NuxtLink></div>
         </div>
-        <div class="split-media"><img :src="publicVisuals.education" alt="Projet éducatif accompagné par IFICS"></div>
+        <div class="split-media"><img :src="publicVisuals.projects" alt="Pilotage structuré d’un projet IFICS"></div>
       </div>
     </section>
 
@@ -34,7 +34,7 @@ const projects = computed(() => data.value?.data ?? [])
             </div>
           </article>
         </div>
-        <div v-else class="empty-state projects-empty"><strong>Les premiers projets publics seront bientôt présentés ici.</strong><span>Leur absence ne signifie pas qu’aucune action n’est en cours : seules les publications validées sont visibles.</span></div>
+        <div v-else class="empty-state projects-empty"><strong>Les premiers projets publics seront bientôt présentés ici.</strong><span>Seules les publications validées sont visibles.</span></div>
       </div>
     </section>
 
@@ -44,10 +44,10 @@ const projects = computed(() => data.value?.data ?? [])
 
 <style scoped>
 .projects-hero { background: #fff; }
-.project-list-section { background: #f1f5f2; border-block: 1px solid #e5ece7; }
+.project-list-section { background: #f3f6f4; border-block: 1px solid #e5ece7; }
 .project-intro { display: grid; grid-template-columns: 1fr .8fr; gap: 50px; align-items: end; margin-bottom: 32px; }
 .project-intro .lead { font-size: 1rem; }
-.project-card h2 { font-size: 1.25rem; }
+.project-card h2 { font-size: 1.12rem; }
 .projects-empty { display: flex; flex-direction: column; gap: 7px; }
 .projects-empty strong { color: var(--ifics-ink); }
 @media (max-width: 800px) { .project-intro { grid-template-columns: 1fr; gap: 8px; align-items: start; } }
