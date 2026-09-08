@@ -20,15 +20,15 @@ const actions = [
       <div class="container split-section">
         <div class="split-copy">
           <p class="eyebrow">Nos actions</p>
-          <h1 class="display-title">Plusieurs disciplines.<br>Une même ambition.</h1>
-          <p class="lead">Rendre les personnes actrices de leur parcours en mobilisant le bon levier au bon moment : apprendre, bouger, créer, comprendre, s’insérer et coopérer.</p>
+          <h1 class="display-title">Des disciplines complémentaires pour répondre aux besoins du terrain.</h1>
+          <p class="lead">IFICS mobilise différents leviers selon le public, le territoire et l’objectif : apprendre, bouger, créer, comprendre, s’insérer, coopérer et expérimenter.</p>
           <ul class="feature-list">
             <li><span><strong>Des formats adaptables</strong><br>Atelier ponctuel, cycle régulier, stage ou projet long.</span></li>
             <li><span><strong>Un cadre co-construit</strong><br>Le public, les objectifs et les contraintes du territoire guident le dispositif.</span></li>
             <li><span><strong>Un suivi utile</strong><br>Chaque action peut être documentée et évaluée avec le partenaire.</span></li>
           </ul>
         </div>
-        <div class="split-media"><img :src="publicVisuals.sport" alt="Activité sportive inclusive réunissant plusieurs publics"></div>
+        <div class="split-media"><img :src="publicVisuals.actions" alt="Plusieurs domaines d’intervention réunis dans une même démarche"></div>
       </div>
     </section>
 
@@ -59,7 +59,7 @@ const actions = [
 </template>
 
 <style scoped>
-.actions-hero { background: linear-gradient(180deg, #f7faf8 0, #fff 100%); }
-.action-list-section { background: #f1f5f2; }
+.actions-hero { background: #fff; }
+.action-list-section { background: #f3f6f4; }
 @media (max-width: 640px) { .actions-hero { padding-top: 44px; } }
 </style>
