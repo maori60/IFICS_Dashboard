@@ -1,0 +1,158 @@
+enum AssetDocumentType {
+  PURCHASE_INVOICE
+  WARRANTY
+  RECEIPT
+  MANUAL
+  CERTIFICATE
+  PHOTO
+  OTHER
+}
+
+enum HrContractType {
+  CDI
+  CDD
+  STAGE
+  ALTERNANCE
+  APPRENTISSAGE
+  PROFESSIONNALISATION
+  VOLONTARIAT
+  OTHER
+}
+
+enum HrContractStatus {
+  DRAFT
+  GENERATED
+  SIGNED
+  CANCELLED
+  ARCHIVED
+}
+
+model AssociationFinanceSettings {
+  id                   String   @id @default(cuid())
+  associationId        String   @unique
+  legalForm            String?  @db.VarChar(100)
+  rnaNumber             String?  @db.VarChar(40)
+  vatNumber             String?  @db.VarChar(40)
+  bankName              String?  @db.VarChar(150)
+  bankAccountHolder     String?  @db.VarChar(200)
+  iban                   String?  @db.VarChar(34)
+  bic                    String?  @db.VarChar(11)
+  paymentTerms          String?
+  taxExemptionText      String?
+  logoFilePath          String?  @db.VarChar(500)
+  maxAssetDocuments     Int      @default(20)
+  maxAssetDocumentMb    Int      @default(10)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([associationId])
+}
+
+model TicketProgress {
+  id                String   @id @default(cuid())
+  ticketId          String   @unique
+  progressPercent   Int      @default(0)
+  nextAction        String?
+  resolutionSummary String?
+  updatedByUserId   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([ticketId])
+  @@index([updatedByUserId])
+}
+
+model AssetDocument {
+  id               String            @id @default(cuid())
+  assetId          String
+  uploadedByUserId String?
+  type             AssetDocumentType @default(OTHER)
+  title            String?           @db.VarChar(255)
+  originalName     String            @db.VarChar(255)
+  storedName       String            @db.VarChar(255)
+  filePath         String            @db.VarChar(500)
+  mimeType         String            @db.VarChar(100)
+  fileSize         BigInt
+  sha256           String?           @db.VarChar(64)
+  archivedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([assetId, archivedAt])
+  @@index([type])
+  @@index([sha256])
+  @@index([uploadedByUserId])
+}
+
+model JobPosition {
+  id            String   @id @default(cuid())
+  associationId String
+  code          String   @db.VarChar(60)
+  title         String   @db.VarChar(180)
+  departmentId  String?
+  description   String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([associationId, code])
+  @@index([associationId, active])
+  @@index([departmentId])
+}
+
+model ContractTemplate {
+  id            String         @id @default(cuid())
+  associationId String
+  contractType  HrContractType
+  name          String         @db.VarChar(180)
+  content       String
+  isDefault     Boolean        @default(false)
+  active        Boolean        @default(true)
+  version       Int            @default(1)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([associationId, contractType, name])
+  @@index([associationId, contractType, active])
+  @@index([associationId, isDefault])
+}
+
+model HrEmploymentDetail {
+  id                   String         @id @default(cuid())
+  profileId            String         @unique
+  positionId           String?
+  contractType         HrContractType
+  workLocation         String?        @db.VarChar(200)
+  weeklyHours          Decimal?       @db.Decimal(6, 2)
+  grossMonthlySalary   Decimal?       @db.Decimal(12, 2)
+  probationPeriod      String?        @db.VarChar(180)
+  contractReference    String?        @db.VarChar(100)
+  additionalConditions String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@index([positionId])
+  @@index([contractType])
+}
+
+model HrContract {
+  id              String           @id @default(cuid())
+  associationId   String
+  profileId       String
+  templateId      String?
+  contractType    HrContractType
+  status          HrContractStatus @default(DRAFT)
+  title           String           @db.VarChar(255)
+  contentSnapshot String
+  pdfPath         String?          @db.VarChar(500)
+  createdByUserId String?
+  generatedAt     DateTime?
+  signedAt        DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([associationId, status])
+  @@index([profileId, createdAt])
+  @@index([templateId])
+  @@index([createdByUserId])
+}
