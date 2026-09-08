@@ -21,9 +21,7 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
 
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word
-    if (font.widthOfTextAtSize(candidate, size) <= maxWidth || !current) {
-      current = candidate
-    }
+    if (font.widthOfTextAtSize(candidate, size) <= maxWidth || !current) current = candidate
     else {
       lines.push(current)
       current = word
@@ -43,7 +41,6 @@ function drawWrapped(
 ): number {
   const lineHeight = options.lineHeight ?? options.size * 1.35
   const lines = wrapText(text, options.font, options.size, options.maxWidth)
-
   lines.forEach((line, index) => {
     page.drawText(line, {
       x,
@@ -53,16 +50,12 @@ function drawWrapped(
       color: rgb(0.12, 0.16, 0.23),
     })
   })
-
   return y - lines.length * lineHeight
 }
 
 function formatMoney(value: unknown, currency = 'EUR'): string {
   const number = Number(value)
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency,
-  }).format(Number.isFinite(number) ? number : 0)
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(Number.isFinite(number) ? number : 0)
 }
 
 function formatDate(value: Date | string | null | undefined): string {
@@ -92,12 +85,26 @@ export type BillingPdfInput = {
     billingCity?: string | null
     billingCountry?: string | null
     billingEmail?: string | null
+    billingPhone?: string | null
     siret?: string | null
     pdfFooter?: string | null
   }
+  finance?: {
+    legalForm?: string | null
+    rnaNumber?: string | null
+    vatNumber?: string | null
+    bankName?: string | null
+    bankAccountHolder?: string | null
+    iban?: string | null
+    bic?: string | null
+    paymentTerms?: string | null
+    taxExemptionText?: string | null
+  } | null
+  logo?: { bytes: Uint8Array; mimeType: 'image/png' | 'image/jpeg' } | null
   client: {
     name: string
     serviceName?: string | null
+    siret?: string | null
     addressLine1: string
     addressLine2?: string | null
     postalCode: string
@@ -120,29 +127,51 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
 
   let page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
   let y = PAGE_HEIGHT - MARGIN
-
   const title = input.kind === 'QUOTE' ? 'DEVIS' : 'FACTURE'
-  page.drawText(title, { x: MARGIN, y, size: 24, font: bold, color: rgb(0.10, 0.29, 0.63) })
-  page.drawText(input.number, { x: PAGE_WIDTH - MARGIN - 160, y: y + 2, size: 13, font: bold })
-  y -= 42
+
+  let titleX = MARGIN
+  if (input.logo) {
+    try {
+      const image = input.logo.mimeType === 'image/png'
+        ? await pdf.embedPng(input.logo.bytes)
+        : await pdf.embedJpg(input.logo.bytes)
+      const natural = image.scale(1)
+      const factor = Math.min(82 / natural.width, 42 / natural.height, 1)
+      const width = natural.width * factor
+      const height = natural.height * factor
+      page.drawImage(image, { x: MARGIN, y: y - height + 7, width, height })
+      titleX = MARGIN + 96
+    }
+    catch {
+      titleX = MARGIN
+    }
+  }
+
+  page.drawText(title, { x: titleX, y, size: 24, font: bold, color: rgb(0.10, 0.29, 0.63) })
+  page.drawText(input.number, { x: PAGE_WIDTH - MARGIN - 150, y: y + 2, size: 13, font: bold })
+  y -= input.logo ? 54 : 42
 
   const issuer = input.association.billingName || input.association.legalName || input.association.name
   page.drawText(safeText(issuer), { x: MARGIN, y, size: 12, font: bold })
   y -= 16
   const issuerLines = [
+    input.finance?.legalForm,
     input.association.billingAddress,
     [input.association.billingPostalCode, input.association.billingCity].filter(Boolean).join(' '),
     input.association.billingCountry,
     input.association.billingEmail,
+    input.association.billingPhone,
     input.association.siret ? `SIRET : ${input.association.siret}` : null,
+    input.finance?.rnaNumber ? `RNA : ${input.finance.rnaNumber}` : null,
+    input.finance?.vatNumber ? `TVA : ${input.finance.vatNumber}` : null,
   ].filter(Boolean) as string[]
   issuerLines.forEach((line) => {
-    page.drawText(safeText(line), { x: MARGIN, y, size: 9, font: regular })
-    y -= 13
+    page.drawText(safeText(line), { x: MARGIN, y, size: 8.5, font: regular })
+    y -= 12
   })
 
   const clientX = 335
-  let clientY = PAGE_HEIGHT - MARGIN - 42
+  let clientY = PAGE_HEIGHT - MARGIN - 54
   page.drawText('DESTINATAIRE', { x: clientX, y: clientY, size: 9, font: bold, color: rgb(0.35, 0.39, 0.47) })
   clientY -= 17
   page.drawText(safeText(input.client.name), { x: clientX, y: clientY, size: 11, font: bold })
@@ -156,6 +185,7 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
     input.client.addressLine2,
     `${input.client.postalCode} ${input.client.city}`,
     input.client.country,
+    input.client.siret ? `SIRET : ${input.client.siret}` : null,
   ].filter(Boolean).forEach((line) => {
     page.drawText(safeText(line), { x: clientX, y: clientY, size: 9, font: regular })
     clientY -= 13
@@ -163,9 +193,7 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
 
   y = Math.min(y, clientY) - 24
   page.drawText(`Émis le : ${formatDate(input.issueDate)}`, { x: MARGIN, y, size: 9, font: regular })
-  if (input.dueDate) {
-    page.drawText(`Échéance : ${formatDate(input.dueDate)}`, { x: 220, y, size: 9, font: regular })
-  }
+  if (input.dueDate) page.drawText(`Échéance : ${formatDate(input.dueDate)}`, { x: 220, y, size: 9, font: regular })
   y -= 26
 
   if (input.subject) {
@@ -177,8 +205,8 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
     page.drawRectangle({ x: MARGIN, y: y - 18, width: PAGE_WIDTH - 2 * MARGIN, height: 24, color: rgb(0.94, 0.96, 1) })
     page.drawText('Description', { x: MARGIN + 6, y: y - 10, size: 9, font: bold })
     page.drawText('Qté', { x: 360, y: y - 10, size: 9, font: bold })
-    page.drawText('PU', { x: 410, y: y - 10, size: 9, font: bold })
-    page.drawText('Total', { x: 490, y: y - 10, size: 9, font: bold })
+    page.drawText('PU HT', { x: 410, y: y - 10, size: 8, font: bold })
+    page.drawText('Total HT', { x: 486, y: y - 10, size: 8, font: bold })
     y -= 30
   }
 
@@ -187,59 +215,73 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
   for (const line of input.lines) {
     const descriptionLines = wrapText(line.description, regular, 9, 280)
     const rowHeight = Math.max(22, descriptionLines.length * 12 + 8)
-
-    if (y - rowHeight < 150) {
+    if (y - rowHeight < 170) {
       page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
       y = PAGE_HEIGHT - MARGIN
       drawTableHeader()
     }
-
-    descriptionLines.forEach((text, index) => {
-      page.drawText(text, { x: MARGIN + 6, y: y - 10 - index * 12, size: 9, font: regular })
-    })
+    descriptionLines.forEach((text, index) => page.drawText(text, { x: MARGIN + 6, y: y - 10 - index * 12, size: 9, font: regular }))
     page.drawText(String(line.quantity), { x: 360, y: y - 10, size: 9, font: regular })
     page.drawText(formatMoney(line.unitPrice, input.currency), { x: 410, y: y - 10, size: 8, font: regular })
-    page.drawText(formatMoney(line.lineTotal, input.currency), { x: 490, y: y - 10, size: 8, font: bold })
-    page.drawLine({
-      start: { x: MARGIN, y: y - rowHeight + 3 },
-      end: { x: PAGE_WIDTH - MARGIN, y: y - rowHeight + 3 },
-      thickness: 0.5,
-      color: rgb(0.86, 0.88, 0.92),
-    })
+    page.drawText(formatMoney(line.lineTotal, input.currency), { x: 486, y: y - 10, size: 8, font: bold })
+    page.drawLine({ start: { x: MARGIN, y: y - rowHeight + 3 }, end: { x: PAGE_WIDTH - MARGIN, y: y - rowHeight + 3 }, thickness: 0.5, color: rgb(0.86, 0.88, 0.92) })
     y -= rowHeight
   }
 
   y -= 12
-  const totalsX = 370
+  const totalsX = 350
   const totals = [
-    ['Sous-total', formatMoney(input.subtotal, input.currency)],
+    ['TOTAL HT', formatMoney(input.subtotal, input.currency)],
     [`TVA (${Number(input.taxRate).toFixed(2)} %)`, formatMoney(input.taxAmount, input.currency)],
-    ['TOTAL', formatMoney(input.total, input.currency)],
+    ['TOTAL TTC', formatMoney(input.total, input.currency)],
   ]
 
   totals.forEach(([label, value], index) => {
     const font = index === totals.length - 1 ? bold : regular
     const size = index === totals.length - 1 ? 12 : 9
     page.drawText(label!, { x: totalsX, y, size, font })
-    page.drawText(value!, { x: 480, y, size, font })
+    page.drawText(value!, { x: 470, y, size, font })
     y -= index === totals.length - 1 ? 24 : 17
   })
 
+  if (Number(input.taxRate) === 0 && input.finance?.taxExemptionText) {
+    y = drawWrapped(page, input.finance.taxExemptionText, totalsX, y, { font: regular, size: 7.5, maxWidth: PAGE_WIDTH - MARGIN - totalsX }) - 8
+  }
+
+  if (input.kind === 'INVOICE' && input.finance?.iban) {
+    if (y < 150) {
+      page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+      y = PAGE_HEIGHT - MARGIN
+    }
+    page.drawText('RÈGLEMENT', { x: MARGIN, y, size: 10, font: bold, color: rgb(0.10, 0.29, 0.63) })
+    y -= 16
+    const paymentLines = [
+      `Titulaire : ${input.finance.bankAccountHolder || issuer}`,
+      input.finance.bankName ? `Banque : ${input.finance.bankName}` : null,
+      `IBAN : ${input.finance.iban}`,
+      input.finance.bic ? `BIC : ${input.finance.bic}` : null,
+    ].filter(Boolean) as string[]
+    paymentLines.forEach((line) => {
+      page.drawText(safeText(line), { x: MARGIN, y, size: 8.5, font: regular })
+      y -= 12
+    })
+    if (input.finance.paymentTerms) {
+      y = drawWrapped(page, input.finance.paymentTerms, MARGIN, y - 2, { font: regular, size: 8, maxWidth: PAGE_WIDTH - 2 * MARGIN }) - 8
+    }
+  }
+
   if (input.notes) {
-    y = Math.max(y - 10, 80)
+    if (y < 100) {
+      page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+      y = PAGE_HEIGHT - MARGIN
+    }
     page.drawText('Notes', { x: MARGIN, y, size: 9, font: bold })
-    drawWrapped(page, input.notes, MARGIN, y - 14, { font: regular, size: 8, maxWidth: 300 })
+    drawWrapped(page, input.notes, MARGIN, y - 14, { font: regular, size: 8, maxWidth: PAGE_WIDTH - 2 * MARGIN })
   }
 
   const footer = input.association.pdfFooter || `${issuer} — document généré par IFICS Dashboard`
   for (const pdfPage of pdf.getPages()) {
-    pdfPage.drawText(safeText(footer).slice(0, 140), {
-      x: MARGIN,
-      y: 28,
-      size: 7,
-      font: regular,
-      color: rgb(0.45, 0.49, 0.57),
-    })
+    pdfPage.drawText(safeText(footer).slice(0, 140), { x: MARGIN, y: 28, size: 7, font: regular, color: rgb(0.45, 0.49, 0.57) })
   }
 
   return pdf.save()
@@ -285,23 +327,13 @@ export async function generateReportPdf(input: ReportPdfInput): Promise<Uint8Arr
   for (const paragraph of paragraphs) {
     const lines = wrapText(paragraph.replace(/\n/g, ' '), regular, 10, PAGE_WIDTH - 2 * MARGIN)
     const height = lines.length * 14 + 10
-
     if (y - height < 60) addPage()
-
-    lines.forEach((line, index) => {
-      page.drawText(line, { x: MARGIN, y: y - index * 14, size: 10, font: regular })
-    })
+    lines.forEach((line, index) => page.drawText(line, { x: MARGIN, y: y - index * 14, size: 10, font: regular }))
     y -= height
   }
 
   for (const pdfPage of pdf.getPages()) {
-    pdfPage.drawText(`${safeText(input.associationName)} — IFICS Dashboard`, {
-      x: MARGIN,
-      y: 28,
-      size: 7,
-      font: regular,
-      color: rgb(0.45, 0.49, 0.57),
-    })
+    pdfPage.drawText(`${safeText(input.associationName)} — IFICS Dashboard`, { x: MARGIN, y: 28, size: 7, font: regular, color: rgb(0.45, 0.49, 0.57) })
   }
 
   return pdf.save()
