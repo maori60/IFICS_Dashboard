@@ -141,7 +141,7 @@ async function convertQuote() {
           <div class="field field-full"><label for="billing-subject">Objet</label><input id="billing-subject" v-model="form.subject" class="input" maxlength="255"></div>
         </div>
         <div class="table-wrap" style="margin-top:18px">
-          <table><thead><tr><th>Description</th><th>Quantité</th><th>Prix unitaire (€)</th><th></th></tr></thead><tbody>
+          <table><thead><tr><th>Description</th><th>Quantité</th><th>Prix unitaire (€)</th><th>Action</th></tr></thead><tbody>
             <tr v-for="(line,index) in form.lines" :key="index"><td><input v-model="line.description" class="input" required></td><td><input v-model="line.quantity" class="input" type="number" min="0.01" step="0.01" required></td><td><input v-model="line.unitPrice" class="input" type="number" min="0" step="0.01" required></td><td><button class="btn btn-secondary" type="button" :disabled="form.lines.length===1" @click="removeLine(index)">Retirer</button></td></tr>
           </tbody></table>
         </div>
