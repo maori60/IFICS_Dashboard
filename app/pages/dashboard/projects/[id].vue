@@ -147,7 +147,7 @@ async function archiveProject() {
           <div class="field"><label for="edit-project-actual">Budget réel (€)</label><input id="edit-project-actual" v-model="form.actualBudget" class="input" type="number" min="0" step="0.01" :disabled="!canWrite"></div>
           <div class="field"><label for="edit-project-sessions">Nombre de séances</label><input id="edit-project-sessions" v-model="form.totalSessions" class="input" type="number" min="0" step="1" :disabled="!canWrite"></div>
           <div class="field"><label for="edit-project-unit-price">Prix unitaire séance (€)</label><input id="edit-project-unit-price" v-model="form.sessionUnitPrice" class="input" type="number" min="0" step="0.01" :disabled="!canWrite"></div>
-          <div class="field field-full"><label for="edit-project-description">Description</label><textarea id="edit-project-description" v-model="form.description" class="textarea" :disabled="!canWrite"></textarea></div>
+          <div class="field field-full"><label for="edit-project-description">Description</label><textarea id="edit-project-description" v-model="form.description" class="textarea" :disabled="!canWrite" /></div>
         </div>
 
         <h2 style="margin-top:28px">Coûts et marge internes</h2>
@@ -158,7 +158,7 @@ async function archiveProject() {
           <div class="field"><label for="edit-project-other-cost">Autres coûts (€)</label><input id="edit-project-other-cost" v-model="form.otherCost" class="input" type="number" min="0" step="0.01" :disabled="!canWrite"></div>
           <div class="field"><label for="edit-project-estimated-margin">Marge prévisionnelle (€)</label><input id="edit-project-estimated-margin" v-model="form.estimatedNetMargin" class="input" type="number" step="0.01" :disabled="!canWrite"></div>
           <div class="field"><label for="edit-project-actual-margin">Marge réelle (€)</label><input id="edit-project-actual-margin" v-model="form.actualNetMargin" class="input" type="number" step="0.01" :disabled="!canWrite"></div>
-          <div class="field field-full"><label for="edit-project-comments">Commentaires internes</label><textarea id="edit-project-comments" v-model="form.internalComments" class="textarea" :disabled="!canWrite"></textarea></div>
+          <div class="field field-full"><label for="edit-project-comments">Commentaires internes</label><textarea id="edit-project-comments" v-model="form.internalComments" class="textarea" :disabled="!canWrite" /></div>
         </div>
 
         <div v-if="canWrite" class="actions" style="margin-top:22px"><button class="btn btn-primary" type="submit" :disabled="saving">{{ saving ? 'Enregistrement…' : 'Enregistrer les modifications' }}</button><button class="btn btn-secondary" type="button" :disabled="archiving" @click="archiveProject">{{ archiving ? 'Archivage…' : 'Archiver le projet' }}</button></div>
