@@ -1,3 +1,58 @@
-<script setup lang="ts">useHead({title:'Nous rejoindre'});const profiles=['Salariés','Stagiaires','Alternants','Bénévoles','Développeurs','Formateurs','Chercheurs & contributeurs R&D','Chefs de projet']</script>
-<template><section class="section"><div class="container"><p class="eyebrow">Nous rejoindre</p><h1 class="display-title">Mettre ses compétences au service de projets utiles.</h1><p class="lead">IFICS peut accueillir différents profils selon les besoins de ses actions. Les opportunités sont étudiées au regard des projets en cours et des compétences recherchées.</p><div class="grid grid-4 profiles"><article v-for="profile in profiles" :key="profile" class="card card-pad"><h2>{{profile}}</h2></article></div><div class="card card-pad join"><div><h2>Vous souhaitez contribuer ?</h2><p>Présentez votre parcours, vos compétences, votre disponibilité et le domaine dans lequel vous souhaitez vous engager.</p></div><NuxtLink to="/contact" class="btn btn-primary">Contacter IFICS</NuxtLink></div></div></section></template>
-<style scoped>.profiles{margin-top:35px}.profiles h2{font-size:1rem;margin:0}.join{margin-top:35px;display:flex;justify-content:space-between;align-items:center;gap:25px}.join h2,.join p{margin:0}.join p{margin-top:6px;color:var(--ifics-muted)}@media(max-width:750px){.join{align-items:flex-start;flex-direction:column}}</style>
+<script setup lang="ts">
+import { publicVisuals } from '~/utils/publicVisuals'
+
+useHead({ title: 'Nous rejoindre' })
+
+const profiles = [
+  ['Salariés', 'Contribuer durablement au pilotage ou à la réalisation des actions.'],
+  ['Stagiaires', 'Découvrir un métier en participant à des missions encadrées et concrètes.'],
+  ['Alternants', 'Développer ses compétences dans un environnement mêlant terrain et projets.'],
+  ['Bénévoles', 'Apporter du temps, une expertise ou une énergie à une action utile.'],
+  ['Développeurs', 'Concevoir des outils numériques responsables et réellement utilisables.'],
+  ['Formateurs', 'Transmettre des compétences avec une pédagogie adaptée aux publics.'],
+  ['Contributeurs R&D', 'Explorer, prototyper et documenter des solutions nouvelles.'],
+  ['Chefs de projet', 'Coordonner partenaires, intervenants, calendrier et résultats.'],
+]
+</script>
+
+<template>
+  <div>
+    <section class="section join-hero">
+      <div class="container split-section reverse">
+        <div class="split-copy">
+          <p class="eyebrow">Nous rejoindre</p>
+          <h1 class="display-title">Mettre ses compétences au service de projets utiles.</h1>
+          <p class="lead">IFICS peut accueillir différents profils selon les besoins de ses actions. Les opportunités sont étudiées au regard des projets en cours, des compétences recherchées et de la capacité à accompagner correctement chaque personne.</p>
+          <div class="hero-actions"><NuxtLink to="/contact" class="btn btn-primary">Présenter votre candidature</NuxtLink><NuxtLink to="/actions" class="btn btn-secondary">Découvrir nos actions</NuxtLink></div>
+        </div>
+        <div class="split-media"><img :src="publicVisuals.insertion" alt="Accompagnement d'un jeune dans la construction de son parcours"></div>
+      </div>
+    </section>
+
+    <section class="section profile-section">
+      <div class="container">
+        <p class="eyebrow">Profils</p>
+        <h2 class="section-title">Différentes façons de contribuer à IFICS.</h2>
+        <div class="grid grid-4 profile-grid">
+          <article v-for="(profile, index) in profiles" :key="profile[0]" class="card card-pad profile-card"><span class="theme-card-index">0{{ index + 1 }}</span><h2>{{ profile[0] }}</h2><p>{{ profile[1] }}</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-compact">
+      <div class="container split-section">
+        <div class="split-copy"><p class="eyebrow">Ce qui compte</p><h2 class="section-title">Un rôle clair, un cadre clair, un objectif utile.</h2><p class="lead">Une candidature n’est pas étudiée uniquement à partir d’un intitulé. Nous regardons le parcours, les compétences, les disponibilités et la manière dont elles peuvent répondre à un besoin concret.</p><ul class="feature-list"><li><span>Une mission comprise avant de commencer.</span></li><li><span>Des responsabilités adaptées au niveau d’autonomie.</span></li><li><span>Un suivi pour capitaliser sur l’expérience.</span></li></ul></div>
+        <div class="split-media"><img :src="publicVisuals.numerique" alt="Transmission de compétences dans un atelier numérique" loading="lazy"></div>
+      </div>
+    </section>
+
+    <section class="section-compact"><div class="container cta-panel"><div><h2>Vous souhaitez contribuer ?</h2><p>Présentez votre parcours, vos compétences, votre disponibilité et le domaine dans lequel vous souhaitez vous engager.</p></div><NuxtLink to="/contact" class="btn btn-secondary">Contacter IFICS</NuxtLink></div></section>
+  </div>
+</template>
+
+<style scoped>
+.join-hero { background: #fff; }
+.profile-section { background: #f1f5f2; border-block: 1px solid #e5ece7; }
+.profile-card h2 { margin: 8px 0 7px; font-size: 1.08rem; }
+.profile-card p { margin: 0; color: var(--ifics-muted); font-size: .9rem; }
+</style>
