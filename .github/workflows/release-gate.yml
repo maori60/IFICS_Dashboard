@@ -112,7 +112,7 @@ jobs:
           status=$(curl -sS -o /tmp/protected.json -w '%{http_code}' -b /tmp/ifics.cookies http://127.0.0.1:3000/api/system/health)
           [ "$status" = "403" ]
 
-          curl -fsS -X POST -H "Authorization: Bearer $INTERNAL_JOB_TOKEN" http://127.0.0.1:3000/api/internal/jobs/document-expiry >/tmp/job.json
+          curl -fsS -X POST -H "X-Internal-Job-Token: $INTERNAL_JOB_TOKEN" http://127.0.0.1:3000/api/internal/jobs/document-expiry >/tmp/job.json
           grep -q '"ok":true' /tmp/job.json
       - name: Server log on failure
         if: failure()
