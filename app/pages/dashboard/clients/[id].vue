@@ -168,7 +168,7 @@ async function archiveClient() {
           <div class="field"><label for="edit-billing-postal">Code postal</label><input id="edit-billing-postal" v-model="form.billingPostalCode" class="input" maxlength="20" :disabled="!canWrite"></div>
           <div class="field"><label for="edit-billing-city">Ville</label><input id="edit-billing-city" v-model="form.billingCity" class="input" maxlength="120" :disabled="!canWrite"></div>
           <div class="field"><label for="edit-billing-country">Pays</label><input id="edit-billing-country" v-model="form.billingCountry" class="input" maxlength="100" :disabled="!canWrite"></div>
-          <div class="field field-full"><label for="edit-client-notes">Notes internes</label><textarea id="edit-client-notes" v-model="form.notes" class="textarea" :disabled="!canWrite"></textarea></div>
+          <div class="field field-full"><label for="edit-client-notes">Notes internes</label><textarea id="edit-client-notes" v-model="form.notes" class="textarea" :disabled="!canWrite" /></div>
         </div>
 
         <div v-if="canWrite" class="actions" style="margin-top:22px">
