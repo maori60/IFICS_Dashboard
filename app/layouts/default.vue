@@ -4,6 +4,7 @@ import type { ApiSuccess, SessionPayload } from '~/types/api'
 const route = useRoute()
 const menuOpen = ref(false)
 const logoAvailable = ref(true)
+const publicLogoUrl = '/api/public/branding/logo'
 const sessionState = ref<'loading' | 'authenticated' | 'anonymous'>('loading')
 
 const links = [
@@ -42,7 +43,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
       <div class="container header-inner">
         <NuxtLink to="/" class="public-brand" aria-label="IFICS — accueil">
           <span class="brand-symbol">
-            <img v-if="logoAvailable" src="/api/public/branding/logo" alt="" @error="logoAvailable = false">
+            <img v-if="logoAvailable" :src="publicLogoUrl" alt="" @error="logoAvailable = false">
             <span v-else class="brand-mark" aria-hidden="true">I</span>
           </span>
           <span class="brand-copy">
@@ -72,7 +73,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
     <footer class="public-footer">
       <div class="container footer-top">
         <div class="footer-brand">
-          <div class="footer-brand-line"><span class="brand-symbol small"><img v-if="logoAvailable" src="/api/public/branding/logo" alt=""><span v-else class="brand-mark small" aria-hidden="true">I</span></span><strong>IFICS</strong></div>
+          <div class="footer-brand-line"><span class="brand-symbol small"><img v-if="logoAvailable" :src="publicLogoUrl" alt=""><span v-else class="brand-mark small" aria-hidden="true">I</span></span><strong>IFICS</strong></div>
           <p>Des projets utiles pour apprendre, s'insérer, créer, coopérer et agir durablement sur les territoires.</p>
         </div>
         <div class="footer-col"><strong>Découvrir</strong><NuxtLink to="/association">L'association</NuxtLink><NuxtLink to="/actions">Nos actions</NuxtLink><NuxtLink to="/projets">Nos projets</NuxtLink><NuxtLink to="/actualites">Actualités</NuxtLink></div>
