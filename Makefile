@@ -25,11 +25,9 @@ dev-init: dev-build dev-db
 	$(DEV_COMPOSE) ps
 
 dev-up:
-	@echo "Starting IFICS development stack..."
 	$(DEV_COMPOSE) up -d
 
 dev-down:
-	@echo "Stopping IFICS development stack..."
 	$(DEV_COMPOSE) down
 
 dev-restart:
@@ -68,13 +66,26 @@ dev-clean:
 	$(DEV_COMPOSE) down -v
 
 # -----------------------------------------------------------------------------
-# Production-like local stack
-# This is NOT the final production deployment definition. It exists so the
-# release image can be exercised without development bind mounts.
+# Production / self-hosted stack
 # -----------------------------------------------------------------------------
 
 build:
 	$(COMPOSE) build
+
+prod-db:
+	$(COMPOSE) up -d db
+
+prod-migrate: prod-db
+	$(COMPOSE) run --rm app npm run db:migrate
+
+# Synchronises association and system roles. It does not create an administrator
+# unless ADMIN_* variables are explicitly injected for this command.
+prod-seed: prod-db
+	$(COMPOSE) run --rm app npm run db:seed
+
+prod-init: build prod-migrate prod-seed
+	$(COMPOSE) up -d app
+	$(COMPOSE) ps
 
 up:
 	$(COMPOSE) up -d
@@ -91,15 +102,23 @@ logs:
 ps:
 	$(COMPOSE) ps
 
+ready:
+	@curl --fail --silent --show-error http://127.0.0.1:$${APP_PORT:-3000}/api/ready && echo
+
+backup:
+	sh scripts/backup.sh
+
+# Usage: RESTORE_CONFIRM=YES make restore BACKUP=/absolute/path/to/ifics-backup
+restore:
+	@test -n "$(BACKUP)" || (echo "BACKUP=/path/to/backup is required" >&2; exit 2)
+	RESTORE_CONFIRM="$${RESTORE_CONFIRM:-}" sh scripts/restore.sh "$(BACKUP)"
+
 shell-app:
 	$(COMPOSE) exec app sh
 
 shell-db:
 	$(COMPOSE) exec db sh
 
-# Intentionally no automatic db-push or seed on container startup.
-# Production migrations will be handled by an explicit deployment workflow.
-
 .PHONY: dev-build dev-db dev-init dev-up dev-down dev-restart dev-logs dev-ps \
 	dev-migrate dev-seed dev-generate dev-reset dev-shell-app dev-shell-db dev-clean \
-	build up down restart logs ps shell-app shell-db
+	build prod-db prod-migrate prod-seed prod-init up down restart logs ps ready backup restore shell-app shell-db
