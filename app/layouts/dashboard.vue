@@ -21,6 +21,7 @@ const navigation = computed(() => [
   { label: 'R&D', to: '/dashboard/rnd', visible: can('rnd:read') },
   { label: 'Parc IT', to: '/dashboard/assets', visible: can('it:read') },
   { label: 'RH', to: '/dashboard/hr', visible: can('hr:read') },
+  { label: 'Système', to: '/dashboard/system', visible: can('audit:read') },
   { label: 'Administration', to: '/dashboard/admin', visible: can('user:manage') || can('settings:manage') || can('audit:read') },
 ].filter(item => item.visible))
 
