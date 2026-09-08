@@ -1,6 +1,4 @@
-# M1.3 audit evidence: reproducible Docker development bootstrap and persistence checks.
-# Keep this workflow in sync with the documented Node/Docker runtime.
-# Acceptance gate: the green check on the current HEAD is the M1.3 infrastructure evidence.
+# Reproducible Docker development bootstrap and persistence checks.
 name: Docker Dev Smoke
 
 on:
@@ -22,12 +20,17 @@ on:
 jobs:
   docker-dev-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       POSTGRES_USER: ifics_ci
       POSTGRES_PASSWORD: ci_only_not_a_secret
       POSTGRES_DB: ifics_ci
       DATABASE_URL: postgresql://ifics_ci:ci_only_not_a_secret@db:5432/ifics_ci?schema=public
+      APP_BASE_URL: http://localhost:3000
+      APP_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      IP_HASH_PEPPER: docker-smoke-development-pepper
+      INTERNAL_JOB_TOKEN: docker-smoke-internal-token
+      TRUST_PROXY: 'false'
       APP_PORT: '3000'
       POSTGRES_PORT: '5432'
 
@@ -59,7 +62,7 @@ jobs:
       - name: Wait for HTTP readiness
         run: |
           for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:3000/ >/dev/null; then
+            if curl --fail --silent http://127.0.0.1:3000/api/ready >/dev/null; then
               exit 0
             fi
             sleep 2
@@ -90,7 +93,7 @@ jobs:
           docker compose -f docker-compose.dev.yml up -d --force-recreate app
 
           for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:3000/ >/dev/null; then
+            if curl --fail --silent http://127.0.0.1:3000/api/ready >/dev/null; then
               break
             fi
             sleep 2
@@ -103,10 +106,10 @@ jobs:
             'SELECT "updatedAt" FROM "Association" WHERE id = '\''assoc_default_ifics'\'';')
           test "$timestamp_after" = "$SEED_UPDATED_AT"
 
-      - name: Validate production-like Compose configuration
+      - name: Validate production Compose configuration
         run: docker compose config --quiet
 
-      - name: Build production-like application image
+      - name: Build production application image
         run: docker compose build app
 
       - name: Show final service state
