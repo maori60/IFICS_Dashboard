@@ -147,7 +147,7 @@ async function submit() {
       <h2 style="margin-top:28px">Lignes</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Description</th><th>Quantité</th><th>Prix unitaire (€)</th><th>Total indicatif</th><th></th></tr></thead>
+          <thead><tr><th>Description</th><th>Quantité</th><th>Prix unitaire (€)</th><th>Total indicatif</th><th>Action</th></tr></thead>
           <tbody>
             <tr v-for="(line,index) in form.lines" :key="index">
               <td><input v-model="line.description" class="input" maxlength="500" required placeholder="Prestation"></td>
