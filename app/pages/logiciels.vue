@@ -32,11 +32,11 @@ const items = computed(() => data.value?.data ?? [])
       <div class="container split-section">
         <div class="split-copy">
           <p class="eyebrow">Logiciels & ressources</p>
-          <h1 class="display-title">Des outils utiles, accessibles et documentés.</h1>
-          <p class="lead">IFICS peut publier ses propres outils ou recommander des ressources pertinentes. Chaque fiche distingue clairement l’origine, la version, la licence et les informations utiles avant téléchargement.</p>
+          <h1 class="display-title">Des ressources utiles, documentées et faciles à identifier.</h1>
+          <p class="lead">IFICS peut publier ses propres outils ou recommander des ressources pertinentes. Chaque fiche précise l’origine, la version, la licence et les informations techniques utiles avant téléchargement.</p>
           <ul class="feature-list"><li><span>Des ressources gratuites ou ouvertes clairement identifiées.</span></li><li><span>Des versions et changements documentés.</span></li><li><span>Des téléchargements accompagnés des informations techniques utiles.</span></li></ul>
         </div>
-        <div class="split-media"><img :src="publicVisuals.numerique" alt="Atelier d'accompagnement aux usages numériques"></div>
+        <div class="split-media"><img :src="publicVisuals.resources" alt="Catalogue de ressources et d’outils IFICS"></div>
       </div>
     </section>
 
@@ -62,13 +62,13 @@ const items = computed(() => data.value?.data ?? [])
 
 <style scoped>
 .software-hero { background: #fff; }
-.catalog-section { background: #f1f5f2; }
+.catalog-section { background: #f3f6f4; }
 .software-card { display: flex; flex-direction: column; }
-.software-card h2 { margin: 14px 0 8px; font-size: 1.28rem; }
+.software-card h2 { margin: 14px 0 8px; font-size: 1.12rem; }
 .software-card > p { margin: 0; color: var(--ifics-muted); }
 .software-meta { display: grid; gap: 10px; margin: 22px 0; }
 .software-meta div { display: grid; grid-template-columns: 96px 1fr; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid #edf1ee; }
-.software-meta dt { color: var(--ifics-muted); font-size: .78rem; font-weight: 750; }
+.software-meta dt { color: var(--ifics-muted); font-size: .78rem; font-weight: 600; }
 .software-meta dd { margin: 0; font-size: .86rem; }
 .checksum { margin: 0 0 20px; color: var(--ifics-muted); font-size: .8rem; }
 .checksum code { display: block; margin-top: 8px; word-break: break-all; font-size: .7rem; }
