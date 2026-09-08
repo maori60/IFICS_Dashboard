@@ -100,7 +100,7 @@ jobs:
           curl -fsS http://127.0.0.1:3000/ >/tmp/home.html
           grep -qi 'IFICS' /tmp/home.html
           curl -fsS http://127.0.0.1:3000/api/public/projects >/tmp/public-projects.json
-          grep -q '"success":true' /tmp/public-projects.json
+          grep -q '"ok":true' /tmp/public-projects.json
 
           printf '{"email":"%s","password":"%s"}' "$ADMIN_EMAIL" "$ADMIN_PASSWORD" >/tmp/login-payload.json
           curl -fsS -c /tmp/ifics.cookies -H 'Content-Type: application/json' --data-binary @/tmp/login-payload.json http://127.0.0.1:3000/api/auth/login >/tmp/login.json
@@ -113,7 +113,7 @@ jobs:
           [ "$status" = "403" ]
 
           curl -fsS -X POST -H "Authorization: Bearer $INTERNAL_JOB_TOKEN" http://127.0.0.1:3000/api/internal/jobs/document-expiry >/tmp/job.json
-          grep -q '"success":true' /tmp/job.json
+          grep -q '"ok":true' /tmp/job.json
       - name: Server log on failure
         if: failure()
         run: cat /tmp/ifics-server.log 2>/dev/null || true
