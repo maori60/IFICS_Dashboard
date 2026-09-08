@@ -73,6 +73,28 @@ h1, h2, h3, h4, h5, h6,
 }
 .card-pad { padding: 22px; }
 
+/* Public header */
+.public-shell .public-header {
+  background: #fff;
+  backdrop-filter: none;
+  border-bottom: 1px solid #e4ebe6;
+}
+.public-shell .public-header .container {
+  width: min(1380px, calc(100% - 40px));
+}
+.public-shell .header-inner { min-height: 70px; gap: 18px; }
+.public-shell .public-brand { min-width: 188px; gap: 9px; }
+.public-shell .brand-symbol,
+.public-shell .brand-symbol img { width: 36px; height: 36px; }
+.public-shell .brand-copy strong { font-size: 1rem; font-weight: 600; letter-spacing: .02em; }
+.public-shell .public-brand small { font-size: .64rem; max-width: 170px; line-height: 1.22; }
+.public-shell .public-nav { gap: 16px; }
+.public-shell .nav-links { gap: 13px; }
+.public-shell .nav-links a { font-size: .79rem; font-weight: 600; padding-top: 25px; padding-bottom: 23px; }
+.public-shell .nav-actions { gap: 8px; }
+.public-shell .nav-actions .btn { min-height: 38px; padding: 8px 12px; font-size: .78rem; border-radius: 8px; }
+.public-shell .menu-button { border-radius: 8px; font-weight: 600; }
+
 .public-hero {
   background: #f7faf8;
   border-bottom: 1px solid #e5ebe7;
@@ -167,6 +189,30 @@ h1, h2, h3, h4, h5, h6,
   letter-spacing: -.02em;
 }
 
+@media (max-width: 1360px) {
+  .public-shell .menu-button { display: inline-flex; margin-left: auto; }
+  .public-shell .public-nav {
+    position: absolute;
+    top: 64px;
+    left: 18px;
+    right: 18px;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    background: #fff;
+    padding: 16px;
+    border: 1px solid #dbe5de;
+    border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(8,44,31,.08);
+  }
+  .public-shell .public-nav.open { display: flex; }
+  .public-shell .nav-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; }
+  .public-shell .nav-links a { padding: 9px 8px; white-space: normal; }
+  .public-shell .nav-links a::after { display: none; }
+  .public-shell .nav-actions { border-top: 1px solid #e4ebe6; padding-top: 12px; }
+}
+
 @media (max-width: 1180px) {
   .container { width: min(100% - 36px, 1180px); }
   .hero-grid { grid-template-columns: 1fr 1fr; gap: 38px; }
@@ -188,6 +234,7 @@ h1, h2, h3, h4, h5, h6,
 
 @media (max-width: 640px) {
   .container { width: min(100% - 24px, 1180px); }
+  .public-shell .public-header .container { width: min(100% - 20px, 1380px); }
   .section { padding: 44px 0; }
   .display-title {
     font-size: clamp(1.9rem, 9.5vw, 2.55rem);
@@ -201,4 +248,7 @@ h1, h2, h3, h4, h5, h6,
   .hero-actions .btn { width: 100%; }
   .domain-strip { grid-template-columns: 1fr 1fr; }
   .card-pad { padding: 18px; }
+  .public-shell .nav-links { grid-template-columns: 1fr; }
+  .public-shell .nav-actions { flex-direction: column; align-items: stretch; }
+  .public-shell .nav-actions .btn { width: 100%; }
 }
