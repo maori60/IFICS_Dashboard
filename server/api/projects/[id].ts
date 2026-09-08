@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
       title: true,
       description: true,
       status: true,
+      classification: true,
       startDate: true,
       endDate: true,
       plannedBudget: true,
@@ -37,6 +38,7 @@ export default defineEventHandler(async (event) => {
       createdAt: true,
       updatedAt: true,
       projectClients: {
+        orderBy: { isMainClient: 'desc' },
         select: {
           id: true,
           isMainClient: true,
