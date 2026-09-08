@@ -1,2 +1,7 @@
-<script setup lang="ts">await navigateTo('/dashboard/clients', { replace: true })</script>
-<template><p>Redirection vers l’espace IFICS…</p></template>
+<script setup lang="ts">
+await navigateTo('/dashboard/clients/create', { replace: true })
+</script>
+
+<template>
+  <p>Redirection vers la création de client…</p>
+</template>
