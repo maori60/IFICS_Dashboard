@@ -25,6 +25,7 @@ const clients = computed(() => data.value?.data ?? [])
 const permissions = computed(() => session.value?.data.user.permissions ?? [])
 const canCreate = computed(() => permissions.value.includes('*') || permissions.value.includes('client:write'))
 const created = computed(() => route.query.created === '1')
+const archived = computed(() => route.query.archived === '1')
 </script>
 
 <template>
@@ -46,6 +47,9 @@ const created = computed(() => route.query.created === '1')
 
     <div v-if="created" class="alert alert-success" style="margin-bottom: 18px">
       Le client a été créé avec succès.
+    </div>
+    <div v-if="archived" class="alert alert-success" style="margin-bottom: 18px">
+      Le client a été archivé.
     </div>
 
     <div v-if="error" class="alert alert-error">
@@ -69,6 +73,7 @@ const created = computed(() => route.query.created === '1')
             <th>Contact</th>
             <th>Projets</th>
             <th>Statut</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -79,6 +84,7 @@ const created = computed(() => route.query.created === '1')
             <td>{{ client.email || client.phone1 || '—' }}</td>
             <td>{{ client._count.projectClients }}</td>
             <td><span class="badge" :class="client.status === 'ACTIVE' ? '' : 'badge-muted'">{{ client.status }}</span></td>
+            <td><NuxtLink class="btn btn-secondary btn-small" :to="`/dashboard/clients/${client.id}`">Ouvrir / modifier</NuxtLink></td>
           </tr>
         </tbody>
       </table>
@@ -88,4 +94,5 @@ const created = computed(() => route.query.created === '1')
 
 <style scoped>
 .empty-state p { margin-top: 0; }
+.btn-small { padding: 8px 12px; white-space: nowrap; }
 </style>
