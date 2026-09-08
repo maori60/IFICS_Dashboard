@@ -26,8 +26,9 @@ logs
 .env.*
 !.env.example
 
-# Uploads (documents)
+# Uploads and local backups (never commit operational/user data)
 uploads/
+backups/
 
 # Fichiers temporaires / debug
 *.txt
