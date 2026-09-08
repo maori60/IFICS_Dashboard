@@ -13,11 +13,11 @@ const items = computed(() => data.value?.data ?? [])
       <div class="container split-section">
         <div class="split-copy">
           <p class="eyebrow">Innovation & R&D</p>
-          <h1 class="display-title">Expérimenter, mesurer, documenter et partager.</h1>
-          <p class="lead">Le pôle Innovation & R&D part de problèmes concrets pour tester des méthodes pédagogiques, des outils numériques et des prototypes utiles. Les résultats sont documentés avant toute diffusion publique.</p>
+          <h1 class="display-title">Expérimenter, mesurer et documenter des solutions utiles.</h1>
+          <p class="lead">Le pôle Innovation & R&D part de problèmes concrets pour tester des méthodes pédagogiques, des outils numériques et des prototypes. Les résultats sont documentés avant toute diffusion publique.</p>
           <div class="hero-actions"><NuxtLink to="/contact" class="btn btn-primary">Échanger avec IFICS</NuxtLink><NuxtLink to="/logiciels" class="btn btn-secondary">Voir les ressources</NuxtLink></div>
         </div>
-        <div class="split-media"><img :src="publicVisuals.innovation" alt="Atelier de prototypage et d'innovation mené avec différents publics"></div>
+        <div class="split-media"><img :src="publicVisuals.innovation" alt="Expérimentation et prototypage dans un projet IFICS"></div>
       </div>
     </section>
 
@@ -33,11 +33,11 @@ const items = computed(() => data.value?.data ?? [])
       <div class="container split-section reverse">
         <div class="split-copy">
           <p class="eyebrow">Recherche appliquée</p>
-          <h2 class="section-title">L’innovation n’a de valeur que si elle améliore réellement un usage.</h2>
-          <p class="lead">IFICS privilégie les expérimentations mesurables, compréhensibles et transférables. Le but n’est pas de multiplier les outils mais d’identifier ceux qui répondent vraiment au besoin.</p>
+          <h2 class="section-title">L’innovation doit améliorer un usage réel.</h2>
+          <p class="lead">IFICS privilégie les expérimentations mesurables, compréhensibles et transférables. L’objectif est d’identifier les méthodes et outils qui répondent réellement au besoin.</p>
           <ul class="feature-list"><li><span>Des hypothèses explicites avant l’expérimentation.</span></li><li><span>Des retours du terrain pendant le test.</span></li><li><span>Une documentation suffisante pour comprendre les résultats.</span></li></ul>
         </div>
-        <div class="split-media"><img :src="publicVisuals.numerique" alt="Atelier d'accompagnement numérique et de transmission de compétences" loading="lazy"></div>
+        <div class="split-media"><img :src="publicVisuals.numerique" alt="Prototype numérique et transmission de compétences" loading="lazy"></div>
       </div>
     </section>
 
@@ -46,7 +46,7 @@ const items = computed(() => data.value?.data ?? [])
         <p class="eyebrow">Publications R&D</p>
         <h2 class="section-title">Partager ce qui peut être utile à d'autres.</h2>
         <div v-if="items.length" class="grid grid-3">
-          <article v-for="item in items" :key="item.id" class="card card-pad publication-card"><span class="badge">R&D</span><h3>{{ item.title }}</h3><p>{{ item.excerpt }}</p><NuxtLink class="media-card-link" :to="`/actualites/${item.slug}`">Lire la publication →</NuxtLink></article>
+          <article v-for="item in items" :key="item.id" class="card card-pad publication-card"><span class="badge">R&D</span><h3>{{ item.title }}</h3><p>{{ item.excerpt }}</p><NuxtLink class="media-card-link" :to="`/actualites/${item.slug}`">Lire la publication</NuxtLink></article>
         </div>
         <div v-else class="empty-state">Aucune publication R&D n’est ouverte au public pour le moment.</div>
       </div>
@@ -55,10 +55,10 @@ const items = computed(() => data.value?.data ?? [])
 </template>
 
 <style scoped>
-.innovation-hero { background: linear-gradient(180deg, #f7faf8 0, #fff 100%); }
-.process-section { background: #eff4f0; border-block: 1px solid #e5ece7; }
-.process-section h2 { margin: 9px 0; font-size: 1.22rem; }
+.innovation-hero { background: #fff; }
+.process-section { background: #f3f6f4; border-block: 1px solid #e5ece7; }
+.process-section h2 { margin: 9px 0; font-size: 1.1rem; }
 .process-section p, .publication-card p { color: var(--ifics-muted); margin-bottom: 0; }
-.publications-section { background: #f9fbf9; }
+.publications-section { background: #fafcfa; }
 .publication-card h3 { margin: 14px 0 8px; }
 </style>
