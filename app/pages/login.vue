@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ApiSuccess } from '~/types/api'
+import type { ApiSuccess, SessionPayload } from '~/types/api'
 import { apiErrorMessage } from '~/utils/api-error'
 
 definePageMeta({ layout: 'default' })
@@ -7,6 +7,7 @@ useHead({ title: 'Connexion' })
 
 const form = reactive({ email: '', password: '' })
 const pending = ref(false)
+const checkingSession = ref(true)
 const errorMessage = ref('')
 
 type LoginResponse = {
@@ -14,6 +15,20 @@ type LoginResponse = {
   mfaRequired: boolean
   mfaSetupRequired: boolean
 }
+
+onMounted(async () => {
+  try {
+    const current = await $fetch<ApiSuccess<SessionPayload>>('/api/auth/me')
+    if (current.data.mfa.setupRequired || (current.data.mfa.enabled && !current.data.mfa.verified)) {
+      await navigateTo('/mfa')
+      return
+    }
+    await navigateTo('/dashboard')
+  }
+  catch {
+    checkingSession.value = false
+  }
+})
 
 async function submit() {
   if (pending.value) return
@@ -35,7 +50,8 @@ async function submit() {
   <section class="section auth-section">
     <div class="container auth-grid">
       <div><p class="eyebrow">Espace sécurisé</p><h1 class="section-title">Piloter IFICS avec une plateforme unique.</h1><p class="lead">Projets, intervenants, partenaires, documents, facturation, support et fonctions internes sont protégés par des droits d’accès et le MFA lorsque requis.</p></div>
-      <form class="card card-pad auth-card" @submit.prevent="submit">
+      <div v-if="checkingSession" class="card card-pad auth-card"><h2>Vérification de la session…</h2><p class="muted">Si votre session IFICS est encore valide, vous serez redirigé sans nouvelle authentification.</p></div>
+      <form v-else class="card card-pad auth-card" @submit.prevent="submit">
         <h2>Connexion</h2>
         <p class="muted">Utilisez le compte créé ou invité par IFICS.</p>
         <div v-if="errorMessage" class="alert alert-error" role="alert">{{ errorMessage }}</div>
@@ -54,5 +70,5 @@ async function submit() {
 .auth-card { display: flex; flex-direction: column; gap: 17px; max-width: 470px; width: 100%; justify-self: end; }
 .auth-card h2, .auth-card p { margin: 0; }
 .forgot-link { color: var(--ifics-green-700); font-weight: 700; font-size: .9rem; }
-@media (max-width: 850px) { .auth-grid { grid-template-columns: 1fr; gap: 28px; } .auth-card { justify-self: stretch; max-width: none; } }
+@media (max-width: 850px) { .auth-grid { grid-template-columns: 1fr; gap: 28px; }.auth-card { justify-self: stretch; max-width: none; } }
 </style>
