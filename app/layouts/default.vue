@@ -3,6 +3,7 @@ import type { ApiSuccess, SessionPayload } from '~/types/api'
 
 const route = useRoute()
 const menuOpen = ref(false)
+const logoAvailable = ref(true)
 const sessionState = ref<'loading' | 'authenticated' | 'anonymous'>('loading')
 
 const links = [
@@ -40,7 +41,10 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
     <header class="public-header">
       <div class="container header-inner">
         <NuxtLink to="/" class="public-brand" aria-label="IFICS — accueil">
-          <span class="brand-mark" aria-hidden="true">I</span>
+          <span class="brand-symbol">
+            <img v-if="logoAvailable" src="/api/public/branding/logo" alt="" @error="logoAvailable = false">
+            <span v-else class="brand-mark" aria-hidden="true">I</span>
+          </span>
           <span class="brand-copy">
             <strong>IFICS</strong>
             <small>Institut de formation, d'insertion, de culture et de sport</small>
@@ -68,35 +72,14 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
     <footer class="public-footer">
       <div class="container footer-top">
         <div class="footer-brand">
-          <div class="footer-brand-line"><span class="brand-mark small" aria-hidden="true">I</span><strong>IFICS</strong></div>
+          <div class="footer-brand-line"><span class="brand-symbol small"><img v-if="logoAvailable" src="/api/public/branding/logo" alt=""><span v-else class="brand-mark small" aria-hidden="true">I</span></span><strong>IFICS</strong></div>
           <p>Des projets utiles pour apprendre, s'insérer, créer, coopérer et agir durablement sur les territoires.</p>
         </div>
-        <div class="footer-col">
-          <strong>Découvrir</strong>
-          <NuxtLink to="/association">L'association</NuxtLink>
-          <NuxtLink to="/actions">Nos actions</NuxtLink>
-          <NuxtLink to="/projets">Nos projets</NuxtLink>
-          <NuxtLink to="/actualites">Actualités</NuxtLink>
-        </div>
-        <div class="footer-col">
-          <strong>Agir avec nous</strong>
-          <NuxtLink to="/proposer-un-projet">Proposer un projet</NuxtLink>
-          <NuxtLink to="/partenaires">Devenir partenaire</NuxtLink>
-          <NuxtLink to="/rejoindre">Nous rejoindre</NuxtLink>
-          <NuxtLink to="/contact">Contact</NuxtLink>
-        </div>
-        <div class="footer-col">
-          <strong>Accès</strong>
-          <NuxtLink :to="spaceTarget">{{ spaceLabel }}</NuxtLink>
-          <NuxtLink to="/innovation">Innovation & R&D</NuxtLink>
-          <NuxtLink to="/logiciels">Logiciels & ressources</NuxtLink>
-          <span>Association IFICS · France</span>
-        </div>
+        <div class="footer-col"><strong>Découvrir</strong><NuxtLink to="/association">L'association</NuxtLink><NuxtLink to="/actions">Nos actions</NuxtLink><NuxtLink to="/projets">Nos projets</NuxtLink><NuxtLink to="/actualites">Actualités</NuxtLink></div>
+        <div class="footer-col"><strong>Agir avec nous</strong><NuxtLink to="/proposer-un-projet">Proposer un projet</NuxtLink><NuxtLink to="/partenaires">Devenir partenaire</NuxtLink><NuxtLink to="/rejoindre">Nous rejoindre</NuxtLink><NuxtLink to="/contact">Contact</NuxtLink></div>
+        <div class="footer-col"><strong>Accès</strong><NuxtLink :to="spaceTarget">{{ spaceLabel }}</NuxtLink><NuxtLink to="/innovation">Innovation & R&D</NuxtLink><NuxtLink to="/logiciels">Logiciels & ressources</NuxtLink><span>Association IFICS · France</span></div>
       </div>
-      <div class="container footer-bottom">
-        <span>© {{ new Date().getFullYear() }} IFICS</span>
-        <span>Éducation · Sport · Culture · Numérique · Insertion · Innovation</span>
-      </div>
+      <div class="container footer-bottom"><span>© {{ new Date().getFullYear() }} IFICS</span><span>Éducation · Sport · Culture · Numérique · Insertion · Innovation</span></div>
     </footer>
   </div>
 </template>
@@ -108,6 +91,9 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
 .public-header { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,.94); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(219,229,222,.92); }
 .header-inner { min-height: 74px; display: flex; align-items: center; gap: 24px; }
 .public-brand { display: flex; align-items: center; gap: 11px; text-decoration: none; min-width: 220px; flex: 0 0 auto; }
+.brand-symbol { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 auto; }
+.brand-symbol img { width: 42px; height: 42px; object-fit: contain; }
+.brand-symbol.small, .brand-symbol.small img { width: 34px; height: 34px; }
 .brand-copy { display: flex; flex-direction: column; line-height: 1.1; }
 .public-brand strong { font-size: 1.12rem; letter-spacing: .045em; }
 .public-brand small { color: var(--ifics-muted); font-size: .68rem; max-width: 195px; margin-top: 4px; line-height: 1.25; }
@@ -122,7 +108,6 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
 .nav-actions { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
 .nav-actions .btn { min-height: 40px; padding: 9px 14px; font-size: .82rem; }
 .menu-button { display: none; align-items: center; gap: 7px; border: 1px solid var(--ifics-border); background: #fff; color: var(--ifics-green-900); border-radius: 999px; padding: 9px 13px; font-weight: 750; cursor: pointer; }
-
 .public-footer { margin-top: auto; background: var(--ifics-green-950); color: #eef6f1; }
 .footer-top { display: grid; grid-template-columns: 1.7fr repeat(3, 1fr); gap: 54px; padding: 56px 0 42px; }
 .footer-brand-line { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; letter-spacing: .05em; }
@@ -133,7 +118,6 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
 .footer-col a:hover { color: #fff; text-decoration: underline; }
 .footer-col span { color: #9fb6a8; font-size: .88rem; }
 .footer-bottom { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-top: 1px solid rgba(255,255,255,.1); color: #93aa9c; font-size: .8rem; }
-
 @media (max-width: 1180px) {
   .menu-button { display: inline-flex; margin-left: auto; }
   .public-nav { position: absolute; top: 66px; left: max(16px, calc((100vw - 1240px) / 2)); right: 16px; display: none; flex-direction: column; align-items: stretch; gap: 16px; background: #fff; padding: 18px; border: 1px solid var(--ifics-border); border-radius: 18px; box-shadow: var(--ifics-shadow); }
@@ -146,7 +130,6 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
   .footer-top { grid-template-columns: 1.5fr repeat(2, 1fr); }
   .footer-col:last-child { grid-column: 2 / -1; }
 }
-
 @media (max-width: 760px) {
   .header-inner { min-height: 68px; }
   .public-brand { min-width: 0; }
