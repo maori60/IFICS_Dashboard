@@ -25,6 +25,9 @@ function safeText(value: unknown): string {
       return code < 32 || code === 127 ? ' ' : character
     })
     .join('')
+    .replace(/[\u00A0\u202F]/g, ' ')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -101,13 +104,13 @@ export function fitDimensions(width: number, height: number, maxWidth: number, m
 
 function formatMoney(value: unknown, currency = 'EUR'): string {
   const number = Number(value)
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(Number.isFinite(number) ? number : 0)
+  return safeText(new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(Number.isFinite(number) ? number : 0))
 }
 
 function formatDate(value: Date | string | null | undefined): string {
   if (!value) return '—'
   const date = value instanceof Date ? value : new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat('fr-FR').format(date)
+  return Number.isNaN(date.getTime()) ? '—' : safeText(new Intl.DateTimeFormat('fr-FR').format(date))
 }
 
 export type BillingPdfInput = {
@@ -294,7 +297,7 @@ export async function generateBillingPdf(input: BillingPdfInput): Promise<Uint8A
   page.drawRectangle({ x: MARGIN, y: y - metadataHeight + 10, width: CONTENT_WIDTH, height: metadataHeight, color: COLORS.greenSoft })
   const metaTop = y - 5
   const metaColumns = [
-    { label: 'DATE D’ÉMISSION', value: formatDate(input.issueDate), x: MARGIN + 14 },
+    { label: "DATE D'ÉMISSION", value: formatDate(input.issueDate), x: MARGIN + 14 },
     { label: input.kind === 'QUOTE' ? 'VALIDITÉ / ÉCHÉANCE' : 'ÉCHÉANCE', value: input.dueDate ? formatDate(input.dueDate) : '—', x: MARGIN + 185 },
     { label: 'DEVISE', value: safeText(input.currency || 'EUR'), x: MARGIN + 370 },
   ]
