@@ -1,4 +1,5 @@
 import { getQuery } from 'h3'
+import type { Prisma } from '../../../generated/prisma/client'
 import { requirePermission } from '../../utils/auth'
 import { PERMISSIONS } from '../../utils/constants'
 import { prisma } from '../../utils/prisma'
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
   const from = optionalDate(query.from)
   const to = optionalDate(query.to, true)
 
-  const where = {
+  const where: Prisma.AuditLogWhereInput = {
     associationId: context.associationId,
     ...(action ? { action } : {}),
     ...(entityType ? { entityType } : {}),
