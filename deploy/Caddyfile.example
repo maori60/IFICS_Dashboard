@@ -1,0 +1,15 @@
+# Replace ifics.example.org with the public domain and keep APP_BASE_URL aligned.
+if ics.example.org {
+  encode zstd gzip
+
+  reverse_proxy 127.0.0.1:3000
+
+  header {
+    Strict-Transport-Security "max-age=31536000"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    -Server
+  }
+}
