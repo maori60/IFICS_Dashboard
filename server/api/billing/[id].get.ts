@@ -8,9 +8,28 @@ export default defineEventHandler(async (event) => {
   const context = await requirePermission(event, PERMISSIONS.BILLING_READ)
   const id = requireRouterId(getRouterParam(event, 'id'), 'Document')
   const document = await prisma.billingDocument.findFirst({
-    where: { id, associationId: context.associationId, ...(context.roleCode === ROLE_CODES.CLIENT ? { clientId: context.clientId || '__none__' } : {}) },
+    where: {
+      id,
+      associationId: context.associationId,
+      ...(context.roleCode === ROLE_CODES.CLIENT ? { clientId: context.clientId || '__none__' } : {}),
+    },
     include: {
-      association: { select: { name: true, legalName: true, billingName: true, billingAddress: true, billingPostalCode: true, billingCity: true, billingCountry: true, billingEmail: true, siret: true, pdfFooter: true } },
+      association: {
+        select: {
+          name: true,
+          legalName: true,
+          logoUrl: true,
+          billingName: true,
+          billingAddress: true,
+          billingPostalCode: true,
+          billingCity: true,
+          billingCountry: true,
+          billingEmail: true,
+          billingPhone: true,
+          siret: true,
+          pdfFooter: true,
+        },
+      },
       client: true,
       project: { select: { id: true, reference: true, title: true } },
       lines: { orderBy: { position: 'asc' } },
@@ -19,5 +38,21 @@ export default defineEventHandler(async (event) => {
     },
   })
   if (!document) httpError(404, 'Document de facturation introuvable.', 'BILLING_NOT_FOUND')
-  return success(jsonSafe(document))
+
+  const finance = await prisma.associationFinanceSettings.findUnique({
+    where: { associationId: context.associationId },
+    select: {
+      legalForm: true,
+      rnaNumber: true,
+      vatNumber: true,
+      bankName: true,
+      bankAccountHolder: true,
+      iban: true,
+      bic: true,
+      paymentTerms: true,
+      taxExemptionText: true,
+    },
+  })
+
+  return success(jsonSafe({ ...document, finance }))
 })
