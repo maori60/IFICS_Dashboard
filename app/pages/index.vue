@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import type { ApiSuccess, PublicContent, PublicPartner, PublicProject } from '~/types/api'
+import { publicVisuals, visualForDomain } from '~/utils/publicVisuals'
 
-useHead({ title: 'Agir, transmettre, inclure et innover' })
+useHead({
+  title: 'Agir, transmettre, inclure et innover',
+  meta: [
+    { name: 'description', content: 'IFICS conçoit avec les territoires des projets éducatifs, sportifs, culturels, numériques, d’insertion et d’innovation.' },
+  ],
+})
 
 const { data: projectsResponse } = await useFetch<ApiSuccess<PublicProject[]>>('/api/public/projects')
 const { data: newsResponse } = await useFetch<ApiSuccess<PublicContent[]>>('/api/public/content', { query: { kind: 'NEWS' } })
@@ -12,58 +18,160 @@ const news = computed(() => (newsResponse.value?.data ?? []).slice(0, 3))
 const partners = computed(() => (partnersResponse.value?.data ?? []).slice(0, 8))
 
 const domains = [
-  ['Éducation', 'Concevoir des actions pédagogiques qui donnent confiance et développent l’autonomie.'],
-  ['Sport', 'Faire du mouvement un outil de santé, de transmission, de discipline et de lien social.'],
-  ['Culture', 'Créer des espaces d’expression, de découverte et de rencontre entre les publics.'],
-  ['Numérique', 'Rendre les outils numériques compréhensibles, utiles et accessibles au plus grand nombre.'],
-  ['Insertion', 'Renforcer les compétences et les passerelles vers l’emploi et la participation citoyenne.'],
-  ['Innovation & R&D', 'Expérimenter, documenter et transformer des idées en solutions réutilisables.'],
+  { key: 'education', title: 'Éducation', short: 'Apprendre et progresser', text: 'Des actions pédagogiques qui renforcent la confiance, l’autonomie et l’envie d’apprendre.', image: publicVisuals.education },
+  { key: 'sport', title: 'Sport', short: 'Bouger et se construire', text: 'Le mouvement comme levier de santé, de transmission, de discipline et de lien social.', image: publicVisuals.sport },
+  { key: 'culture', title: 'Culture', short: 'Créer et partager', text: 'Des espaces d’expression, de découverte et de rencontre entre les publics et les territoires.', image: publicVisuals.culture },
+  { key: 'numerique', title: 'Numérique', short: 'Comprendre les outils', text: 'Rendre les usages numériques plus simples, plus utiles et accessibles au plus grand nombre.', image: publicVisuals.numerique },
+  { key: 'insertion', title: 'Insertion', short: 'Construire son parcours', text: 'Renforcer les compétences, l’orientation et les passerelles vers l’activité et l’emploi.', image: publicVisuals.insertion },
+  { key: 'innovation', title: 'Innovation & R&D', short: 'Tester et documenter', text: 'Transformer des besoins concrets en méthodes, prototypes et ressources réutilisables.', image: publicVisuals.innovation },
 ]
 </script>
 
 <template>
   <div>
-    <section class="hero">
+    <section class="public-hero">
       <div class="container hero-grid">
-        <div>
+        <div class="hero-copy">
           <p class="eyebrow">Association IFICS · France</p>
-          <h1 class="display-title">Agir sur le terrain. Transmettre durablement.</h1>
-          <p class="lead">IFICS développe des projets d’éducation, de sport, de culture, de numérique, d’insertion et d’innovation avec les collectivités, les partenaires et les acteurs de terrain.</p>
-          <div class="hero-actions"><NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet</NuxtLink><NuxtLink to="/actions" class="btn btn-secondary">Découvrir nos actions</NuxtLink></div>
+          <h1 class="display-title">Agir sur le terrain.<br>Transmettre durablement.</h1>
+          <p class="lead">IFICS construit avec les collectivités et les acteurs de terrain des projets utiles en éducation, sport, culture, numérique, insertion et innovation.</p>
+          <div class="hero-actions">
+            <NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet →</NuxtLink>
+            <NuxtLink to="/actions" class="btn btn-secondary">Découvrir nos actions</NuxtLink>
+          </div>
+          <div class="hero-trust" aria-label="Principes d'intervention">
+            <div class="hero-trust-item"><span class="hero-trust-icon" aria-hidden="true">1</span><span><strong>Partir du besoin réel</strong><br>Observer le terrain avant de concevoir l’action.</span></div>
+            <div class="hero-trust-item"><span class="hero-trust-icon" aria-hidden="true">2</span><span><strong>Construire ensemble</strong><br>Associer partenaires, intervenants et bénéficiaires.</span></div>
+            <div class="hero-trust-item"><span class="hero-trust-icon" aria-hidden="true">3</span><span><strong>Documenter l’impact</strong><br>Suivre, évaluer et améliorer chaque projet.</span></div>
+          </div>
         </div>
-        <div class="hero-panel" aria-label="Domaines d'intervention IFICS"><span>Éducation</span><span>Sport</span><span>Culture</span><span>Numérique</span><span>Insertion</span><span>Innovation</span><strong>Des projets conçus avec les territoires.</strong></div>
+        <div class="hero-media">
+          <img class="hero-image" :src="publicVisuals.education" alt="Atelier éducatif accompagné par une intervenante dans un environnement lumineux">
+          <div class="hero-note">
+            <strong>Des projets conçus avec les territoires, pas à leur place.</strong>
+            <span>Une méthode transversale, du besoin jusqu’au bilan.</span>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section"><div class="container"><p class="eyebrow">Nos domaines</p><h2 class="section-title">Une approche transversale, du besoin à l’impact.</h2><div class="grid grid-3 domain-grid"><article v-for="(domain, index) in domains" :key="domain[0]" class="card card-pad"><span class="domain-number">0{{ index + 1 }}</span><h3>{{ domain[0] }}</h3><p>{{ domain[1] }}</p></article></div></div></section>
+    <section class="public-band section-compact" aria-labelledby="domains-title">
+      <div class="container domain-strip">
+        <div id="domains-title" class="domain-strip-title">Nos domaines<br>d’intervention</div>
+        <NuxtLink v-for="domain in domains" :key="domain.key" to="/actions" class="domain-chip">
+          <strong>{{ domain.title }}</strong>
+          <span>{{ domain.short }}</span>
+        </NuxtLink>
+      </div>
+    </section>
 
-    <section class="section project-section"><div class="container"><div class="section-row"><div><p class="eyebrow">Projets</p><h2 class="section-title">Ce que nous construisons avec nos partenaires.</h2></div><NuxtLink to="/projets" class="btn btn-secondary">Voir les projets</NuxtLink></div><div v-if="projects.length" class="grid grid-3"><article v-for="project in projects" :key="project.id" class="card project-card"><div class="project-image" :style="project.imageUrl ? { backgroundImage: `url(${project.imageUrl})` } : undefined"/><div class="card-pad"><span class="badge">{{ project.status || 'Projet IFICS' }}</span><h3>{{ project.title }}</h3><p>{{ project.summary }}</p><small>{{ project.territory }}</small></div></article></div><div v-else class="empty-state">Les projets publics validés par IFICS apparaîtront ici.</div></div></section>
+    <section class="section">
+      <div class="container">
+        <p class="eyebrow">Une même méthode, plusieurs disciplines</p>
+        <h2 class="section-title">Répondre au besoin avec le bon levier.</h2>
+        <p class="lead">Les disciplines ne sont pas des silos : elles peuvent se compléter dans un même projet selon le public, le territoire et les objectifs.</p>
+        <div class="grid grid-3 theme-grid">
+          <article v-for="(domain, index) in domains" :key="domain.key" class="card theme-card">
+            <img :src="domain.image" :alt="`Illustration du domaine ${domain.title}`" loading="lazy">
+            <div class="theme-card-content">
+              <span class="theme-card-index">0{{ index + 1 }}</span>
+              <h3>{{ domain.title }}</h3>
+              <p>{{ domain.text }}</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
 
-    <section class="section"><div class="container"><div class="section-row"><div><p class="eyebrow">Actualités</p><h2 class="section-title">Suivre les actions et les publications.</h2></div><NuxtLink to="/actualites" class="btn btn-secondary">Toutes les actualités</NuxtLink></div><div v-if="news.length" class="grid grid-3"><article v-for="item in news" :key="item.id" class="card card-pad"><span class="badge badge-muted">Actualité</span><h3>{{ item.title }}</h3><p>{{ item.excerpt }}</p><NuxtLink :to="`/actualites/${item.slug}`">Lire la publication →</NuxtLink></article></div><div v-else class="empty-state">Les actualités publiées par l’équipe communication apparaîtront ici.</div></div></section>
+    <section class="section project-section">
+      <div class="container">
+        <div class="section-row">
+          <div><p class="eyebrow">Projets</p><h2 class="section-title">Des actions concrètes construites avec nos partenaires.</h2></div>
+          <NuxtLink to="/projets" class="btn btn-secondary">Voir les projets</NuxtLink>
+        </div>
+        <div v-if="projects.length" class="grid grid-3">
+          <article v-for="project in projects" :key="project.id" class="card media-card">
+            <img class="media-card-image" :src="project.imageUrl || visualForDomain(`${project.title} ${project.summary}`)" :alt="project.title" loading="lazy">
+            <div class="media-card-body">
+              <span class="badge">{{ project.status || 'Projet IFICS' }}</span>
+              <h3>{{ project.title }}</h3>
+              <p>{{ project.summary }}</p>
+              <small v-if="project.territory" class="muted">{{ project.territory }}</small>
+            </div>
+          </article>
+        </div>
+        <div v-else class="empty-state empty-rich">
+          <strong>Les prochaines réalisations publiques seront présentées ici.</strong>
+          <span>Seuls les projets validés pour publication apparaissent sur le site.</span>
+        </div>
+      </div>
+    </section>
 
-    <section class="section partner-section"><div class="container"><p class="eyebrow">Partenaires</p><h2 class="section-title">La coopération est au cœur de notre méthode.</h2><div v-if="partners.length" class="partner-list"><a v-for="partner in partners" :key="partner.id" :href="partner.websiteUrl || undefined" class="partner-chip" :aria-label="partner.websiteUrl ? `Site de ${partner.name}` : partner.name"><img v-if="partner.logoUrl" :src="partner.logoUrl" alt=""><span>{{ partner.name }}</span></a></div><p v-else class="lead">Collectivités, associations, entreprises, mécènes et partenaires opérationnels peuvent construire une action avec IFICS.</p><div class="hero-actions"><NuxtLink to="/partenaires" class="btn btn-primary">Devenir partenaire</NuxtLink><NuxtLink to="/contact" class="btn btn-secondary">Nous contacter</NuxtLink></div></div></section>
+    <section class="section">
+      <div class="container split-section">
+        <div class="split-copy">
+          <p class="eyebrow">Notre manière d’agir</p>
+          <h2 class="section-title">Des projets lisibles pour les partenaires et utiles aux bénéficiaires.</h2>
+          <p class="lead">Objectifs, calendrier, ressources et critères de réussite sont posés clairement. L’équipe suit ensuite l’action pour pouvoir l’ajuster et en rendre compte.</p>
+          <ul class="feature-list">
+            <li><span><strong>Co-construction</strong><br>Un cadre défini avec la structure partenaire.</span></li>
+            <li><span><strong>Suivi</strong><br>Des informations structurées tout au long du projet.</span></li>
+            <li><span><strong>Évaluation</strong><br>Un bilan qui aide à comprendre et améliorer l’action.</span></li>
+          </ul>
+        </div>
+        <div class="split-media"><img :src="publicVisuals.insertion" alt="Accompagnement d’un parcours d’insertion et de formation" loading="lazy"></div>
+      </div>
+    </section>
+
+    <section class="section news-section">
+      <div class="container">
+        <div class="section-row">
+          <div><p class="eyebrow">Actualités & publications</p><h2 class="section-title">Suivre ce qui avance chez IFICS.</h2></div>
+          <NuxtLink to="/actualites" class="btn btn-secondary">Toutes les actualités</NuxtLink>
+        </div>
+        <div v-if="news.length" class="grid grid-3">
+          <article v-for="item in news" :key="item.id" class="card card-pad news-card">
+            <span class="badge badge-muted">Actualité</span>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.excerpt }}</p>
+            <NuxtLink class="media-card-link" :to="`/actualites/${item.slug}`">Lire la publication →</NuxtLink>
+          </article>
+        </div>
+        <div v-else class="empty-state">Les publications validées par l’équipe communication apparaîtront ici.</div>
+      </div>
+    </section>
+
+    <section class="section partner-section">
+      <div class="container">
+        <p class="eyebrow">Partenaires</p>
+        <h2 class="section-title">Construire dans la durée, avec les bonnes compétences autour de la table.</h2>
+        <div v-if="partners.length" class="partner-list">
+          <a v-for="partner in partners" :key="partner.id" :href="partner.websiteUrl || undefined" class="partner-chip" :aria-label="partner.websiteUrl ? `Site de ${partner.name}` : partner.name">
+            <img v-if="partner.logoUrl" :src="partner.logoUrl" alt=""><span>{{ partner.name }}</span>
+          </a>
+        </div>
+        <p v-else class="lead">Collectivités, associations, entreprises, mécènes et partenaires opérationnels peuvent construire une action avec IFICS.</p>
+        <div class="cta-panel partner-cta">
+          <div><h2>Un besoin sur votre territoire ?</h2><p>Présentez le contexte, le public et l’objectif. L’équipe IFICS qualifiera la demande avant de construire une proposition.</p></div>
+          <div class="hero-actions"><NuxtLink to="/proposer-un-projet" class="btn btn-secondary">Proposer un projet</NuxtLink><NuxtLink to="/contact" class="btn btn-secondary">Nous contacter</NuxtLink></div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
-.hero { padding: 90px 0 72px; overflow: hidden; background: radial-gradient(circle at 85% 15%, #d9eee0 0, transparent 35%), linear-gradient(180deg, #f8fbf8 0, #eef5f0 100%); }
-.hero-grid { display: grid; grid-template-columns: 1.45fr .55fr; gap: 60px; align-items: center; }
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
-.hero-panel { min-height: 390px; border-radius: 32px; padding: 28px; background: var(--ifics-green-900); color: #fff; box-shadow: var(--ifics-shadow); display: flex; align-content: flex-start; flex-wrap: wrap; gap: 10px; position: relative; }
-.hero-panel span { border: 1px solid #3f6c55; background: #183f2d; border-radius: 999px; padding: 8px 11px; font-size: .82rem; }
-.hero-panel strong { align-self: flex-end; width: 100%; margin-top: auto; font-size: 2rem; line-height: 1.05; letter-spacing: -.035em; }
-.domain-grid h3 { margin: 8px 0 6px; font-size: 1.35rem; }
-.domain-grid p { color: var(--ifics-muted); margin: 0; }
-.domain-number { color: var(--ifics-gold); font-weight: 900; }
-.project-section { background: #eef3ef; }
-.section-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
-.project-card { overflow: hidden; }
-.project-image { height: 180px; background: linear-gradient(135deg, #b8d6c2, #214f39); background-size: cover; background-position: center; }
-.project-card h3 { margin-bottom: 6px; }
-.project-card p, .project-card small { color: var(--ifics-muted); }
+.project-section { background: #eff4f0; }
+.news-section { background: #fbfcfb; border-top: 1px solid #edf2ee; border-bottom: 1px solid #edf2ee; }
 .partner-section { background: #fff; }
-.partner-list { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0; }
+.section-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 30px; }
+.empty-rich { display: flex; flex-direction: column; gap: 7px; }
+.empty-rich strong { color: var(--ifics-ink); }
+.news-card h3 { margin: 14px 0 8px; font-size: 1.16rem; }
+.news-card p { color: var(--ifics-muted); margin: 0; }
+.partner-list { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0 32px; }
 .partner-chip { min-height: 62px; padding: 10px 16px; border: 1px solid var(--ifics-border); border-radius: 14px; display: flex; align-items: center; gap: 10px; text-decoration: none; background: #fff; }
 .partner-chip img { width: 42px; height: 42px; object-fit: contain; }
-@media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } .hero-panel { min-height: 260px; } .section-row { align-items: flex-start; flex-direction: column; } }
+.partner-cta { margin-top: 32px; }
+@media (max-width: 900px) { .section-row { align-items: flex-start; flex-direction: column; } }
 </style>
