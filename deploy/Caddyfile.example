@@ -1,5 +1,5 @@
 # Replace ifics.example.org with the public domain and keep APP_BASE_URL aligned.
-if ics.example.org {
+ifics.example.org {
   encode zstd gzip
 
   reverse_proxy 127.0.0.1:3000
