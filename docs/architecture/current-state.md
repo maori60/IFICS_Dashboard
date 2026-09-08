@@ -1,159 +1,215 @@
-# IFICS Dashboard — Technical baseline before Milestone 1
+# IFICS Platform V1 — architecture actuelle
 
-Date: 2026-09-07
-Baseline branch: `baseline/pre-m1-2026-09-07`
-Baseline commit: `d992e66d494d1f46e9ab4f5fbd6c0ce9889e9d64`
+Date de référence : 8 septembre 2026.
 
-## Purpose
+Ce document décrit l’état **après** construction de la V1. L’ancien inventaire pré-Milestone a été remplacé afin de ne plus présenter comme absents des contrôles désormais implémentés.
 
-This document records the technical state of IFICS Dashboard before the Milestone 1 foundation work and tracks the foundation controls added during M1. It is intentionally factual and is used as a stable reference for future maintenance, security reviews and audits.
+## Architecture générale
 
-## Current stack
+IFICS est un **monolithe modulaire** Nuxt/Nitro. Ce choix garde un déploiement simple pour une infrastructure self-hosted tout en séparant les domaines métier dans le code et les permissions.
 
-- Nuxt 4 / Vue 3
-- Nitro server API
-- Node.js 22 container image
-- Prisma ORM with PostgreSQL adapter
-- PostgreSQL 16
-- Docker / Docker Compose
-- ESLint / TypeScript / Vitest quality toolchain
+```text
+Navigateur
+├── Site public
+├── Espace IFICS
+├── Espace intervenants
+└── Espace partenaires
+        |
+        v
+Nuxt 4 / Vue 3
+        |
+        v
+Nitro API / middleware
+├── Auth / MFA / sessions
+├── Permissions / classifications
+├── Projets / clients / intervenants
+├── Documents / bilans / facturation
+├── Tickets / CRM
+├── CMS / publications
+├── R&D / logiciels
+├── RH / départements
+├── IT / actifs
+├── Audit / notifications
+└── Santé / maintenance / recherche
+        |
+        v
+Prisma 7 + PostgreSQL 17
+        |
+        +--> volume uploads
+```
 
-## Current repository structure
+## Séparation public / interne
 
-- `app/`: Nuxt pages, layouts and UI components
-- `server/api/`: Nitro API routes
-- `server/utils/`: shared server utilities
-- `prisma/`: schema, migrations and development seed
-- `tests/`: automated tests
-- `public/`: public static assets
-- `docs/`: architecture, development and security documentation
-- `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh`: production-like local runtime
-- `Dockerfile.dev`, `docker-compose.dev.yml`: development runtime
+Un objet interne n’est jamais considéré comme publiable parce qu’il existe dans PostgreSQL.
 
-## Existing business capabilities
+Les API publiques ne doivent exposer que des modèles/projections explicitement destinés à la publication. Les données suivantes restent internes :
 
-The current data model and API already cover the foundations of:
+- budgets et marges ;
+- factures et devis internes ;
+- commentaires internes ;
+- contrats et conventions non partagés ;
+- IBAN/BIC ;
+- pièces d’identité et justificatifs administratifs ;
+- journaux d’audit ;
+- données RH ;
+- projets classifiés non autorisés.
 
-- association configuration
-- users and roles (data model only; authorization is not yet enforced)
-- clients and client contacts
-- projects
-- external intervenors / service providers
-- project assignments
-- project documents
-- intervenor administrative documents
-- quotes and invoices
-- project reports
+## Authentification
 
-## Security baseline findings
+Le socle comprend :
 
-The repository must not be exposed to the public Internet in its current foundation state.
+- mots de passe scrypt avec sel aléatoire ;
+- sessions opaques persistées côté serveur ;
+- stockage uniquement du hash du token de session ;
+- cookie `HttpOnly`, `SameSite=Lax`, `Secure` en production ;
+- révocation d’une session ou de toutes les sessions utilisateur ;
+- date d’expiration d’accès utilisateur ;
+- limitation des tentatives de login ;
+- journalisation des succès/échecs pertinents.
 
-Critical gaps identified before M1 and still applicable where not explicitly remediated:
+## MFA
 
-1. Authentication and secure session management are not implemented.
-2. Server routes do not yet enforce authorization, scopes or data classifications.
-3. Sensitive intervenor data can currently be returned by API routes without authorization enforcement.
-4. Database credentials were stored directly in repository configuration before M1.2; those historical values are considered compromised and must never be reused.
-5. File validation trusts the multipart MIME value and requires stronger content validation and malware scanning.
-6. Audit logging is not implemented.
-7. Existing API behavior still lacks broad regression coverage; this is the purpose of M1.5.
-8. Legacy lint debt exists and is explicitly baselined rather than hidden.
-9. Development-tooling dependency vulnerabilities remain where npm currently offers only a breaking forced Prisma downgrade; see `docs/development/quality.md`.
+Les rôles sensibles imposent le TOTP.
 
-## Known defects observed during baseline review
+- secret TOTP chiffré en AES-256-GCM avec `APP_ENCRYPTION_KEY` ;
+- codes de récupération stockés sous forme de hash ;
+- vérification MFA liée à la session ;
+- réinitialisation MFA distincte du reset de mot de passe ;
+- reset MFA nécessitant une permission dédiée et un administrateur MFA-validé ;
+- token de récupération à durée courte et usage unique ;
+- révocation de l’ancien secret, des anciens recovery codes et des sessions lors du reset ;
+- ré-enrôlement obligatoire après récupération.
 
-- The project document viewing route queries `intervenorDocument` instead of `projectDocument`.
-- A document route exists with a trailing space in its repository filename.
-- That route references `archivedAt` on an `IntervenorDocument` model that does not currently define that field.
-- Current contract replacement deletes prior contract records/files rather than preserving immutable version history.
+## Autorisation
 
-These issues are documented before remediation so that corresponding regression tests can be created.
+Le contrôle d’accès est basé sur des permissions atomiques associées aux rôles. Les routes sensibles appellent explicitement les gardes d’autorisation.
 
-## Positive baseline characteristics
+Les projets possèdent en plus une classification :
 
-The existing project should be evolved rather than rewritten from scratch because it already provides:
+- `PUBLIC` ;
+- `INTERNAL` ;
+- `CONFIDENTIAL` ;
+- `RESTRICTED`.
 
-- a useful relational domain model
-- Prisma migrations
-- PostgreSQL constraints and indexes
-- UUID-based stored filenames for several uploads
-- soft-archive behavior for some business entities
-- a clear Nuxt `app/` / Nitro `server/` separation
-- a Dockerized application and database
+La possession de `project:read` ne suffit pas à ouvrir un projet classifié. Une permission spécifique de lecture confidentielle est requise.
 
-## M1 controls implemented so far
+Les utilisateurs de type client/intervenant sont en outre limités aux ressources qui leur sont effectivement liées.
 
-### M1.1 — Baseline and architecture documentation
+## Documents
 
-- stable pre-M1 branch and commit reference
-- factual architecture / security inventory
-- known defects recorded before remediation
+- fichiers PDF stockés hors des sources de l’application ;
+- noms de stockage générés côté serveur ;
+- taille limitée ;
+- empreinte SHA-256 ;
+- versionnement ;
+- visibilité ;
+- validation administrative ;
+- date d’émission et d’expiration pour les pièces prestataires ;
+- statuts de renouvellement/expiration ;
+- rappels programmés à l’approche des échéances.
 
-### M1.2 — Secrets and environment configuration
+La validation IFICS constitue une validation administrative interne et ne doit pas être présentée comme une garantie absolue d’authenticité du document.
 
-- committed `.env.example` contains placeholders only
-- real credentials removed from current repository configuration
-- build-only Prisma placeholder is deliberately non-secret and unreachable
-- historical committed values classified as compromised
+## Audit
 
-### M1.3 — Reproducible development Docker environment
+Les actions sensibles alimentent `AuditLog` avec :
 
-- Node.js 22 runtime
-- deterministic dependency installation with `npm ci`
-- dedicated development Dockerfile and Compose file
-- persistent PostgreSQL and upload volumes
-- source bind mount for development
-- localhost-only development port exposure
-- explicit Prisma client generation
-- committed migrations applied with `prisma migrate deploy`
-- development seed is explicit and never tied to application restart
-- runtime entrypoint performs no schema mutation or seed
-- Docker smoke test verifies migration, seed, HTTP startup, non-reseeding and upload persistence
+- utilisateur ;
+- association ;
+- action et résultat ;
+- type/id de ressource ;
+- request ID ;
+- IP pseudonymisée ;
+- user-agent ;
+- métadonnées expurgées des clés sensibles.
 
-See `docs/development/docker.md`.
+L’audit applicatif est append-only du point de vue de l’interface. Un administrateur root de la base reste techniquement capable d’altérer PostgreSQL ; une immutabilité forte nécessiterait un stockage externe/WORM.
 
-### M1.4 — Quality and test foundation
+## Publication
 
-- Nuxt ESLint enabled
-- current 37-warning legacy lint baseline recorded and capped with `--max-warnings=37`
-- Nuxt TypeScript typecheck is blocking
-- Vitest + V8 coverage enabled
-- first three unit tests cover required environment-variable validation
-- coverage thresholds are blocking and the initial utility has 100% coverage
-- permanent pull-request `Quality Gate` workflow added
-- dependency tree remediated without `npm audit fix --force`
-- critical dependency findings removed from the accepted production gate
-- Prisma CLI classified as development tooling rather than an application runtime dependency
-- complete audit output retained for review
+Les contenus publics disposent d’états de workflow distincts du contenu interne, par exemple brouillon, revue, approbation, planification, publication et archivage selon le module.
 
-See `docs/development/quality.md`.
+Le CMS couvre les contenus institutionnels et actualités. Les publications de projets, partenaires, profils d’intervenants et logiciels sont explicitement contrôlées.
 
-## Milestone 1 rule
+## Exploitation
 
-No M1 capability is considered complete until it has:
+La V1 fournit :
 
-1. implementation
-2. automated tests
-3. negative/security tests where applicable
-4. documentation
-5. audit evidence or an auditable control description
+- `/api/health` : vie du processus ;
+- `/api/ready` : disponibilité avec PostgreSQL ;
+- centre système authentifié ;
+- statistiques hôte/process ;
+- sessions actives / échecs login récents ;
+- état stockage ;
+- mode maintenance ;
+- recherche globale filtrée par permissions ;
+- job interne d’expiration documentaire protégé par token ;
+- scripts de backup et restore ;
+- runbook Debian ;
+- reverse proxy Caddy d’exemple.
 
-## Planned M1 sequence
+## Déploiement
 
-1. M1.1 — baseline and architecture documentation ✅
-2. M1.2 — secrets and environment configuration ✅
-3. M1.3 — clean development Docker environment ✅
-4. M1.4 — lint, typecheck and test foundation — final CI acceptance pending
-5. M1.5 — regression tests for existing API
-6. M1.6 — validation and error-handling foundation
-7. M1.7 — persistent and secure document storage
-8. M1.8 — user / roles / permissions model
-9. M1.9 — authentication
-10. M1.10 — secure sessions
-11. M1.11 — MFA and recovery
-12. M1.12 — audit log
-13. M1.13 — rate limiting and security protections
-14. M1.14 — CI
-15. M1.15 — staging
-16. M1.16 — security/audit baseline
+Production recommandée :
+
+- Debian ;
+- Docker Compose ;
+- PostgreSQL 17 dans un réseau Docker privé ;
+- Nitro exposé uniquement sur `127.0.0.1:3000` ;
+- Caddy/Nginx devant l’application ;
+- TLS public ;
+- SMTP transactionnel externe ;
+- sauvegardes chiffrées hors serveur.
+
+Voir `docs/operations/production-debian.md`.
+
+## Qualité et CI
+
+Deux niveaux de contrôle sont utilisés :
+
+### Completion Gate
+
+- installation déterministe ;
+- validation/génération Prisma ;
+- ESLint sans warning ;
+- Nuxt typecheck ;
+- tests avec couverture ;
+- audit des dépendances de production bloquant à partir de `high` ;
+- build production.
+
+### Release Gate
+
+- PostgreSQL 17 réel ;
+- application de l’historique complet de migrations ;
+- seed ;
+- Completion Gate complet ;
+- validation syntaxique des scripts d’exploitation ;
+- validation Docker Compose ;
+- démarrage réel du serveur ;
+- smoke tests pages/API ;
+- login et obligation de configuration MFA ;
+- refus d’un endpoint sensible avant MFA ;
+- exécution du job interne protégé.
+
+## Migrations
+
+L’historique de migrations existant et le schéma V1 ont été réconciliés par une migration de rattrapage générée via Prisma. Le résultat a été testé sur une base PostgreSQL vierge puis comparé au schéma cible avec un diff nul.
+
+En production, utiliser exclusivement :
+
+```bash
+npm run db:migrate
+```
+
+Ne pas utiliser `prisma db push`.
+
+## Limites conscientes de V1
+
+- monolithe et une instance d’association par déploiement ;
+- fichiers sur volume local plutôt que stockage objet ;
+- métriques intégrées simples plutôt qu’une stack Prometheus/Grafana ;
+- audit stocké dans PostgreSQL et non dans un WORM externe ;
+- aucune prétention à détecter automatiquement tous les faux documents ;
+- montée en charge horizontale non activée par défaut.
+
+Ces choix réduisent la complexité d’exploitation aujourd’hui sans bloquer une évolution ultérieure vers stockage S3-compatible, Redis/queue, observabilité externe ou plusieurs réplicas.
