@@ -1,170 +1,142 @@
-# M1.4 — Quality and test baseline
+# Qualité, tests et gates CI — IFICS Platform V1
 
-## Purpose
-
-Milestone 1.4 establishes a reproducible quality gate before adding broader API regression tests.
-The goal is not to rewrite business code during this foundation step, but to make new quality debt
-measurable and prevent regressions from silently entering the branch.
-
-## Supported runtime
+## Runtime supporté
 
 - Node.js 22
-- deterministic dependency installation with `npm ci`
-- Nuxt 4.5.2 or a compatible version allowed by the committed lockfile
-- Prisma client / adapter 7.10.0 or a compatible version allowed by the committed lockfile
-- Prisma CLI classified as development tooling, not an application runtime dependency
+- Nuxt 4.5+
+- Prisma 7.10+
+- PostgreSQL 17 pour la validation des migrations et la production recommandée
+- installation déterministe avec `npm ci`
 
-## Local quality commands
+Le lockfile fait foi pour une livraison donnée.
+
+## Commandes locales
 
 ```bash
 npm run lint
 npm run typecheck
-npm test
+npm run test
 npm run test:coverage
 npm run quality
+npm run security:audit
+npm run build
+npm run ci
 ```
 
-`npm run quality` executes lint, type checking and tests with coverage in sequence.
+`npm run ci` enchaîne le gate qualité, l’audit des dépendances de production et le build.
 
-## ESLint baseline
+## ESLint
 
-Nuxt ESLint is enabled through `@nuxt/eslint`.
-
-The existing project contained 37 lint warnings when M1.4 introduced the gate:
-
-- 30 `@typescript-eslint/no-explicit-any` warnings
-- 7 `vue/html-self-closing` warnings
-
-There are no lint errors in the accepted M1.4 baseline.
-
-The lint command is deliberately configured with:
+Le lint est bloquant avec :
 
 ```text
---max-warnings=37
+eslint . --max-warnings=0
 ```
 
-This is a ratchet, not a target. Existing debt is visible but temporarily tolerated; a change that
-introduces a 38th warning fails CI. The warning ceiling should only move downward as legacy typing
-and template cleanup are completed.
+La dette historique de warnings tolérés pendant le socle M1 a été supprimée. La V1 n’accepte plus de nouveau warning ESLint.
 
-## Type checking
+## TypeScript
 
-The project uses Nuxt's generated TypeScript configuration and validates the application with:
+La vérification utilise :
 
 ```bash
 nuxt typecheck
 ```
 
-Type checking is a blocking CI step.
+Elle est bloquante dans le Completion Gate et dans le Release Gate.
 
-## Unit test foundation
+## Tests unitaires
 
-Vitest 5 with V8 coverage is configured in `vitest.config.ts`.
+Vitest/V8 couvre notamment :
 
-The first unit-tested foundation utility is `server/utils/env.ts`, which centralizes required
-environment-variable validation through `requireEnv()`.
+- validation des variables d’environnement requises ;
+- politique de mot de passe ;
+- hash/vérification scrypt ;
+- chiffrement/déchiffrement AES-256-GCM ;
+- génération/vérification TOTP ;
+- hash des tokens opaques.
 
-The initial tests cover:
+Les tests unitaires ne remplacent pas les smoke tests avec PostgreSQL réel.
 
-1. returning a configured value after trimming whitespace
-2. rejecting an absent required variable
-3. rejecting a whitespace-only required variable
+## Sécurité des dépendances
 
-At M1.4 acceptance, these three tests pass and the utility has 100% statement, branch, function and
-line coverage.
+Le gate exécute :
 
-Configured minimum coverage thresholds for the currently covered foundation code are:
+```bash
+npm audit --omit=dev --audit-level=high
+```
 
-- statements: 80%
-- branches: 75%
-- functions: 80%
-- lines: 80%
+Les vulnérabilités de production **high** et **critical** bloquent la livraison.
 
-Coverage scope will expand as M1.5 adds API regression tests. Thresholds must not be weakened to make
-a failing change pass without a documented engineering reason.
+La V1 a été durcie sans `npm audit fix --force` :
 
-## CI quality gate
+- Nodemailer a été migré sur la branche 10 avec types TypeScript intégrés ;
+- `@types/nodemailer` a été retiré ;
+- les dépendances transitives vulnérables `deepmerge-ts` et `mysql2` utilisées par l’outillage Prisma sont contraintes vers des versions corrigées ;
+- Prisma reste sur la branche 7 afin d’éviter une migration majeure non nécessaire à la V1.
 
-`.github/workflows/quality.yml` runs on pull requests and can also be invoked manually.
+Toute modification de ces overrides doit repasser l’ensemble du gate Prisma + lint + typecheck + tests + audit + build.
 
-It verifies, in order:
+## Completion Gate
 
-1. Node.js 22
-2. deterministic `npm ci`
-3. Prisma client generation
-4. ESLint baseline
-5. Nuxt TypeScript type checking
-6. Vitest unit tests with coverage thresholds
-7. absence of critical vulnerabilities in production dependencies
-8. a complete informational dependency audit
+`.github/workflows/completion-gate.yml` s’exécute sur la branche de finalisation, sur `main` et sur les pull requests vers `main`.
 
-A failure in the blocking steps means the milestone or pull request is not accepted.
+Étapes :
 
-## Dependency security remediation performed in M1.4
+1. `npm ci` ;
+2. `prisma validate` ;
+3. `prisma generate` ;
+4. ESLint zéro warning ;
+5. Nuxt typecheck ;
+6. tests avec couverture ;
+7. audit production high/critical ;
+8. build Nuxt/Nitro.
 
-The M1.3 deterministic install initially reported 30 npm audit findings:
+## Release Gate
 
-- 4 low
-- 6 moderate
-- 16 high
-- 4 critical
+`.github/workflows/release-gate.yml` ajoute une preuve d’exécution :
 
-After the M1.4 quality toolchain was added, the tree reported 28 findings. Controlled remediation was
-then performed without `npm audit fix --force`.
+1. PostgreSQL 17 réel ;
+2. génération Prisma ;
+3. application de **tout l’historique** des migrations avec `prisma migrate deploy` ;
+4. `prisma migrate status` ;
+5. seed association/rôles/admin CI ;
+6. Completion Gate complet ;
+7. validation syntaxique des scripts backup/restore/job ;
+8. validation Docker Compose ;
+9. démarrage du serveur Nitro ;
+10. `/api/ready` ;
+11. rendu de la page publique ;
+12. API publique ;
+13. login admin ;
+14. confirmation que le MFA doit être configuré ;
+15. confirmation qu’un endpoint sensible reste refusé avant MFA ;
+16. exécution du job interne avec token éphémère.
 
-The remediation included upgrading the root dependency ranges to the secure compatible line used by
-the final lockfile, including:
+Les secrets utilisés dans ce workflow sont générés à la volée et ne sont pas stockés dans le dépôt.
 
-- Nuxt 4.5.2+
-- Prisma client / adapter / CLI 7.10.0+
+## Docker Dev Smoke
 
-Safe transitive fixes were also applied. The critical findings involving Nuxt DevTools, `seroval`,
-`shell-quote` and `tar` were removed.
+Le workflow Docker vérifie séparément :
 
-The Prisma CLI was subsequently moved from `dependencies` to `devDependencies`. The running IFICS
-application does not execute the Prisma CLI: the runtime entrypoint validates `DATABASE_URL` and
-starts the built Nuxt/Nitro server. Prisma CLI remains available during development, client
-generation, migration operations and image build steps.
+- construction de l’image de développement ;
+- PostgreSQL ;
+- migrations ;
+- seed explicite ;
+- démarrage HTTP ;
+- persistance des uploads lors d’une recréation du conteneur app ;
+- absence de reseed automatique ;
+- validation du Compose de production ;
+- construction de l’image production.
 
-## Remaining dependency debt
+## Règles de livraison
 
-After all non-breaking remediations, the complete development dependency audit still reports four
-high-severity findings through Prisma tooling dependencies:
+Une livraison ne doit pas être déclarée validée si le commit final n’a pas passé les gates applicables.
 
-- `deepmerge-ts` through `@prisma/config`
-- `mysql2` through `@prisma/config` / Prisma CLI
+Ne pas :
 
-At the time of M1.4, npm proposes remediation only through `npm audit fix --force`, which would
-install Prisma 6.19.3 and therefore perform a breaking major-version downgrade from Prisma 7.
-
-That forced downgrade is explicitly rejected. These findings are tracked as development-tooling
-security debt and must be reviewed again when Prisma publishes a compatible dependency path or when
-the Prisma tooling architecture is revisited.
-
-The production dependency gate is stricter about impact: critical production vulnerabilities are
-blocking. Prisma CLI development-only findings must not be misrepresented as application runtime
-dependencies.
-
-## Security rules
-
-- never use `npm audit fix --force` automatically
-- never accept a breaking dependency change merely to make an audit counter reach zero
-- production critical findings block CI
-- complete audit output remains visible for review
-- dependency updates must be followed by lint, typecheck, unit tests and Docker smoke tests
-
-## Acceptance criteria
-
-M1.4 is complete only when the same final branch HEAD has both:
-
-1. a green `Quality Gate`
-2. a green `Docker Dev Smoke`
-
-The Docker smoke test is retained from M1.3 to prove that quality/dependency changes did not break
-Prisma generation, committed migrations, development seed, HTTP startup, database non-reseeding,
-upload persistence, Compose validation or the production-like image build.
-
-## Next step
-
-M1.5 will add regression tests around the existing API behavior and known baseline defects before
-security-sensitive business logic is refactored further.
+- réduire un seuil pour masquer une régression ;
+- utiliser `npm audit fix --force` sans revue ;
+- utiliser `prisma db push` en production ;
+- modifier manuellement une migration déjà appliquée ;
+- ignorer un échec de Release Gate sous prétexte que le build passe.
