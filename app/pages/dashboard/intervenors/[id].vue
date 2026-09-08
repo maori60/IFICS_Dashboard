@@ -135,7 +135,7 @@ async function archiveIntervenor() {
         <div class="form-grid">
           <div class="field"><label for="edit-intervenor-bic">BIC</label><input id="edit-intervenor-bic" v-model="form.ribBic" class="input" maxlength="20" autocomplete="off" :disabled="!canWrite"></div>
           <div class="field field-full"><label for="edit-intervenor-iban">IBAN</label><input id="edit-intervenor-iban" v-model="form.ribIban" class="input" maxlength="50" autocomplete="off" :disabled="!canWrite"><span class="help">Donnée administrative privée, jamais publiée.</span></div>
-          <div class="field field-full"><label for="edit-intervenor-notes">Notes internes</label><textarea id="edit-intervenor-notes" v-model="form.notes" class="textarea" :disabled="!canWrite"></textarea></div>
+          <div class="field field-full"><label for="edit-intervenor-notes">Notes internes</label><textarea id="edit-intervenor-notes" v-model="form.notes" class="textarea" :disabled="!canWrite" /></div>
         </div>
 
         <div v-if="canWrite" class="actions" style="margin-top:22px"><button class="btn btn-primary" type="submit" :disabled="saving">{{ saving ? 'Enregistrement…' : 'Enregistrer les modifications' }}</button><button class="btn btn-secondary" type="button" :disabled="archiving" @click="archiveIntervenor">{{ archiving ? 'Archivage…' : 'Archiver l’intervenant' }}</button></div>
