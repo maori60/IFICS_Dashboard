@@ -1,249 +1,222 @@
-# 🚀 IFICS Dashboard
+# IFICS Platform
 
-> Full-stack associative management platform for projects, clients, intervenors and documents.
+Plateforme web institutionnelle et de gestion pour l’association IFICS : site public, espace interne, gestion des intervenants, partenaires, projets, documents, finances, R&D, RH, IT et sécurité.
 
-## 🎬 Demo
+## V1 — périmètre livré
 
-![IFICS Dashboard Demo](./output_demo.gif)
+IFICS Platform V1 regroupe dans une même application Nuxt :
 
----
+- un **site public institutionnel** ;
+- un **espace IFICS authentifié** ;
+- des parcours sécurisés pour les intervenants et partenaires ;
+- un back-office modulaire ;
+- une API Nitro ;
+- PostgreSQL/Prisma ;
+- un déploiement self-hosted Docker sur Debian.
 
-## 💡 Quick overview
+L’application suit un principe important : les données internes ne deviennent jamais publiques automatiquement. Les contenus publics sont projetés via des modèles et workflows de publication dédiés.
 
-- Client management
-- Project tracking
-- Document handling (PDF)
-- Invoices & quotes (in progress)
-- Data-driven dashboard
+## Site public
 
----
+Le site comprend notamment :
 
-## ⚙️ Tech Stack
+- présentation de l’association, mission et valeurs ;
+- domaines d’action ;
+- projets publiés ;
+- actualités ;
+- partenaires et mécénat ;
+- Innovation & R&D ;
+- catalogue de logiciels et outils gratuits ;
+- recrutement / nous rejoindre ;
+- formulaire de proposition de projet ;
+- contact multi-motifs ;
+- profils d’intervenants explicitement autorisés à la publication.
 
-- Nuxt 4 / Vue 3
+Les projets internes confidentiels, données financières, contrats, pièces administratives, commentaires et documents privés ne sont pas exposés par les API publiques.
+
+## Espace IFICS
+
+Le dashboard couvre :
+
+- pilotage et indicateurs ;
+- clients / collectivités ;
+- projets et affectations ;
+- intervenants ;
+- documents et validation administrative ;
+- bilans avec versioning et PDF ;
+- devis, factures et suivi des statuts ;
+- tickets de support ;
+- partenaires / CRM ;
+- CMS et workflow de publication ;
+- R&D et logiciels ;
+- parc IT ;
+- RH et départements ;
+- rôles et permissions ;
+- notifications ;
+- journal d’audit ;
+- recherche globale filtrée par droits ;
+- santé système et mode maintenance.
+
+## Sécurité
+
+La V1 inclut :
+
+- mots de passe hashés ;
+- sessions serveur révocables et cookies `HttpOnly` ;
+- MFA TOTP obligatoire pour les rôles sensibles ;
+- codes de récupération MFA hashés ;
+- procédure de reset MFA administrée, temporaire et auditée ;
+- invitations et tokens one-shot stockés sous forme de hash ;
+- limitation des tentatives de connexion ;
+- permissions granulaires ;
+- classification des projets (`PUBLIC`, `INTERNAL`, `CONFIDENTIAL`, `RESTRICTED`) ;
+- séparation des droits de lecture des projets confidentiels ;
+- contrôle des accès clients/intervenants ;
+- audit des opérations sensibles avec métadonnées expurgées ;
+- chiffrement des secrets MFA au repos ;
+- pseudonymisation des IP dans les journaux ;
+- upload PDF contrôlé, renommage serveur et SHA-256 ;
+- échéance/renouvellement des documents prestataires ;
+- mode maintenance côté serveur ;
+- audit npm bloquant à partir du niveau `high`.
+
+La sécurité applicative ne remplace pas la sécurité de l’hôte : Debian, Docker, reverse proxy, firewall et sauvegardes doivent également être maintenus.
+
+## Stack
+
 - Node.js 22
-- Nitro server API
-- Prisma ORM
-- PostgreSQL 16 (self-hosted)
+- Nuxt 4 / Vue 3
+- Nitro
+- TypeScript
+- Prisma 7
+- PostgreSQL 17
 - Docker / Docker Compose
-- ESLint / TypeScript / Vitest
+- ESLint
+- Vitest
+- Nodemailer 10
+- pdf-lib
 
----
-
-## 🧪 Local setup
-
-1. Clone the repository.
-2. Create your local environment file:
+## Développement local
 
 ```bash
+git clone https://github.com/maori60/IFICS_Dashboard.git
+cd IFICS_Dashboard
 cp .env.example .env
-```
-
-3. Replace every placeholder secret in `.env` with a unique local value.
-4. Initialize the development stack:
-
-```bash
+# Adapter les secrets et valeurs de développement dans .env
 make dev-init
 ```
 
-The application is exposed on `http://localhost:3000` by default. `APP_PORT` can be changed in `.env`.
+Application : `http://localhost:3000` par défaut.
 
-> Never commit `.env` or real credentials. Values that appeared in Git history before Milestone 1.2 must be considered compromised and must not be reused.
-
-### Quality checks
-
-Before proposing a change, run:
+Commandes utiles :
 
 ```bash
+make dev-up
+make dev-down
+make dev-logs
+make dev-migrate
+make dev-seed
 npm run quality
+npm run security:audit
+npm run build
 ```
 
-The permanent pull-request quality gate also validates deterministic installation, Prisma client generation, lint, Nuxt type checking, Vitest coverage and the production dependency critical-vulnerability threshold.
+## Qualité
 
-See:
+Le gate de complétion exécute :
 
-- `docs/development/docker.md`
-- `docs/development/quality.md`
-- `docs/security/secrets-management.md`
+```text
+npm ci
+prisma validate
+prisma generate
+eslint --max-warnings=0
+nuxt typecheck
+vitest --coverage
+npm audit --omit=dev --audit-level=high
+nuxt build
+```
 
----
+Les migrations V1 ont également été validées en appliquant **tout l’historique** sur une PostgreSQL vierge puis en comparant la base obtenue au schéma Prisma cible.
 
-## 📌 Contexte du projet
+## Production Debian
 
-> Dashboard de gestion associative dédié aux structures éducatives, collectivités et intervenants.
+La définition `docker-compose.yml` de production :
 
-## Contexte
+- n’expose pas PostgreSQL sur l’hôte ;
+- lie Nitro uniquement à `127.0.0.1:3000` ;
+- attend que PostgreSQL soit sain ;
+- possède un healthcheck applicatif sur `/api/ready` ;
+- transmet explicitement les secrets/runtime nécessaires ;
+- est prévue pour être placée derrière un reverse proxy HTTPS.
 
-Ce projet est directement issu de mon expérience professionnelle.
+Procédure complète :
 
-De 2021 à 2026, j’ai travaillé en tant que **Responsable Projets et Solutions Digitales** au sein de l’association **IFICS**, spécialisée dans l’éducation et les projets avec les collectivités territoriales.
+- [`docs/operations/production-debian.md`](docs/operations/production-debian.md)
+- [`docs/operations/backup-restore.md`](docs/operations/backup-restore.md)
 
-Au quotidien, j’ai été confronté à des problématiques concrètes :
+Exemple Caddy : [`deploy/Caddyfile.example`](deploy/Caddyfile.example).
 
-- gestion complexe des projets
-- multiplicité des interlocuteurs (collectivités, établissements scolaires, partenaires)
-- suivi des intervenants
-- organisation des documents (bilans, conventions, contrats)
-- gestion des devis et factures
-- absence d’un outil centralisé réellement adapté aux associations
+## Sauvegarde / restauration
 
-En novembre 2023, j’intègre **l’école 42** afin de me reconvertir dans le développement.
+```bash
+make backup
+```
 
-👉 Ce projet est donc la fusion entre :
-- mon expérience métier terrain
-- mes compétences techniques en cours d’acquisition
+Une sauvegarde contient PostgreSQL, les uploads, des métadonnées et des checksums SHA-256.
 
----
+Restauration destructive explicite :
 
-## Objectif
+```bash
+RESTORE_CONFIRM=YES make restore BACKUP=/chemin/vers/ifics-YYYYMMDDTHHMMSSZ
+```
 
-Créer une application web permettant de :
+Les backups locaux doivent être recopiés vers un stockage **chiffré hors serveur** et régulièrement restaurés sur un environnement de test.
 
-- centraliser la gestion d’une association
-- structurer les projets et les acteurs
-- simplifier la gestion administrative et documentaire
-- sécuriser les accès aux données sensibles
-- proposer un outil réutilisable par d’autres structures
+## Tâches planifiées
 
----
+Les contrôles d’expiration des documents prestataires sont déclenchables via :
 
-## Vision produit
+```bash
+INTERNAL_JOB_TOKEN='...' sh scripts/run-document-expiry.sh
+```
 
-Le projet est conçu comme :
+Le runbook Debian fournit un exemple de timer systemd quotidien.
 
-- une **web application**
-- **auto-hébergée**
-- **une association = une instance**
-- **responsive / mobile-first**
-- **évolutive et personnalisable**
+## Structure
 
-Objectif long terme :
+```text
+app/                 interface Nuxt
+server/api/          routes API
+server/middleware/   contrôles globaux
+server/utils/        sécurité et logique partagée
+prisma/              schéma, migrations et seed
+scripts/             exploitation / backup / restore
+docs/                architecture, développement, sécurité, opérations
+deploy/              exemples de configuration de production
+tests/               tests automatisés
+```
 
-- outil métier robuste
-- solution réutilisable
-- produit scalable et distribuable
+## Variables sensibles
 
----
+Ne jamais committer :
 
-## ⚙️ Fonctionnalités principales
+- `.env` ;
+- mots de passe ;
+- `APP_ENCRYPTION_KEY` ;
+- `IP_HASH_PEPPER` ;
+- `INTERNAL_JOB_TOKEN` ;
+- identifiants SMTP ;
+- uploads ;
+- sauvegardes.
 
-### 👥 Gestion des utilisateurs
-- rôles (admin, client, intervenant)
-- permissions
-- accès temporaires
+`.gitignore` exclut les emplacements locaux correspondants. Utilisez un gestionnaire de secrets pour conserver les clés critiques hors du serveur.
 
-### Gestion des clients
-- collectivités
-- établissements scolaires
-- associations
-- multi-contacts
+## État du projet
 
-### Gestion des projets
-- statuts (brouillon, validé, en cours, terminé…)
-- clients associés
-- intervenants
-- partenaires
-- suivi global
+**V1 fonctionnelle et préparée pour livraison self-hosted.**
 
-### Gestion des intervenants
-- affectation aux projets
-- acceptation / refus de mission
-- dépôt de documents
+La suite du projet pourra enrichir les modules sans remettre en cause le socle : permissions plus avancées par périmètre, workflows supplémentaires, observabilité externe, stockage objet, automatisations et montée en charge.
 
-### Gestion documentaire
-- upload de fichiers (PDF)
-- consultation sécurisée
-- gestion des accès
-- traçabilité
+## Auteur
 
-### Devis & Factures *(en cours)*
-- génération
-- suivi
-- export PDF
-
-### Bilans *(en cours)*
-- rédaction libre
-- versioning
-- export
-
-### 🔔 Notifications
-- actions importantes
-- activité récente
-
----
-
-## 📂 Structure du projet
-
-- `app/` → Frontend Nuxt (pages, composants)
-- `server/` → API backend (routes, logique métier)
-- `prisma/` → schéma + migrations base de données
-- `public/` → assets statiques
-- `tests/` → tests automatisés
-- `docs/` → documentation architecture, sécurité et exploitation
-
----
-
-## 🔐 Sécurité
-
-Le projet est en cours de durcissement dans le cadre du Milestone 1. La cible inclut notamment :
-
-- authentification forte et MFA
-- permissions granulaires et scopes
-- journal d’audit
-- gestion sécurisée des documents
-- séparation des données sensibles
-- tests automatisés de sécurité et d’autorisation
-- environnement auditable
-
-Voir `docs/architecture/current-state.md`, `docs/development/quality.md` et `docs/security/secrets-management.md`.
-
----
-
-## 🚧 État du projet
-
-⚠️ Projet en développement actif.
-
-### Fonctionnel actuellement
-
-- gestion des projets
-- gestion des documents (upload + visualisation PDF)
-- API backend structurée
-- routing dynamique Nuxt
-- environnement Docker DEV reproductible
-- lint, typecheck et tests unitaires automatisés
-
-### En cours
-
-- tests de régression API
-- socle sécurité / authentification
-- amélioration UI/UX
-- gestion avancée des rôles
-- devis / factures
-- notifications
-
----
-
-## 🚀 Roadmap
-
-Le projet suit maintenant une construction incrémentale par milestones, avec tests et documentation à chaque étape. Le détail du Milestone 1 est documenté dans `docs/architecture/current-state.md`.
-
----
-
-## 💡 Vision
-
-Créer un outil métier basé sur une vraie expérience terrain, capable d’aider les associations à structurer leur activité et à gagner en efficacité.
-
----
-
-## 👨‍💻 Auteur
-
-**Van BUI**
-
-- Étudiant à l’école 42
-- Responsable Projets & Solutions Digitales
-
----
-
-## ⚠️ Disclaimer
-
-Projet en développement actif. Certaines fonctionnalités sont encore en cours d’implémentation.
+Van BUI — projet développé dans le cadre d’une démarche mêlant expérience métier associative et formation à l’École 42.
