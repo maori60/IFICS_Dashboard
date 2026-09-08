@@ -1,0 +1,117 @@
+name: Release Gate
+
+on:
+  push:
+    branches:
+      - main
+      - project-completion/v1
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ifics_ci
+          POSTGRES_DB: ifics_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ifics_ci -d ifics_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ifics_ci@127.0.0.1:5432/ifics_ci?schema=public
+      APP_BASE_URL: http://127.0.0.1:3000
+      SESSION_COOKIE_NAME: ifics_ci_session
+      SESSION_TTL_HOURS: 2
+      MFA_ISSUER: IFICS CI
+      TRUST_PROXY: 'false'
+      UPLOAD_DIR: /tmp/ifics-ci-uploads
+      MAX_UPLOAD_MB: 10
+      ADMIN_EMAIL: admin-ci@example.com
+      ADMIN_FIRST_NAME: CI
+      ADMIN_LAST_NAME: Administrator
+      NODE_ENV: development
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Use Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Generate ephemeral CI secrets
+        run: |
+          echo "APP_ENCRYPTION_KEY=$(openssl rand -base64 32 | tr -d '\n')" >> "$GITHUB_ENV"
+          echo "IP_HASH_PEPPER=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "INTERNAL_JOB_TOKEN=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "ADMIN_PASSWORD=Ci-$(openssl rand -hex 12)-Aa1!" >> "$GITHUB_ENV"
+      - name: Install dependencies
+        run: npm ci
+      - name: Apply complete migration history
+        run: |
+          npx prisma generate
+          npm run db:migrate
+          npm run db:status
+      - name: Seed association, roles and CI administrator
+        run: npm run db:seed
+      - name: Full quality and security gate
+        run: npm run ci
+      - name: Validate operations scripts and Compose
+        run: |
+          sh -n scripts/backup.sh
+          sh -n scripts/restore.sh
+          sh -n scripts/run-document-expiry.sh
+          APP_ENCRYPTION_KEY="$APP_ENCRYPTION_KEY" IP_HASH_PEPPER="$IP_HASH_PEPPER" INTERNAL_JOB_TOKEN="$INTERNAL_JOB_TOKEN" POSTGRES_PASSWORD=ci-placeholder docker compose config --quiet
+      - name: Runtime smoke test
+        run: |
+          set -eu
+          mkdir -p "$UPLOAD_DIR"
+          npm run start >/tmp/ifics-server.log 2>&1 &
+          APP_PID=$!
+          cleanup() { kill "$APP_PID" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+
+          tries=0
+          until curl -fsS http://127.0.0.1:3000/api/ready >/tmp/ready.json; do
+            tries=$((tries + 1))
+            if [ "$tries" -ge 30 ]; then
+              cat /tmp/ifics-server.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          grep -q '"ready"' /tmp/ready.json
+          curl -fsS http://127.0.0.1:3000/ >/tmp/home.html
+          grep -qi 'IFICS' /tmp/home.html
+          curl -fsS http://127.0.0.1:3000/api/public/projects >/tmp/public-projects.json
+          grep -q '"success":true' /tmp/public-projects.json
+
+          printf '{"email":"%s","password":"%s"}' "$ADMIN_EMAIL" "$ADMIN_PASSWORD" >/tmp/login-payload.json
+          curl -fsS -c /tmp/ifics.cookies -H 'Content-Type: application/json' --data-binary @/tmp/login-payload.json http://127.0.0.1:3000/api/auth/login >/tmp/login.json
+          grep -q '"mfaSetupRequired":true' /tmp/login.json
+
+          curl -fsS -b /tmp/ifics.cookies http://127.0.0.1:3000/api/auth/me >/tmp/me.json
+          grep -q '"setupRequired":true' /tmp/me.json
+
+          status=$(curl -sS -o /tmp/protected.json -w '%{http_code}' -b /tmp/ifics.cookies http://127.0.0.1:3000/api/system/health)
+          [ "$status" = "403" ]
+
+          curl -fsS -X POST -H "Authorization: Bearer $INTERNAL_JOB_TOKEN" http://127.0.0.1:3000/api/internal/jobs/document-expiry >/tmp/job.json
+          grep -q '"success":true' /tmp/job.json
+      - name: Server log on failure
+        if: failure()
+        run: cat /tmp/ifics-server.log 2>/dev/null || true
