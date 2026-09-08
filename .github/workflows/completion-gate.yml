@@ -3,7 +3,11 @@ name: Completion Gate
 on:
   push:
     branches:
+      - main
       - project-completion/v1
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -43,7 +47,7 @@ jobs:
       - name: Unit tests
         if: always()
         run: npm run test:coverage
-      - name: Block critical production dependency vulnerabilities
+      - name: Block high and critical production dependency vulnerabilities
         if: always()
         run: npm run security:audit
       - name: Build
