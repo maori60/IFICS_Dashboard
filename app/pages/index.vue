@@ -3,7 +3,7 @@ import type { ApiSuccess, PublicContent, PublicPartner, PublicProject } from '~/
 import { publicVisuals, visualForDomain } from '~/utils/publicVisuals'
 
 useHead({
-  title: 'Agir, transmettre, inclure et innover',
+  title: 'Agir, transmettre et construire avec les territoires',
   meta: [
     { name: 'description', content: 'IFICS conçoit avec les territoires des projets éducatifs, sportifs, culturels, numériques, d’insertion et d’innovation.' },
   ],
@@ -33,23 +33,23 @@ const domains = [
       <div class="container hero-grid">
         <div class="hero-copy">
           <p class="eyebrow">Association IFICS · France</p>
-          <h1 class="display-title">Agir sur le terrain.<br>Transmettre durablement.</h1>
-          <p class="lead">IFICS construit avec les collectivités et les acteurs de terrain des projets utiles en éducation, sport, culture, numérique, insertion et innovation.</p>
+          <h1 class="display-title">Des projets utiles, construits avec les territoires.</h1>
+          <p class="lead">IFICS conçoit et conduit des actions en éducation, sport, culture, numérique, insertion et innovation, avec les collectivités, les partenaires et les acteurs de terrain.</p>
           <div class="hero-actions">
-            <NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet →</NuxtLink>
+            <NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet</NuxtLink>
             <NuxtLink to="/actions" class="btn btn-secondary">Découvrir nos actions</NuxtLink>
           </div>
           <div class="hero-trust" aria-label="Principes d'intervention">
-            <div class="hero-trust-item"><span class="hero-trust-icon" aria-hidden="true">1</span><span><strong>Partir du besoin réel</strong><br>Observer le terrain avant de concevoir l’action.</span></div>
-            <div class="hero-trust-item"><span class="hero-trust-icon" aria-hidden="true">2</span><span><strong>Construire ensemble</strong><br>Associer partenaires, intervenants et bénéficiaires.</span></div>
-            <div class="hero-trust-item"><span class="hero-trust-icon" aria-hidden="true">3</span><span><strong>Documenter l’impact</strong><br>Suivre, évaluer et améliorer chaque projet.</span></div>
+            <div class="hero-trust-item"><span class="hero-trust-icon" aria-hidden="true">1</span><span><strong>Comprendre le besoin</strong><br>Observer le terrain avant de concevoir l’action.</span></div>
+            <div class="hero-trust-item"><span class="hero-trust-icon" aria-hidden="true">2</span><span><strong>Construire ensemble</strong><br>Associer les interlocuteurs et partenaires utiles.</span></div>
+            <div class="hero-trust-item"><span class="hero-trust-icon" aria-hidden="true">3</span><span><strong>Suivre les résultats</strong><br>Documenter, évaluer et améliorer les projets.</span></div>
           </div>
         </div>
         <div class="hero-media">
-          <img class="hero-image" :src="publicVisuals.education" alt="Atelier éducatif accompagné par une intervenante dans un environnement lumineux">
+          <img class="hero-image" :src="publicVisuals.home" alt="Équipe IFICS construisant un projet avec plusieurs acteurs">
           <div class="hero-note">
-            <strong>Des projets conçus avec les territoires, pas à leur place.</strong>
-            <span>Une méthode transversale, du besoin jusqu’au bilan.</span>
+            <strong>Une approche structurée, du besoin au bilan.</strong>
+            <span>Des objectifs clairs, un suivi et une évaluation adaptés à chaque projet.</span>
           </div>
         </div>
       </div>
@@ -57,7 +57,7 @@ const domains = [
 
     <section class="public-band section-compact" aria-labelledby="domains-title">
       <div class="container domain-strip">
-        <div id="domains-title" class="domain-strip-title">Nos domaines<br>d’intervention</div>
+        <div id="domains-title" class="domain-strip-title">Nos domaines d’intervention</div>
         <NuxtLink v-for="domain in domains" :key="domain.key" to="/actions" class="domain-chip">
           <strong>{{ domain.title }}</strong>
           <span>{{ domain.short }}</span>
@@ -67,9 +67,9 @@ const domains = [
 
     <section class="section">
       <div class="container">
-        <p class="eyebrow">Une même méthode, plusieurs disciplines</p>
-        <h2 class="section-title">Répondre au besoin avec le bon levier.</h2>
-        <p class="lead">Les disciplines ne sont pas des silos : elles peuvent se compléter dans un même projet selon le public, le territoire et les objectifs.</p>
+        <p class="eyebrow">Nos domaines</p>
+        <h2 class="section-title">Des expertises complémentaires selon les besoins du projet.</h2>
+        <p class="lead">Un même projet peut mobiliser plusieurs disciplines selon le public, le territoire et les objectifs définis avec le partenaire.</p>
         <div class="grid grid-3 theme-grid">
           <article v-for="(domain, index) in domains" :key="domain.key" class="card theme-card">
             <img :src="domain.image" :alt="`Illustration du domaine ${domain.title}`" loading="lazy">
@@ -86,7 +86,7 @@ const domains = [
     <section class="section project-section">
       <div class="container">
         <div class="section-row">
-          <div><p class="eyebrow">Projets</p><h2 class="section-title">Des actions concrètes construites avec nos partenaires.</h2></div>
+          <div><p class="eyebrow">Projets</p><h2 class="section-title">Des réalisations suivies et documentées.</h2></div>
           <NuxtLink to="/projets" class="btn btn-secondary">Voir les projets</NuxtLink>
         </div>
         <div v-if="projects.length" class="grid grid-3">
@@ -110,23 +110,23 @@ const domains = [
     <section class="section">
       <div class="container split-section">
         <div class="split-copy">
-          <p class="eyebrow">Notre manière d’agir</p>
-          <h2 class="section-title">Des projets lisibles pour les partenaires et utiles aux bénéficiaires.</h2>
-          <p class="lead">Objectifs, calendrier, ressources et critères de réussite sont posés clairement. L’équipe suit ensuite l’action pour pouvoir l’ajuster et en rendre compte.</p>
+          <p class="eyebrow">Notre méthode</p>
+          <h2 class="section-title">Un cadre clair pour les partenaires et les bénéficiaires.</h2>
+          <p class="lead">Objectifs, calendrier, ressources et critères de réussite sont posés en amont. L’action est ensuite suivie pour pouvoir être ajustée et évaluée.</p>
           <ul class="feature-list">
             <li><span><strong>Co-construction</strong><br>Un cadre défini avec la structure partenaire.</span></li>
             <li><span><strong>Suivi</strong><br>Des informations structurées tout au long du projet.</span></li>
             <li><span><strong>Évaluation</strong><br>Un bilan qui aide à comprendre et améliorer l’action.</span></li>
           </ul>
         </div>
-        <div class="split-media"><img :src="publicVisuals.insertion" alt="Accompagnement d’un parcours d’insertion et de formation" loading="lazy"></div>
+        <div class="split-media"><img :src="publicVisuals.insertion" alt="Accompagnement structuré d’un parcours" loading="lazy"></div>
       </div>
     </section>
 
     <section class="section news-section">
       <div class="container">
         <div class="section-row">
-          <div><p class="eyebrow">Actualités & publications</p><h2 class="section-title">Suivre ce qui avance chez IFICS.</h2></div>
+          <div><p class="eyebrow">Actualités & publications</p><h2 class="section-title">Suivre les actions et les ressources IFICS.</h2></div>
           <NuxtLink to="/actualites" class="btn btn-secondary">Toutes les actualités</NuxtLink>
         </div>
         <div v-if="news.length" class="grid grid-3">
@@ -134,7 +134,7 @@ const domains = [
             <span class="badge badge-muted">Actualité</span>
             <h3>{{ item.title }}</h3>
             <p>{{ item.excerpt }}</p>
-            <NuxtLink class="media-card-link" :to="`/actualites/${item.slug}`">Lire la publication →</NuxtLink>
+            <NuxtLink class="media-card-link" :to="`/actualites/${item.slug}`">Lire la publication</NuxtLink>
           </article>
         </div>
         <div v-else class="empty-state">Les publications validées par l’équipe communication apparaîtront ici.</div>
@@ -144,7 +144,7 @@ const domains = [
     <section class="section partner-section">
       <div class="container">
         <p class="eyebrow">Partenaires</p>
-        <h2 class="section-title">Construire dans la durée, avec les bonnes compétences autour de la table.</h2>
+        <h2 class="section-title">Construire dans la durée avec les acteurs du territoire.</h2>
         <div v-if="partners.length" class="partner-list">
           <a v-for="partner in partners" :key="partner.id" :href="partner.websiteUrl || undefined" class="partner-chip" :aria-label="partner.websiteUrl ? `Site de ${partner.name}` : partner.name">
             <img v-if="partner.logoUrl" :src="partner.logoUrl" alt=""><span>{{ partner.name }}</span>
@@ -161,17 +161,17 @@ const domains = [
 </template>
 
 <style scoped>
-.project-section { background: #eff4f0; }
+.project-section { background: #f3f6f4; }
 .news-section { background: #fbfcfb; border-top: 1px solid #edf2ee; border-bottom: 1px solid #edf2ee; }
 .partner-section { background: #fff; }
 .section-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 30px; }
 .empty-rich { display: flex; flex-direction: column; gap: 7px; }
 .empty-rich strong { color: var(--ifics-ink); }
-.news-card h3 { margin: 14px 0 8px; font-size: 1.16rem; }
+.news-card h3 { margin: 14px 0 8px; font-size: 1.08rem; }
 .news-card p { color: var(--ifics-muted); margin: 0; }
 .partner-list { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0 32px; }
-.partner-chip { min-height: 62px; padding: 10px 16px; border: 1px solid var(--ifics-border); border-radius: 14px; display: flex; align-items: center; gap: 10px; text-decoration: none; background: #fff; }
-.partner-chip img { width: 42px; height: 42px; object-fit: contain; }
+.partner-chip { min-height: 58px; padding: 10px 14px; border: 1px solid var(--ifics-border); border-radius: 10px; display: flex; align-items: center; gap: 10px; text-decoration: none; background: #fff; }
+.partner-chip img { width: 40px; height: 40px; object-fit: contain; }
 .partner-cta { margin-top: 32px; }
 @media (max-width: 900px) { .section-row { align-items: flex-start; flex-direction: column; } }
 </style>
