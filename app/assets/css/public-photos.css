@@ -1,0 +1,39 @@
+/* IFICS public website — photographic visual layer */
+.hero-image,
+.split-media img,
+.theme-card img,
+.media-card-image {
+  display: block;
+  object-fit: cover;
+  background: #f5f8f6;
+}
+
+.hero-media,
+.split-media,
+.theme-card {
+  overflow: hidden;
+}
+
+.hero-image,
+.split-media img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.theme-card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.hero-image,
+.split-media img,
+.theme-card img {
+  image-rendering: auto;
+}
+
+@media (max-width: 640px) {
+  .hero-image,
+  .split-media img {
+    aspect-ratio: 4 / 3;
+  }
+}

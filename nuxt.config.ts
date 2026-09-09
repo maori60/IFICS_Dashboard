@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   modules: ['@nuxt/eslint'],
-  css: ['~/assets/css/main.css', '~/assets/css/public-polish.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/public-polish.css', '~/assets/css/public-photos.css'],
   app: {
     head: {
       htmlAttrs: { lang: 'fr' },
