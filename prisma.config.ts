@@ -9,7 +9,10 @@ if (!DATABASE_URL) {
 }
 
 export default defineConfig({
-  schema: 'prisma/schema.prisma',
+  // Prisma 7 supports schema folders. Core historical models remain in
+  // prisma/schema.prisma while new bounded modules can live in dedicated
+  // *.prisma files without growing one unmaintainable schema file.
+  schema: 'prisma',
   migrations: {
     path: 'prisma/migrations',
     seed: 'tsx prisma/seed.ts',

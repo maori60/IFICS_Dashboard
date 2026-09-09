@@ -22,7 +22,8 @@ const navigation = computed(() => [
   { label: 'Parc IT', to: '/dashboard/assets', visible: can('it:read') },
   { label: 'RH', to: '/dashboard/hr', visible: can('hr:read') },
   { label: 'Système', to: '/dashboard/system', visible: can('audit:read') },
-  { label: 'Administration', to: '/dashboard/admin', visible: can('user:manage') || can('settings:manage') || can('audit:read') },
+  { label: 'Administration', to: '/dashboard/admin', visible: can('user:manage') || can('audit:read') },
+  { label: 'Paramètres', to: '/dashboard/settings', visible: can('settings:manage') },
 ].filter(item => item.visible))
 
 function active(to: string) {
@@ -49,7 +50,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
       <div class="sidebar-bottom">
         <div class="identity"><strong>{{ session?.user.firstName }} {{ session?.user.lastName }}</strong><span>{{ session?.user.email }}</span></div>
         <button type="button" class="logout" @click="logout">Se déconnecter</button>
-        <NuxtLink to="/" class="site-link">Voir le site public</NuxtLink>
+        <a href="/" target="_blank" rel="noopener" class="site-link">Voir le site public</a>
       </div>
     </aside>
     <div class="dash-main">
