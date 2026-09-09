@@ -48,7 +48,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
           </span>
           <span class="brand-copy">
             <strong>IFICS</strong>
-            <small>Institut de formation, d'insertion, de culture et de sport</small>
+            <small>Institut Français pour l'intégration par la culture et le sport</small>
           </span>
         </NuxtLink>
 
@@ -92,13 +92,13 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
 .public-header { position: sticky; top: 0; z-index: 100; background: #fff; border-bottom: 1px solid #e2e9e4; }
 .header-container { width: min(1380px, calc(100% - 40px)); margin: 0 auto; }
 .header-inner { min-height: 70px; display: flex; align-items: center; gap: 18px; }
-.public-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; min-width: 188px; flex: 0 0 auto; }
+.public-brand { display: flex; align-items: center; gap: 9px; text-decoration: none; min-width: 218px; flex: 0 0 auto; }
 .brand-symbol { width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; }
 .brand-symbol img { width: 36px; height: 36px; object-fit: contain; }
 .brand-symbol.small, .brand-symbol.small img { width: 32px; height: 32px; }
 .brand-copy { display: flex; flex-direction: column; line-height: 1.1; }
 .public-brand strong { font-size: 1rem; font-weight: 600; letter-spacing: .02em; }
-.public-brand small { color: var(--ifics-muted); font-size: .64rem; max-width: 170px; margin-top: 3px; line-height: 1.22; }
+.public-brand small { color: var(--ifics-muted); font-size: .62rem; max-width: 200px; margin-top: 3px; line-height: 1.2; }
 .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 8px; background: var(--ifics-green-900); color: #fff; font-weight: 700; }
 .brand-mark.small { width: 32px; height: 32px; border-radius: 8px; }
 .public-nav { min-width: 0; flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
