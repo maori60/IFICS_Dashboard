@@ -40,6 +40,7 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
   () => {
     let prisma: typeof import('../../server/utils/prisma')['prisma']
     let handler: typeof import('../../server/api/cra/[id]/day.put')['default']
+    let submitHandler: typeof import('../../server/api/cra/[id]/submit.post')['default']
     let intervenorId: string
     let secondReportId: string
 
@@ -52,6 +53,10 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
       prisma = (await import('../../server/utils/prisma')).prisma
       handler = (
         await import('../../server/api/cra/[id]/day.put')
+      ).default
+
+      submitHandler = (
+        await import('../../server/api/cra/[id]/submit.post')
       ).default
 
       request.associationId = associationId
@@ -112,7 +117,12 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
 
       await prisma.craReport.updateMany({
         where: { associationId },
-        data: { status: 'DRAFT', revision: 1 },
+        data: {
+          status: 'DRAFT',
+          revision: 1,
+          submittedAt: null,
+          validatedAt: null,
+        },
       })
 
       request.body = {
@@ -233,6 +243,82 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
       expect(await prisma.craDay.count({
         where: { reportId: request.reportId },
       })).toBe(1)
+    })
+    it('refuse une soumission sans confirmation', async () => {
+      request.body = { confirmed: false, revision: 1 }
+
+      await expect(submitHandler(event)).rejects.toMatchObject({
+        statusCode: 400,
+      })
+    })
+
+    it('conserve le brouillon lorsqu’un CRA vide est soumis', async () => {
+      request.body = { confirmed: true, revision: 1 }
+
+      await expect(submitHandler(event)).rejects.toMatchObject({
+        statusCode: 400,
+      })
+
+      const report = await prisma.craReport.findUniqueOrThrow({
+        where: { id: request.reportId },
+      })
+
+      expect(report.status).toBe('DRAFT')
+      expect(report.revision).toBe(1)
+      expect(report.submittedAt).toBeNull()
+    })
+
+    it('soumet un CRA rempli puis bloque les modifications', async () => {
+      await handler(event)
+
+      request.body = { confirmed: true, revision: 2 }
+
+      const result = await submitHandler(event)
+
+      expect(result.data).toMatchObject({
+        status: 'SUBMITTED',
+        revision: 3,
+        totalDays: 1,
+        totalHours: 7,
+      })
+
+      const report = await prisma.craReport.findUniqueOrThrow({
+        where: { id: request.reportId },
+      })
+
+      expect(report.status).toBe('SUBMITTED')
+      expect(report.submittedAt).toBeInstanceOf(Date)
+
+      request.body = {
+        date: '2026-09-18',
+        selected: false,
+        revision: 3,
+      }
+
+      await expect(handler(event)).rejects.toMatchObject({
+        statusCode: 409,
+      })
+
+      expect(await prisma.craDay.count({
+        where: { reportId: request.reportId },
+      })).toBe(1)
+    })
+
+    it('refuse une soumission basée sur une ancienne révision', async () => {
+      await handler(event)
+
+      request.body = { confirmed: true, revision: 1 }
+
+      await expect(submitHandler(event)).rejects.toMatchObject({
+        statusCode: 409,
+      })
+
+      const report = await prisma.craReport.findUniqueOrThrow({
+        where: { id: request.reportId },
+      })
+
+      expect(report.status).toBe('DRAFT')
+      expect(report.revision).toBe(2)
     })
   },
 )
