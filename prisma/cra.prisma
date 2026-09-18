@@ -1,0 +1,47 @@
+enum CraStatus {
+  DRAFT
+  SUBMITTED
+  CLIENT_PENDING
+  VALIDATED
+  REFUSED
+}
+
+model CraReport {
+  id            String    @id @default(cuid())
+  associationId String
+  projectId     String
+  intervenorId  String
+  year          Int
+  month         Int
+  status        CraStatus @default(DRAFT)
+  revision      Int       @default(1)
+  submittedAt   DateTime?
+  validatedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  assignment ProjectIntervenor @relation(fields: [projectId, intervenorId], references: [projectId, intervenorId], onDelete: Restrict)
+  days CraDay[]
+
+  @@unique([projectId, intervenorId, year, month])
+  @@unique([id, intervenorId])
+  @@index([associationId, year, month, status])
+  @@index([intervenorId, year, month])
+}
+
+model CraDay {
+  id           String   @id @default(cuid())
+  reportId     String
+  intervenorId String
+  date         DateTime @db.Date
+  comment      String?  @db.VarChar(2000)
+  hasIncident  Boolean  @default(false)
+  incident     String?  @db.VarChar(5000)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  report CraReport @relation(fields: [reportId, intervenorId], references: [id, intervenorId], onDelete: Restrict)
+
+  @@unique([intervenorId, date])
+  @@index([reportId, date])
+}

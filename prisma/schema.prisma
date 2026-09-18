@@ -492,6 +492,7 @@ model ProjectIntervenor {
 
   project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   intervenor Intervenor @relation(fields: [intervenorId], references: [id], onDelete: Cascade)
+  craReports CraReport[]
 
   @@unique([projectId, intervenorId])
   @@index([intervenorId])

@@ -27,6 +27,14 @@ export const PERMISSIONS = {
   RND_READ: 'rnd:read', RND_WRITE: 'rnd:write',
   IT_READ: 'it:read', IT_WRITE: 'it:write',
   HR_READ: 'hr:read', HR_WRITE: 'hr:write',
+  CRA_READ_OWN: 'cra:read:own',
+  CRA_WRITE_OWN: 'cra:write:own',
+  CRA_READ_ALL: 'cra:read:all',
+  CRA_REVIEW: 'cra:review',
+  CRA_SEND_CLIENT: 'cra:send:client',
+  CRA_REOPEN: 'cra:reopen',
+  CRA_EXPORT: 'cra:export',
+  CRA_MANAGE: 'cra:manage',
 } as const
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
