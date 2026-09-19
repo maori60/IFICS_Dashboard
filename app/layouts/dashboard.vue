@@ -14,6 +14,7 @@ const navigation = computed(() => [
   { label: 'Projets', to: '/dashboard/projects', visible: can('project:read') },
   { label: 'Intervenants', to: '/dashboard/intervenors', visible: can('intervenor:read') },
   { label: 'Bilans', to: '/dashboard/reports', visible: can('report:read') },
+  { label: 'CRA', to: '/dashboard/cra', visible: can('cra:read:all') || (can('cra:read:own') && Boolean(session.value?.user.intervenorId)),},
   { label: 'Facturation', to: '/dashboard/billing', visible: can('billing:read') },
   { label: 'Support', to: '/dashboard/tickets', visible: can('ticket:read') },
   { label: 'Partenaires', to: '/dashboard/partners', visible: can('partner:read') },
