@@ -1,12 +1,14 @@
 import { getRouterParam, readBody } from 'h3'
-import { hasPermission, requireAuth } from '../../../utils/auth'
+import { requireAuth } from '../../../utils/auth'
 import {
   httpError,
   requireRouterId,
   success,
 } from '../../../utils/api'
-import { PERMISSIONS } from '../../../utils/constants'
-import { requireCraAssignmentForCreation } from '../../../utils/cra'
+import {
+  requireCraAssignmentForCreation,
+  requireCraWriter,
+} from '../../../utils/cra'
 import {
   CRA_HOURS_PER_DAY,
   validateCraDate,
@@ -16,6 +18,8 @@ import { badRequest, safeObject } from '../../../utils/validation'
 
 export default defineEventHandler(async (event) => {
   const context = await requireAuth(event)
+  requireCraWriter(context)
+
   const reportId = requireRouterId(getRouterParam(event, 'id'), 'CRA')
   const body = safeObject(await readBody(event))
 
@@ -56,14 +60,6 @@ export default defineEventHandler(async (event) => {
 
   if (!report) {
     httpError(404, 'CRA introuvable.', 'CRA_NOT_FOUND')
-  }
-
-  const canManage = hasPermission(context, PERMISSIONS.CRA_MANAGE)
-  const canWriteOwn = hasPermission(context, PERMISSIONS.CRA_WRITE_OWN)
-    && context.intervenorId === report.intervenorId
-
-  if (!canManage && !canWriteOwn) {
-    httpError(403, 'Soumission de ce CRA interdite.', 'CRA_FORBIDDEN')
   }
 
   await requireCraAssignmentForCreation(

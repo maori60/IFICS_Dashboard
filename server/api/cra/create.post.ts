@@ -1,7 +1,10 @@
 import { readBody } from 'h3'
 import { requireAuth } from '../../utils/auth'
 import { httpError, prismaErrorCode, success } from '../../utils/api'
-import { requireCraAssignmentForCreation } from '../../utils/cra'
+import {
+  requireCraAssignmentForCreation,
+  requireCraWriter,
+} from '../../utils/cra'
 import { prisma } from '../../utils/prisma'
 import {
   badRequest,
@@ -11,6 +14,7 @@ import {
 
 export default defineEventHandler(async (event) => {
   const context = await requireAuth(event)
+  const ownIntervenorId = requireCraWriter(context)
   const body = safeObject(await readBody(event))
 
   const allowedFields = new Set([
@@ -27,7 +31,7 @@ export default defineEventHandler(async (event) => {
   const projectId = requiredString(body.projectId, 'Projet', { max: 191 })
 
   const intervenorId = requiredString(
-    body.intervenorId ?? context.intervenorId,
+    body.intervenorId ?? ownIntervenorId,
     'Intervenant',
     { max: 191 },
   )

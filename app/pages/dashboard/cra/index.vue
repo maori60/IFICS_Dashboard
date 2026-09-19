@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ApiSuccess } from '~/types/api'
+import type { ApiSuccess, SessionPayload } from '~/types/api'
 
 definePageMeta({
   layout: 'dashboard',
@@ -7,6 +7,41 @@ definePageMeta({
 })
 
 useHead({ title: 'Comptes rendus d’activité — IFICS' })
+
+const { data: sessionResponse } = await useFetch<ApiSuccess<SessionPayload>>(
+  '/api/auth/me',
+)
+
+const isIntervenor = computed(
+  () => sessionResponse.value?.data.user.roleCode === 'INTERVENOR',
+)
+
+const canCreate = computed(() => {
+  const user = sessionResponse.value?.data.user
+
+  if (
+    !user
+    || user.roleCode !== 'INTERVENOR'
+    || !user.intervenorId
+  ) {
+    return false
+  }
+
+  return user.permissions.includes('*')
+    || user.permissions.includes('cra:write:own')
+})
+
+const pageSubtitle = computed(() => (
+  isIntervenor.value
+    ? 'Retrouvez vos journées déclarées et suivez la validation de vos CRA.'
+    : 'Consultez les comptes rendus des intervenants et suivez leur état de validation.'
+))
+
+const emptyMessage = computed(() => (
+  canCreate.value
+    ? 'Créez votre CRA à partir d’une mission acceptée pour déclarer vos journées.'
+    : 'Les comptes rendus accessibles apparaîtront ici après leur création.'
+))
 
 type CraStatus =
   | 'DRAFT'
@@ -95,7 +130,11 @@ function previousPage() {
 }
 
 function nextPage() {
-  if (!loading.value && pagination.value?.hasNextPage) {
+  if (
+    !loading.value
+    && !error.value
+    && pagination.value?.hasNextPage
+  ) {
     page.value += 1
   }
 }
@@ -105,13 +144,22 @@ function nextPage() {
   <section class="cra-page" :aria-busy="loading">
     <PageHeader
       title="Comptes rendus d’activité"
-      subtitle="Retrouvez vos journées déclarées et suivez la validation de vos CRA."
-    />
+      :subtitle="pageSubtitle"
+    >
+      <NuxtLink
+        v-if="canCreate"
+        class="cra-button cra-create-link"
+        to="/dashboard/cra/create"
+      >
+        Créer un CRA
+      </NuxtLink>
+    </PageHeader>
 
     <div class="cra-notice">
       <strong>Une journée déclarée = 7 heures au forfait</strong>
       <span>
         Chaque CRA correspond à un intervenant, un projet et un mois.
+        L’intervenant déclare ses journées et transmet son CRA à IFICS.
       </span>
     </div>
 
@@ -137,9 +185,7 @@ function nextPage() {
 
       <div v-if="reports.length === 0" class="cra-empty">
         <h2>Aucun CRA sur cette page</h2>
-        <p>
-          Les comptes rendus apparaîtront ici après leur création.
-        </p>
+        <p>{{ emptyMessage }}</p>
       </div>
 
       <div v-else class="cra-table-container">
@@ -370,6 +416,7 @@ function nextPage() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
@@ -382,6 +429,19 @@ function nextPage() {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+.cra-create-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  background: #1d4933;
+  border-color: #1d4933;
+  color: #fff;
+}
+
+.cra-create-link:hover {
+  background: #153b28;
 }
 
 .cra-button:disabled {

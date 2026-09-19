@@ -71,19 +71,56 @@ const busy = ref(false)
 const feedback = ref('')
 const actionError = ref('')
 
-function can(permission: string): boolean {
+const isOwner = computed(() => {
+  const currentUser = user.value
+  const currentReport = report.value
+
+  return Boolean(
+    currentUser
+    && currentReport
+    && currentUser.roleCode === 'INTERVENOR'
+    && currentUser.intervenorId
+    && currentUser.intervenorId === currentReport.intervenorId,
+  )
+})
+
+const canWriteOwn = computed(() => {
   const permissions = user.value?.permissions ?? []
-  return permissions.includes('*') || permissions.includes(permission)
-}
 
-const canEdit = computed(() => {
-  if (!report.value || report.value.status !== 'DRAFT') return false
-
-  return can('cra:manage')
-    || (
-      can('cra:write:own')
-      && user.value?.intervenorId === report.value.intervenorId
+  return isOwner.value
+    && (
+      permissions.includes('*')
+      || permissions.includes('cra:write:own')
     )
+})
+
+const canEdit = computed(() =>
+  canWriteOwn.value && report.value?.status === 'DRAFT',
+)
+
+const readOnlyMessage = computed(() => {
+  const current = report.value
+
+  if (!current) return ''
+
+  if (current.status === 'DRAFT') {
+    return isOwner.value
+      ? 'Ce CRA est en lecture seule : votre compte ne dispose pas de la permission de saisie.'
+      : 'Ce brouillon est en lecture seule. Seul l’intervenant concerné peut déclarer ses journées et transmettre son CRA.'
+  }
+
+  switch (current.status) {
+    case 'SUBMITTED':
+      return 'Ce CRA a été transmis à IFICS pour vérification. Les journées sont verrouillées.'
+    case 'CLIENT_PENDING':
+      return 'Ce CRA est en attente de validation par le client. Les journées sont verrouillées.'
+    case 'VALIDATED':
+      return 'Ce CRA est validé. Les journées sont en lecture seule.'
+    case 'REFUSED':
+      return 'Ce CRA est à corriger. La saisie reste verrouillée tant qu’IFICS ne l’a pas rouvert en brouillon.'
+    default:
+      return 'Ce CRA est en lecture seule.'
+  }
 })
 
 const calendarAvailable = computed(() =>
@@ -175,6 +212,8 @@ async function saveAction(
   body: Record<string, unknown>,
   message: string,
 ) {
+  if (!canEdit.value || busy.value) return
+
   busy.value = true
   feedback.value = ''
   actionError.value = ''
@@ -189,9 +228,15 @@ async function saveAction(
   finally {
     try {
       await refresh()
+
+      if (error.value) {
+        feedback.value = ''
+        actionError.value = 'Impossible de recharger le CRA. Actualisez la page avant de continuer.'
+      }
     }
     catch {
-      actionError.value = 'Impossible de recharger le CRA. Actualisez la page.'
+      feedback.value = ''
+      actionError.value = 'Impossible de recharger le CRA. Actualisez la page avant de continuer.'
     }
     finally {
       busy.value = false
@@ -205,10 +250,15 @@ async function toggleDay(date: string) {
   if (
     !current
     || !canEdit.value
+    || !calendarAvailable.value
     || busy.value
     || error.value
     || status.value === 'pending'
   ) return
+
+  const cell = calendar.value.find(day => day?.iso === date)
+
+  if (!cell || cell.weekend || cell.holiday) return
 
   const selected = !selectedDays.value.has(date)
 
@@ -246,7 +296,7 @@ async function submitReport() {
   ) return
 
   const confirmed = window.confirm(
-    `Clôturer le CRA de ${period.value} avec ${current.totalDays} journée(s) et ${current.totalHours} h au forfait ? Vous ne pourrez plus le modifier sans réouverture par IFICS.`,
+    `Clôturer le CRA de ${period.value} avec ${current.totalDays} journée(s) et ${current.totalHours} h au forfait ? Les journées seront verrouillées après transmission.`,
   )
 
   if (!confirmed) return
@@ -272,7 +322,12 @@ async function submitReport() {
 
     <div v-else-if="error" class="notice error" role="alert">
       <p>Le CRA est inaccessible ou son chargement a échoué.</p>
-      <button type="button" class="button" @click="refresh()">
+      <button
+        type="button"
+        class="button"
+        :disabled="busy"
+        @click="refresh()"
+      >
         Réessayer
       </button>
     </div>
@@ -304,16 +359,14 @@ async function submitReport() {
         Le calendrier des jours fériés doit être actualisé pour cette année.
         La saisie est désactivée.
       </p>
-      <p v-else-if="canEdit" class="notice">
+
+      <p v-if="canEdit && calendarAvailable" class="notice">
         Cliquez sur une journée pour la cocher ou la décocher.
         Les journées futures sont autorisées ; les week-ends et jours fériés
         sont désactivés. Chaque modification est enregistrée automatiquement.
       </p>
-      <p v-else class="notice">
-        Ce CRA est en lecture seule.
-        <template v-if="report.status !== 'DRAFT'">
-          Sa modification nécessite une réouverture par IFICS.
-        </template>
+      <p v-else-if="!canEdit" class="notice">
+        {{ readOnlyMessage }}
       </p>
 
       <div class="calendar" aria-label="Calendrier mensuel des journées">
@@ -355,8 +408,10 @@ async function submitReport() {
         </template>
       </div>
 
-      <div class="actions">
-        <span v-if="busy" role="status">Enregistrement et actualisation…</span>
+      <div v-if="canEdit || busy" class="actions">
+        <span v-if="busy" role="status">
+          Enregistrement et actualisation…
+        </span>
         <button
           v-if="canEdit"
           type="button"
@@ -467,6 +522,7 @@ async function submitReport() {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
   min-height: 100px;
   padding: 14px;
   border: 1px solid #cbd9cf;
@@ -501,6 +557,7 @@ async function submitReport() {
 
 .day:disabled {
   cursor: default;
+  opacity: 1;
 }
 
 .day:not(:disabled):hover {

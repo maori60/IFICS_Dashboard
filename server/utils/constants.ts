@@ -62,10 +62,21 @@ export const SYSTEM_ROLES: Record<RoleCode, { name: string; description: string;
     ],
   },
   INTERVENOR: {
-    name: 'Intervenant', description: 'Accès aux missions et documents propres à l’intervenant.', permissions: [
-      PERMISSIONS.DASHBOARD_READ, PERMISSIONS.PROJECT_READ, PERMISSIONS.INTERVENOR_READ,
-      PERMISSIONS.DOCUMENT_READ, PERMISSIONS.DOCUMENT_WRITE, PERMISSIONS.REPORT_READ, PERMISSIONS.REPORT_WRITE,
-      PERMISSIONS.NOTIFICATION_READ, PERMISSIONS.TICKET_READ, PERMISSIONS.TICKET_WRITE,
+    name: 'Intervenant',
+    description: 'Accès aux missions et documents propres à l’intervenant.',
+    permissions: [
+      PERMISSIONS.DASHBOARD_READ,
+      PERMISSIONS.PROJECT_READ,
+      PERMISSIONS.INTERVENOR_READ,
+      PERMISSIONS.DOCUMENT_READ,
+      PERMISSIONS.DOCUMENT_WRITE,
+      PERMISSIONS.REPORT_READ,
+      PERMISSIONS.REPORT_WRITE,
+      PERMISSIONS.NOTIFICATION_READ,
+      PERMISSIONS.TICKET_READ,
+      PERMISSIONS.TICKET_WRITE,
+      PERMISSIONS.CRA_READ_OWN,
+      PERMISSIONS.CRA_WRITE_OWN,
     ],
   },
 }

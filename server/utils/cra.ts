@@ -1,25 +1,45 @@
 import { hasPermission, type AuthContext } from './auth'
 import { httpError } from './api'
-import { PERMISSIONS } from './constants'
+import { PERMISSIONS, ROLE_CODES } from './constants'
 import { prisma } from './prisma'
+
+export function requireCraWriter(context: AuthContext): string {
+  const intervenorId = context.intervenorId
+
+  if (
+    context.roleCode !== ROLE_CODES.INTERVENOR
+    || !intervenorId
+    || !hasPermission(context, PERMISSIONS.CRA_WRITE_OWN)
+  ) {
+    httpError(
+      403,
+      'La saisie des CRA est réservée aux intervenants autorisés.',
+      'CRA_FORBIDDEN',
+    )
+  }
+
+  return intervenorId
+}
 
 export async function requireCraAssignmentForCreation(
   context: AuthContext,
   projectId: string,
   intervenorId: string,
 ) {
-  const canManage = hasPermission(context, PERMISSIONS.CRA_MANAGE)
-  const canWriteOwn = hasPermission(context, PERMISSIONS.CRA_WRITE_OWN)
-    && context.intervenorId === intervenorId
+  const ownIntervenorId = requireCraWriter(context)
 
-  if (!canManage && !canWriteOwn) {
-    httpError(403, 'Création de ce CRA interdite.', 'CRA_FORBIDDEN')
+  if (ownIntervenorId !== intervenorId) {
+    httpError(
+      403,
+      'Vous pouvez uniquement créer, modifier et soumettre vos propres CRA.',
+      'CRA_FORBIDDEN',
+    )
   }
 
   const assignment = await prisma.projectIntervenor.findFirst({
     where: {
       projectId,
-      intervenorId,
+      intervenorId: ownIntervenorId,
       assignmentStatus: 'ACCEPTED',
       project: {
         associationId: context.associationId,
