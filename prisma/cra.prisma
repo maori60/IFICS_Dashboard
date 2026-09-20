@@ -7,6 +7,52 @@ enum CraStatus {
   REFUSED
 }
 
+enum CraDayType {
+  WORK
+  PAID_LEAVE
+  RTT
+  SICK_LEAVE
+  AUTHORIZED_ABSENCE
+  UNJUSTIFIED_ABSENCE
+  TRAINING
+  PUBLIC_HOLIDAY
+  OTHER
+}
+
+enum CraDocumentType {
+  IFICS_TO_SIGN
+  INTERVENOR_SIGNED
+}
+
+enum CraDocumentStatus {
+  GENERATED
+  SENT_TO_INTERVENOR
+  RECEIVED
+  APPROVED
+  REJECTED
+  SUPERSEDED
+}
+
+enum CraAntivirusStatus {
+  PENDING
+  CLEAN
+  INFECTED
+  ERROR
+  NOT_APPLICABLE
+}
+
+enum CraClientAccessPurpose {
+  INITIAL_CONFIRMATION
+  REDOWNLOAD
+}
+
+enum CraClientAccessStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  REVOKED
+}
+
 model CraReport {
   id            String    @id @default(cuid())
   associationId String
@@ -32,6 +78,7 @@ model CraReport {
 
   assignment ProjectIntervenor @relation(fields: [projectId, intervenorId], references: [projectId, intervenorId], onDelete: Restrict)
   days       CraDay[]
+  documents  CraDocument[]
 
   @@unique([projectId, intervenorId, year, month])
   @@unique([id, intervenorId])
@@ -40,18 +87,101 @@ model CraReport {
 }
 
 model CraDay {
-  id           String   @id @default(cuid())
-  reportId     String
-  intervenorId String
-  date         DateTime @db.Date
-  comment      String?  @db.VarChar(2000)
-  hasIncident  Boolean  @default(false)
-  incident     String?  @db.VarChar(5000)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String     @id @default(cuid())
+  reportId        String
+  intervenorId    String
+  date            DateTime   @db.Date
+  dayType         CraDayType @default(WORK)
+  durationMinutes Int        @default(420)
+  comment         String?    @db.VarChar(2000)
+  hasIncident     Boolean    @default(false)
+  incident        String?    @db.VarChar(5000)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   report CraReport @relation(fields: [reportId, intervenorId], references: [id, intervenorId], onDelete: Restrict)
 
   @@unique([intervenorId, date])
   @@index([reportId, date])
+  @@index([reportId, dayType])
+}
+
+model CraDocument {
+  id             String            @id @default(cuid())
+  reportId       String
+  type           CraDocumentType
+  status         CraDocumentStatus
+  version        Int               @default(1)
+  reportRevision Int
+
+  reference    String  @unique @db.VarChar(80)
+  originalName String  @db.VarChar(255)
+  storedName   String  @db.VarChar(255)
+  filePath     String  @db.VarChar(500)
+  mimeType     String  @db.VarChar(100)
+  fileSize     BigInt
+  sha256       String? @db.VarChar(64)
+
+  generatedByUserId String?
+  uploadedByUserId  String?
+  reviewedByUserId  String?
+
+  sentToIntervenorAt DateTime?
+  receivedAt         DateTime?
+  reviewedAt         DateTime?
+  rejectionReason    String?   @db.VarChar(2000)
+
+  antivirusStatus    CraAntivirusStatus @default(PENDING)
+  antivirusCheckedAt DateTime?
+  antivirusResult    String?            @db.VarChar(255)
+
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  report         CraReport         @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  clientAccesses CraClientAccess[]
+
+  @@unique([reportId, type, version])
+  @@unique([id, reportId])
+  @@index([reportId, status])
+  @@index([reportId, type])
+  @@index([status])
+  @@index([antivirusStatus])
+  @@index([sha256])
+  @@index([archivedAt])
+}
+
+model CraClientAccess {
+  id         String                 @id @default(cuid())
+  reportId   String
+  documentId String
+  purpose    CraClientAccessPurpose
+  status     CraClientAccessStatus  @default(ACTIVE)
+
+  tokenHash      String @unique @db.VarChar(64)
+  recipientEmail String @db.VarChar(320)
+
+  createdByUserId String?
+
+  expiresAt     DateTime
+  firstViewedAt DateTime?
+  downloadedAt  DateTime?
+  confirmedAt   DateTime?
+  completedAt   DateTime?
+  revokedAt     DateTime?
+
+  emailSentAt    DateTime?
+  emailMessageId String?   @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  document CraDocument @relation(fields: [documentId, reportId], references: [id, reportId], onDelete: Restrict)
+
+  @@index([reportId, status])
+  @@index([documentId])
+  @@index([recipientEmail])
+  @@index([expiresAt])
+  @@index([purpose, status])
 }
