@@ -39,8 +39,17 @@ model AssociationFinanceSettings {
   bic                    String?  @db.VarChar(11)
   paymentTerms          String?
   taxExemptionText      String?
-  logoFilePath          String?  @db.VarChar(500)
-  maxAssetDocuments     Int      @default(20)
+  logoFilePath                  String?   @db.VarChar(500)
+
+  craSignatureFilePath          String?   @db.VarChar(500)
+  craSignatureOriginalName      String?   @db.VarChar(255)
+  craSignatureMimeType          String?   @db.VarChar(100)
+  craSignatureFileSize          BigInt?
+  craSignatureSha256            String?   @db.VarChar(64)
+  craSignatureUpdatedByUserId   String?
+  craSignatureUpdatedAt         DateTime?
+
+  maxAssetDocuments             Int       @default(20)
   maxAssetDocumentMb    Int      @default(10)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

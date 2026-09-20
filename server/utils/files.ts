@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { basename, join, resolve, sep } from 'node:path'
 import { PDFDocument } from 'pdf-lib'
@@ -34,6 +34,8 @@ export type StoredImage = {
   sha256: string
 }
 
+export type StoredCraSignature = StoredPdf | StoredImage
+
 export function uploadRoot(): string {
   return resolve(process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'))
 }
@@ -45,6 +47,10 @@ export function maxUploadBytes(): number {
 }
 
 export function maxBrandImageBytes(): number {
+  return Math.min(maxUploadBytes(), 5 * 1024 * 1024)
+}
+
+export function maxCraSignatureBytes(): number {
   return Math.min(maxUploadBytes(), 5 * 1024 * 1024)
 }
 
@@ -176,6 +182,118 @@ export async function storeBrandImage(
   }
 }
 
+export async function storeCraSignature(
+  associationId: string,
+  originalFilename: string,
+  buffer: Buffer,
+): Promise<StoredCraSignature> {
+  const maxBytes = maxCraSignatureBytes()
+
+  if (!buffer.length || buffer.length > maxBytes) {
+    httpError(
+      400,
+      'La signature doit faire entre 1 octet et 5 Mo.',
+      'INVALID_FILE_SIZE',
+    )
+  }
+
+  const cleanAssociationId = safeSegment(associationId)
+  const cleanOriginalName = safeOriginalFilename(originalFilename)
+
+  const directory = join(
+    uploadRoot(),
+    'signatures',
+    cleanAssociationId,
+  )
+
+  await mkdir(directory, {
+    recursive: true,
+    mode: 0o750,
+  })
+
+  if (
+    buffer.length >= PDF_SIGNATURE.length
+    && buffer.subarray(0, PDF_SIGNATURE.length).compare(PDF_SIGNATURE) === 0
+  ) {
+    await validatePdf(buffer, maxBytes)
+
+    const pdf = await PDFDocument.load(buffer, {
+      ignoreEncryption: false,
+      updateMetadata: false,
+    })
+
+    if (pdf.getPageCount() !== 1) {
+      httpError(
+        400,
+        'Le PDF de signature doit contenir exactement une page.',
+        'INVALID_SIGNATURE_PDF_PAGE_COUNT',
+      )
+    }
+
+    const storedName = `${randomUUID()}.pdf`
+    const absolutePath = join(directory, storedName)
+
+    await writeFile(absolutePath, buffer, {
+      flag: 'wx',
+      mode: 0o640,
+    })
+
+    return {
+      originalName: cleanOriginalName,
+      storedName,
+      filePath: join('signatures', cleanAssociationId, storedName),
+      mimeType: 'application/pdf',
+      fileSize: BigInt(buffer.length),
+      sha256: createHash('sha256').update(buffer).digest('hex'),
+    }
+  }
+
+  const detected = detectBrandImage(buffer)
+
+  if (!detected) {
+    httpError(
+      400,
+      'La signature doit être un fichier PDF, PNG ou JPEG valide.',
+      'INVALID_SIGNATURE_FILE',
+    )
+  }
+
+  try {
+    const validationPdf = await PDFDocument.create()
+
+    if (detected.mimeType === 'image/png') {
+      await validationPdf.embedPng(buffer)
+    }
+    else {
+      await validationPdf.embedJpg(buffer)
+    }
+  }
+  catch {
+    httpError(
+      400,
+      'L’image de signature est corrompue ou invalide.',
+      'INVALID_SIGNATURE_IMAGE',
+    )
+  }
+
+  const storedName = `${randomUUID()}.${detected.extension}`
+  const absolutePath = join(directory, storedName)
+
+  await writeFile(absolutePath, buffer, {
+    flag: 'wx',
+    mode: 0o640,
+  })
+
+  return {
+    originalName: cleanOriginalName,
+    storedName,
+    filePath: join('signatures', cleanAssociationId, storedName),
+    mimeType: detected.mimeType,
+    fileSize: BigInt(buffer.length),
+    sha256: createHash('sha256').update(buffer).digest('hex'),
+  }
+}
+
 export function resolveStoredPath(filePath: string): string {
   const root = uploadRoot()
   const normalized = filePath.replace(/^uploads[\\/]/, '')
@@ -197,6 +315,28 @@ export async function readStoredFile(filePath: string): Promise<Buffer> {
   }
   catch {
     httpError(404, 'Fichier introuvable sur le stockage.', 'FILE_NOT_FOUND')
+  }
+}
+
+export async function removeStoredFile(
+  filePath: string,
+): Promise<void> {
+  const absolute = resolveStoredPath(filePath)
+
+  try {
+    await unlink(absolute)
+  }
+  catch (error) {
+    if (
+      error
+      && typeof error === 'object'
+      && 'code' in error
+      && error.code === 'ENOENT'
+    ) {
+      return
+    }
+
+    throw error
   }
 }
 
