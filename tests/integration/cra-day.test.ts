@@ -641,29 +641,45 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
       expect(report.days).toHaveLength(1)
     })
 
-    it('refuse la soumission avant la fenêtre J-7 sans modifier le CRA', async () => {
-      await handler(event)
-
-      const before = await reportSnapshot()
-
+    it('autorise une journée future et la soumission à tout moment du mois', async () => {
       vi.setSystemTime(
-        new Date('2026-09-22T12:00:00.000Z'),
+        new Date('2026-09-05T12:00:00.000Z'),
       )
+
+      request.body = {
+        date: '2026-09-18',
+        selected: true,
+        revision: 1,
+      }
+
+      const added = await handler(event)
+
+      expect(added.data).toMatchObject({
+        selected: true,
+        revision: 2,
+        totalDays: 1,
+        totalHours: 7,
+      })
 
       request.body = {
         confirmed: true,
         revision: 2,
       }
 
-      await expect(
-        submitHandler(event),
-      ).rejects.toMatchObject({
-        statusCode: 400,
+      const submitted = await submitHandler(event)
+
+      expect(submitted.data).toMatchObject({
+        status: 'SUBMITTED',
+        revision: 3,
+        totalDays: 1,
+        totalHours: 7,
       })
 
-      expect(
-        await reportSnapshot(),
-      ).toEqual(before)
+      const report = await reportSnapshot()
+
+      expect(report.status).toBe('SUBMITTED')
+      expect(report.revision).toBe(3)
+      expect(report.days).toHaveLength(1)
     })
 
     it('refuse une soumission sans confirmation', async () => {

@@ -57,8 +57,14 @@ type CraOfficialDocument = {
   version: number
   reportRevision: number
   reference: string
+  ificsVisaDate: string | null
+  intervenorSignatureDate: string | null
   createdAt: string
   sentToIntervenorAt: string | null
+}
+
+type CraPeriodPolicy = {
+  periodEnd: string
 }
 
 type CraReport = {
@@ -95,6 +101,7 @@ type CraReport = {
   project: { id: string; title: string; reference: string | null }
   intervenor: { id: string; firstName: string; lastName: string }
   officialDocument: CraOfficialDocument | null
+  periodPolicy: CraPeriodPolicy
   days: CraDay[]
 }
 
@@ -175,6 +182,10 @@ const actionError = ref('')
 const showCorrectionForm = ref(false)
 const correctionReason = ref('')
 
+const showGenerationForm = ref(false)
+const generationIficsVisaDate = ref('')
+const generationIntervenorSignatureDate = ref('')
+
 const showDayEditor = ref(false)
 const dayEditorDate = ref('')
 const dayEditorType = ref<CraWritableDayType>('WORK')
@@ -247,6 +258,20 @@ const canViewOfficialDocumentPanel = computed(() =>
   ),
 )
 
+const officialDocumentViewUrl = computed(() => {
+  const documentId = report.value?.officialDocument?.id
+
+  return documentId
+    ? `${reportUrl}/documents/${encodeURIComponent(documentId)}`
+    : ''
+})
+
+const officialDocumentDownloadUrl = computed(() => {
+  const url = officialDocumentViewUrl.value
+
+  return url ? `${url}?download=1` : ''
+})
+
 const correctionReasonValid = computed(() => {
   const reason = correctionReason.value.trim()
 
@@ -286,6 +311,26 @@ const readOnlyMessage = computed(() => {
 
 const calendarAvailable = computed(() =>
   Boolean(report.value && coveredYears.has(report.value.year)),
+)
+
+const canSubmit = computed(() => {
+  const current = report.value
+
+  return Boolean(
+    current
+    && canEdit.value
+    && calendarAvailable.value
+    && current.declaredDays > 0,
+  )
+})
+
+const generationDatesValid = computed(() =>
+  /^\d{4}-\d{2}-\d{2}$/.test(
+    generationIficsVisaDate.value,
+  )
+  && /^\d{4}-\d{2}-\d{2}$/.test(
+    generationIntervenorSignatureDate.value,
+  ),
 )
 
 const selectedDays = computed(() =>
@@ -382,6 +427,21 @@ function dayDateLabel(value: string): string {
   }).format(date)
 }
 
+function isoDateLabel(value: string | null): string {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return '—'
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`)
+
+  if (Number.isNaN(date.getTime())) return '—'
+
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'short',
+    timeZone: 'UTC',
+  }).format(date)
+}
+
 function dayTypeClass(date: string): string {
   const day = selectedDays.value.get(date)
 
@@ -419,9 +479,11 @@ useHead({
 const weekdays = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.']
 
 const calendar = computed(() => {
-  if (!report.value) return []
+  const current = report.value
 
-  const { year, month } = report.value
+  if (!current) return []
+
+  const { year, month } = current
   const first = new Date(Date.UTC(year, month - 1, 1))
   const offset = (first.getUTCDay() + 6) % 7
   const count = new Date(Date.UTC(year, month, 0)).getUTCDate()
@@ -531,7 +593,11 @@ function openDayEditor(date: string) {
 
   const cell = calendar.value.find(day => day?.iso === date)
 
-  if (!cell || cell.weekend || cell.holiday) return
+  if (
+    !cell
+    || cell.weekend
+    || cell.holiday
+  ) return
 
   const existing = selectedDays.value.get(date)
 
@@ -638,9 +704,7 @@ async function submitReport() {
 
   if (
     !current
-    || !canEdit.value
-    || !calendarAvailable.value
-    || current.declaredDays === 0
+    || !canSubmit.value
     || busy.value
   ) return
 
@@ -718,7 +782,7 @@ async function reviewReport(decision: ReviewDecision) {
   }
 }
 
-async function generateOfficialDocument() {
+function openGenerationForm() {
   const current = report.value
 
   if (
@@ -727,12 +791,41 @@ async function generateOfficialDocument() {
     || busy.value
   ) return
 
+  generationIficsVisaDate.value
+    = current.periodPolicy.periodEnd
+
+  generationIntervenorSignatureDate.value
+    = current.periodPolicy.periodEnd
+
+  feedback.value = ''
+  actionError.value = ''
+  showGenerationForm.value = true
+}
+
+function closeGenerationForm() {
+  if (busy.value) return
+
+  showGenerationForm.value = false
+  generationIficsVisaDate.value = ''
+  generationIntervenorSignatureDate.value = ''
+}
+
+async function generateOfficialDocument() {
+  const current = report.value
+
+  if (
+    !current
+    || !canGenerateOfficial.value
+    || !generationDatesValid.value
+    || busy.value
+  ) return
+
   const existing = current.officialDocument
 
   const confirmed = window.confirm(
     existing
-      ? `Générer une nouvelle version du CRA officiel de ${period.value} ? La version ${existing.version} (${existing.reference}) restera conservée dans l’historique mais sera remplacée par la nouvelle version active.`
-      : `Générer le CRA officiel de ${period.value} à faire signer par ${current.intervenor.firstName} ${current.intervenor.lastName} ? La signature officielle IFICS sera intégrée au PDF.`,
+      ? `Confirmer la génération d’une nouvelle version du CRA officiel de ${period.value} ? La version ${existing.version} restera archivée. Dates imprimées : VISA IFICS ${isoDateLabel(generationIficsVisaDate.value)}, signature intervenant ${isoDateLabel(generationIntervenorSignatureDate.value)}.`
+      : `Confirmer la génération du CRA officiel de ${period.value} ? Dates imprimées : VISA IFICS ${isoDateLabel(generationIficsVisaDate.value)}, signature intervenant ${isoDateLabel(generationIntervenorSignatureDate.value)}.`,
   )
 
   if (!confirmed) return
@@ -749,9 +842,17 @@ async function generateOfficialDocument() {
         body: {
           confirmed: true,
           revision: current.revision,
+          ificsVisaDate:
+            generationIficsVisaDate.value,
+          intervenorSignatureDate:
+            generationIntervenorSignatureDate.value,
         },
       },
     )
+
+    showGenerationForm.value = false
+    generationIficsVisaDate.value = ''
+    generationIntervenorSignatureDate.value = ''
 
     feedback.value
       = `Document officiel ${response.data.reference} généré avec succès.`
@@ -759,7 +860,7 @@ async function generateOfficialDocument() {
   catch (cause) {
     actionError.value = apiErrorMessage(
       cause,
-      'Le document officiel n’a pas pu être généré. Vérifiez le CRA et la signature officielle configurée.',
+      'Le document officiel n’a pas pu être généré. Vérifiez le CRA, les dates choisies et la signature officielle configurée.',
     )
   }
   finally {
@@ -904,6 +1005,16 @@ async function generateOfficialDocument() {
         {{ readOnlyMessage }}
       </p>
 
+      <p
+        v-if="canEdit && calendarAvailable"
+        class="notice"
+      >
+        Vous pouvez clôturer et transmettre ce CRA à tout moment.
+        Les journées ouvrées à venir du mois peuvent également être
+        renseignées si nécessaire. Les week-ends et jours fériés
+        restent désactivés.
+      </p>
+
       <section
         v-if="showDayEditor"
         class="day-editor"
@@ -1038,7 +1149,9 @@ async function generateOfficialDocument() {
             :class="[
               {
                 selected: day.selected,
-                unavailable: day.weekend || Boolean(day.holiday),
+                unavailable:
+                  day.weekend
+                  || Boolean(day.holiday),
               },
               dayTypeClass(day.iso),
             ]"
@@ -1074,7 +1187,7 @@ async function generateOfficialDocument() {
         <button
           type="button"
           class="button primary"
-          :disabled="busy || report.declaredDays === 0 || !calendarAvailable"
+          :disabled="busy || !canSubmit"
           @click="submitReport"
         >
           {{ report.status === 'REFUSED'
@@ -1116,6 +1229,21 @@ async function generateOfficialDocument() {
                 {{ dateLabel(report.officialDocument.createdAt) }}
                 — heure de Paris
               </p>
+
+              <p class="muted">
+                Visa IFICS :
+                {{
+                  isoDateLabel(
+                    report.officialDocument.ificsVisaDate,
+                  )
+                }}
+                · Signature intervenant :
+                {{
+                  isoDateLabel(
+                    report.officialDocument.intervenorSignatureDate,
+                  )
+                }}
+              </p>
             </div>
 
             <span class="badge">
@@ -1135,18 +1263,39 @@ async function generateOfficialDocument() {
             {{ dateLabel(report.officialDocument.sentToIntervenorAt) }}
             — heure de Paris.
           </p>
+
+          <div class="official-document-file-actions">
+            <a
+              :href="officialDocumentViewUrl"
+              class="button primary"
+              target="_blank"
+              rel="noopener"
+            >
+              Visualiser le PDF
+            </a>
+
+            <a
+              :href="officialDocumentDownloadUrl"
+              class="button"
+            >
+              Télécharger le PDF
+            </a>
+          </div>
         </template>
 
         <p v-else>
           Aucun document officiel n’a encore été généré pour ce CRA.
         </p>
 
-        <div v-if="canGenerateOfficial" class="actions">
+        <div
+          v-if="canGenerateOfficial && !showGenerationForm"
+          class="actions"
+        >
           <button
             type="button"
             class="button primary"
             :disabled="busy"
-            @click="generateOfficialDocument"
+            @click="openGenerationForm"
           >
             {{
               report.officialDocument
@@ -1156,8 +1305,86 @@ async function generateOfficialDocument() {
           </button>
         </div>
 
-        <p v-if="canGenerateOfficial" class="muted">
+        <form
+          v-if="canGenerateOfficial && showGenerationForm"
+          class="generation-form"
+          @submit.prevent="generateOfficialDocument"
+        >
+          <p>
+            Les deux dates proposées correspondent par défaut
+            à la fin de la période du CRA. Vous pouvez les modifier
+            avant la génération.
+          </p>
+
+          <p
+            v-if="report.officialDocument"
+            class="muted"
+          >
+            Une nouvelle version sera créée.
+            La version {{ report.officialDocument.version }}
+            ({{ report.officialDocument.reference }})
+            restera conservée dans l’historique.
+          </p>
+
+          <div class="generation-grid">
+            <label class="field">
+              <span>Date VISA IFICS</span>
+              <input
+                v-model="generationIficsVisaDate"
+                class="input"
+                type="date"
+                required
+                :disabled="busy"
+              >
+            </label>
+
+            <label class="field">
+              <span>Date signature intervenant</span>
+              <input
+                v-model="generationIntervenorSignatureDate"
+                class="input"
+                type="date"
+                required
+                :disabled="busy"
+              >
+            </label>
+          </div>
+
+          <p class="muted">
+            La date technique réelle de génération est enregistrée
+            séparément dans la traçabilité du document.
+          </p>
+
+          <div class="actions">
+            <button
+              type="button"
+              class="button"
+              :disabled="busy"
+              @click="closeGenerationForm"
+            >
+              Annuler
+            </button>
+
+            <button
+              type="submit"
+              class="button primary"
+              :disabled="busy || !generationDatesValid"
+            >
+              {{
+                report.officialDocument
+                  ? 'Générer la nouvelle version'
+                  : 'Générer le document officiel'
+              }}
+            </button>
+          </div>
+        </form>
+
+        <p
+          v-if="canGenerateOfficial && !showGenerationForm"
+          class="muted"
+        >
           La signature officielle IFICS sera intégrée au PDF.
+          Les dates imprimées pourront être choisies avant génération.
           Le document généré restera archivé et traçable.
         </p>
       </section>
@@ -1656,8 +1883,53 @@ async function generateOfficialDocument() {
   color: #1d4933;
 }
 
+.official-document-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.official-document-file-actions .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .official-document-panel > .muted:last-child {
   margin-bottom: 0;
+}
+
+.generation-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #d6e2da;
+  border-radius: 12px;
+  background: #f8fbf9;
+}
+
+.generation-form > p {
+  margin: 0;
+}
+
+.generation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.generation-form .field {
+  display: grid;
+  gap: 8px;
+}
+
+.generation-form .field > span {
+  color: #40584a;
+  font-size: .82rem;
+  font-weight: 700;
 }
 
 .correction-form {
@@ -1686,6 +1958,10 @@ async function generateOfficialDocument() {
 }
 
 @media (max-width: 600px) {
+  .generation-grid {
+    grid-template-columns: 1fr;
+  }
+
   .totals {
     gap: 8px;
   }

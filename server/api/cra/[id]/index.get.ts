@@ -6,6 +6,7 @@ import {
   success,
 } from '../../../utils/api'
 import { PERMISSIONS } from '../../../utils/constants'
+import { craPeriodPolicy } from '../../../utils/cra-calendar'
 import { summarizeCraDays } from '../../../utils/cra-summary'
 import { prisma } from '../../../utils/prisma'
 
@@ -127,14 +128,28 @@ export default defineEventHandler(async (event) => {
     ...details
   } = report
   const summary = summarizeCraDays(days)
+  const periodPolicy = craPeriodPolicy(report)
 
   return success({
     ...details,
     project: assignment.project,
     intervenor: assignment.intervenor,
-    officialDocument: canReadAll
-      ? documents[0] ?? null
+    officialDocument: canReadAll && documents[0]
+      ? {
+          ...documents[0],
+          ificsVisaDate:
+            documents[0].ificsVisaDate
+              ?.toISOString()
+              .slice(0, 10)
+            ?? null,
+          intervenorSignatureDate:
+            documents[0].intervenorSignatureDate
+              ?.toISOString()
+              .slice(0, 10)
+            ?? null,
+        }
       : null,
+    periodPolicy,
     days: days.map(day => ({
       ...day,
       date: day.date.toISOString().slice(0, 10),

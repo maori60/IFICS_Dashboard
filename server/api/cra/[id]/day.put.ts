@@ -108,15 +108,7 @@ export default defineEventHandler(async (event) => {
     report.intervenorId,
   )
 
-  const date = validateCraDate(
-    body.date,
-    report,
-    {
-      // Une ancienne journée future doit rester supprimable,
-      // même hors fenêtre de clôture anticipée.
-      allowFuture: !selected,
-    },
-  )
+  const date = validateCraDate(body.date, report)
 
   try {
     const result = await prisma.$transaction(async (tx) => {
