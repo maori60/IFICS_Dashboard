@@ -6,7 +6,7 @@ import {
   success,
 } from '../../../utils/api'
 import { PERMISSIONS } from '../../../utils/constants'
-import { CRA_HOURS_PER_DAY } from '../../../utils/cra-calendar'
+import { summarizeCraDays } from '../../../utils/cra-summary'
 import { prisma } from '../../../utils/prisma'
 
 export default defineEventHandler(async (event) => {
@@ -85,6 +85,8 @@ export default defineEventHandler(async (event) => {
         select: {
           id: true,
           date: true,
+          dayType: true,
+          durationMinutes: true,
           comment: true,
           hasIncident: true,
           incident: true,
@@ -98,6 +100,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { assignment, days, ...details } = report
+  const summary = summarizeCraDays(days)
 
   return success({
     ...details,
@@ -106,9 +109,8 @@ export default defineEventHandler(async (event) => {
     days: days.map(day => ({
       ...day,
       date: day.date.toISOString().slice(0, 10),
-      hours: CRA_HOURS_PER_DAY,
+      hours: day.durationMinutes / 60,
     })),
-    totalDays: days.length,
-    totalHours: days.length * CRA_HOURS_PER_DAY,
+    ...summary,
   })
 })

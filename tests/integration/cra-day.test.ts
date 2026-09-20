@@ -400,6 +400,126 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
       })).toBe(0)
     })
 
+    it('enregistre un congé payé sans le compter comme temps travaillé', async () => {
+      request.body = {
+        date: '2026-09-18',
+        selected: true,
+        revision: 1,
+        dayType: 'PAID_LEAVE',
+        durationMinutes: 420,
+      }
+
+      const result = await handler(event)
+
+      expect(result.data).toMatchObject({
+        selected: true,
+        dayType: 'PAID_LEAVE',
+        durationMinutes: 420,
+        revision: 2,
+        declaredDays: 1,
+        totalDays: 0,
+        totalHours: 0,
+        paidLeaveDays: 1,
+        absenceDays: 1,
+      })
+
+      const day = await prisma.craDay.findFirstOrThrow({
+        where: { reportId: firstReportId },
+      })
+
+      expect(day).toMatchObject({
+        dayType: 'PAID_LEAVE',
+        durationMinutes: 420,
+      })
+    })
+
+    it('sépare la formation du temps réellement travaillé', async () => {
+      request.body = {
+        date: '2026-09-18',
+        selected: true,
+        revision: 1,
+      }
+
+      await handler(event)
+
+      request.body = {
+        date: '2026-09-21',
+        selected: true,
+        revision: 2,
+        dayType: 'TRAINING',
+        durationMinutes: 210,
+      }
+
+      await handler(event)
+
+      request.permissions = ['cra:read:own']
+
+      const result = await readHandler(event)
+
+      expect(result.data).toMatchObject({
+        declaredDays: 2,
+        totalDays: 1,
+        totalHours: 7,
+        trainingDays: 1,
+        trainingMinutes: 210,
+        trainingHours: 3.5,
+        absenceDays: 0,
+      })
+
+      expect(result.data.days).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            date: '2026-09-18',
+            dayType: 'WORK',
+            durationMinutes: 420,
+            hours: 7,
+          }),
+          expect.objectContaining({
+            date: '2026-09-21',
+            dayType: 'TRAINING',
+            durationMinutes: 210,
+            hours: 3.5,
+          }),
+        ]),
+      )
+    })
+
+    it('refuse de déclarer manuellement un jour férié comme type de journée', async () => {
+      request.body = {
+        date: '2026-09-18',
+        selected: true,
+        revision: 1,
+        dayType: 'PUBLIC_HOLIDAY',
+        durationMinutes: 420,
+      }
+
+      await expect(handler(event)).rejects.toMatchObject({
+        statusCode: 400,
+      })
+
+      expect(await prisma.craDay.count({
+        where: { reportId: firstReportId },
+      })).toBe(0)
+    })
+
+    it('refuse une durée de journée supérieure à 12 heures', async () => {
+      request.body = {
+        date: '2026-09-18',
+        selected: true,
+        revision: 1,
+        dayType: 'WORK',
+        durationMinutes: 721,
+      }
+
+      await expect(handler(event)).rejects.toMatchObject({
+        statusCode: 400,
+      })
+
+      expect(await prisma.craDay.count({
+        where: { reportId: firstReportId },
+      })).toBe(0)
+    })
+
     it('refuse la modification administrative sans changer le CRA', async () => {
       await handler(event)
       const before = await reportSnapshot()

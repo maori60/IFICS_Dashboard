@@ -3,7 +3,7 @@ import type { Prisma } from '../../../generated/prisma/client'
 import { hasPermission, requireAuth } from '../../utils/auth'
 import { httpError, success } from '../../utils/api'
 import { PERMISSIONS } from '../../utils/constants'
-import { CRA_HOURS_PER_DAY } from '../../utils/cra-calendar'
+import { summarizeCraDays } from '../../utils/cra-summary'
 import { prisma } from '../../utils/prisma'
 import { badRequest } from '../../utils/validation'
 
@@ -117,8 +117,11 @@ export default defineEventHandler(async (event) => {
               },
             },
           },
-          _count: {
-            select: { days: true },
+          days: {
+            select: {
+              dayType: true,
+              durationMinutes: true,
+            },
           },
         },
       }),
@@ -127,12 +130,11 @@ export default defineEventHandler(async (event) => {
   )
 
   return success({
-    items: reports.map(({ assignment, _count, ...report }) => ({
+    items: reports.map(({ assignment, days, ...report }) => ({
       ...report,
       project: assignment.project,
       intervenor: assignment.intervenor,
-      totalDays: _count.days,
-      totalHours: _count.days * CRA_HOURS_PER_DAY,
+      ...summarizeCraDays(days),
     })),
     pagination: {
       page,

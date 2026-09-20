@@ -9,10 +9,8 @@ import {
   requireCraAssignmentForCreation,
   requireCraWriter,
 } from '../../../utils/cra'
-import {
-  CRA_HOURS_PER_DAY,
-  validateCraDate,
-} from '../../../utils/cra-calendar'
+import { validateCraDate } from '../../../utils/cra-calendar'
+import { summarizeCraDays } from '../../../utils/cra-summary'
 import { prisma } from '../../../utils/prisma'
 import { badRequest, safeObject } from '../../../utils/validation'
 
@@ -95,7 +93,11 @@ export default defineEventHandler(async (event) => {
 
     const days = await tx.craDay.findMany({
       where: { reportId: report.id },
-      select: { date: true },
+      select: {
+        date: true,
+        dayType: true,
+        durationMinutes: true,
+      },
       orderBy: { date: 'asc' },
     })
 
@@ -112,8 +114,7 @@ export default defineEventHandler(async (event) => {
       status: 'SUBMITTED',
       revision: revision + 1,
       submittedAt,
-      totalDays: days.length,
-      totalHours: days.length * CRA_HOURS_PER_DAY,
+      ...summarizeCraDays(days),
     }
   })
 
