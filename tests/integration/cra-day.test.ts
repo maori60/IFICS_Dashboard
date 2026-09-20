@@ -729,6 +729,54 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
       expect(await reportSnapshot()).toEqual(submitted)
     })
 
+    it('soumet un CRA composé uniquement de congés et absences', async () => {
+      request.body = {
+        date: '2026-09-18',
+        selected: true,
+        revision: 1,
+        dayType: 'PAID_LEAVE',
+        durationMinutes: 420,
+      }
+
+      await handler(event)
+
+      request.body = {
+        date: '2026-09-21',
+        selected: true,
+        revision: 2,
+        dayType: 'SICK_LEAVE',
+        durationMinutes: 420,
+      }
+
+      await handler(event)
+
+      request.body = {
+        confirmed: true,
+        revision: 3,
+      }
+
+      const result = await submitHandler(event)
+
+      expect(result.data).toMatchObject({
+        status: 'SUBMITTED',
+        revision: 4,
+        declaredDays: 2,
+        totalDays: 0,
+        totalHours: 0,
+        workedDays: 0,
+        workedMinutes: 0,
+        absenceDays: 2,
+        paidLeaveDays: 1,
+        sickLeaveDays: 1,
+      })
+
+      const submitted = await reportSnapshot()
+
+      expect(submitted.status).toBe('SUBMITTED')
+      expect(submitted.revision).toBe(4)
+      expect(submitted.days).toHaveLength(2)
+    })
+
     it('retransmet un CRA refusé après correction puis verrouille les journées', async () => {
       request.body = {
         date: '2026-09-18',
