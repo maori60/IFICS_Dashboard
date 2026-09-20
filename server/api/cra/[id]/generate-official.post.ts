@@ -8,7 +8,10 @@ import {
 } from '../../../utils/api'
 import { writeAuditLog } from '../../../utils/audit'
 import { PERMISSIONS } from '../../../utils/constants'
-import { validateCraDate } from '../../../utils/cra-calendar'
+import {
+  craPeriodPolicy,
+  validateCraDate,
+} from '../../../utils/cra-calendar'
 import { summarizeCraDays } from '../../../utils/cra-summary'
 import {
   readStoredFile,
@@ -28,6 +31,40 @@ function shortReportReference(reportId: string): string {
     .toUpperCase()
 
   return compact.slice(-8).padStart(8, '0')
+}
+
+function parseCraDocumentDate(
+  value: unknown,
+  fallback: string,
+  label: string,
+): {
+  iso: string
+  date: Date
+} {
+  const text = value === undefined ? fallback : value
+
+  if (
+    typeof text !== 'string'
+    || !/^\d{4}-\d{2}-\d{2}$/.test(text)
+  ) {
+    badRequest(
+      `${label} doit respecter le format AAAA-MM-JJ.`,
+    )
+  }
+
+  const date = new Date(`${text}T00:00:00.000Z`)
+
+  if (
+    Number.isNaN(date.getTime())
+    || date.toISOString().slice(0, 10) !== text
+  ) {
+    badRequest(`${label} est invalide.`)
+  }
+
+  return {
+    iso: text,
+    date,
+  }
 }
 
 export default defineEventHandler(async (event) => {
@@ -54,6 +91,8 @@ export default defineEventHandler(async (event) => {
   const allowedFields = new Set([
     'confirmed',
     'revision',
+    'ificsVisaDate',
+    'intervenorSignatureDate',
   ])
 
   if (
@@ -202,6 +241,21 @@ export default defineEventHandler(async (event) => {
     )
   }
 
+  const defaultPrintedDate
+    = craPeriodPolicy(report).periodEnd
+
+  const ificsVisaDate = parseCraDocumentDate(
+    body.ificsVisaDate,
+    defaultPrintedDate,
+    'La date du visa IFICS',
+  )
+
+  const intervenorSignatureDate = parseCraDocumentDate(
+    body.intervenorSignatureDate,
+    defaultPrintedDate,
+    'La date de signature de l’intervenant',
+  )
+
   const [association, finance] = await Promise.all([
     prisma.association.findFirst({
       where: {
@@ -336,6 +390,9 @@ export default defineEventHandler(async (event) => {
   const pdfBytes = await generateCraPdf({
     reference,
     generatedAt,
+    ificsVisaDate: ificsVisaDate.date,
+    intervenorSignatureDate:
+      intervenorSignatureDate.date,
 
     year: report.year,
     month: report.month,
@@ -443,6 +500,10 @@ export default defineEventHandler(async (event) => {
             version,
             reportRevision: revision,
 
+            ificsVisaDate: ificsVisaDate.date,
+            intervenorSignatureDate:
+              intervenorSignatureDate.date,
+
             reference,
 
             originalName: `${reference}.pdf`,
@@ -467,6 +528,8 @@ export default defineEventHandler(async (event) => {
             status: true,
             version: true,
             reportRevision: true,
+            ificsVisaDate: true,
+            intervenorSignatureDate: true,
             reference: true,
             originalName: true,
             mimeType: true,
@@ -521,6 +584,10 @@ export default defineEventHandler(async (event) => {
       status: document.status,
       version: document.version,
       reference: document.reference,
+      generatedAt: generatedAt.toISOString(),
+      ificsVisaDate: ificsVisaDate.iso,
+      intervenorSignatureDate:
+        intervenorSignatureDate.iso,
       fileSize: document.fileSize.toString(),
       sha256: document.sha256,
       antivirusStatus:

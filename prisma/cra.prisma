@@ -114,6 +114,9 @@ model CraDocument {
   version        Int               @default(1)
   reportRevision Int
 
+  ificsVisaDate           DateTime? @db.Date
+  intervenorSignatureDate DateTime? @db.Date
+
   reference    String  @unique @db.VarChar(80)
   originalName String  @db.VarChar(255)
   storedName   String  @db.VarChar(255)

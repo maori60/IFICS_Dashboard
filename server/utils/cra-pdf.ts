@@ -49,6 +49,8 @@ export type CraPdfLogo = {
 export type CraPdfInput = {
   reference: string
   generatedAt: Date | string
+  ificsVisaDate: Date | string
+  intervenorSignatureDate: Date | string
   year: number
   month: number
 
@@ -421,7 +423,24 @@ export async function generateCraPdf(
       || input.association.legalName
       || input.association.name
 
-  const generatedDate = formatGeneratedDate(input.generatedAt)
+  const generatedAt = input.generatedAt instanceof Date
+    ? input.generatedAt
+    : new Date(input.generatedAt)
+
+  if (Number.isNaN(generatedAt.getTime())) {
+    throw new Error('Date technique de génération invalide.')
+  }
+
+  pdf.setCreationDate(generatedAt)
+  pdf.setModificationDate(generatedAt)
+
+  const ificsVisaDate = formatGeneratedDate(
+    input.ificsVisaDate,
+  )
+
+  const intervenorSignatureDate = formatGeneratedDate(
+    input.intervenorSignatureDate,
+  )
 
   let page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])
   let y = PAGE_HEIGHT - MARGIN
@@ -1037,7 +1056,7 @@ export async function generateCraPdf(
     color: COLORS.ink,
   })
 
-  page.drawText(`Date : ${generatedDate}`, {
+  page.drawText(`Date : ${ificsVisaDate}`, {
     x: MARGIN + 12,
     y: blockTop - 50,
     size: 7.3,
@@ -1084,7 +1103,7 @@ export async function generateCraPdf(
     },
   )
 
-  page.drawText(`Date : ${generatedDate}`, {
+  page.drawText(`Date : ${intervenorSignatureDate}`, {
     x: intervenorBoxX + 12,
     y: blockTop - 51,
     size: 7.3,

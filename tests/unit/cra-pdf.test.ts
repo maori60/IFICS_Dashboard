@@ -31,6 +31,8 @@ function createBaseInput(
   return {
     reference: 'CRA-2026-09-TEST01-V1',
     generatedAt: new Date('2026-09-20T14:00:00.000Z'),
+    ificsVisaDate: '2026-09-30',
+    intervenorSignatureDate: '2026-09-30',
     year: 2026,
     month: 9,
 

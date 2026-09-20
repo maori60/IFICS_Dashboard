@@ -107,6 +107,8 @@ export default defineEventHandler(async (event) => {
           version: true,
           reportRevision: true,
           reference: true,
+          ificsVisaDate: true,
+          intervenorSignatureDate: true,
           createdAt: true,
           sentToIntervenorAt: true,
         },
