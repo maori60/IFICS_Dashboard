@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ApiSuccess, SessionPayload } from '~/types/api'
+import { apiErrorMessage } from '~/utils/api-error'
 import holidayData from '../../../../server/data/jours-feries-metropole.json'
 
 definePageMeta({
@@ -41,6 +42,25 @@ type CraDay = {
   incident: string | null
 }
 
+type CraOfficialDocumentStatus =
+  | 'GENERATED'
+  | 'SENT_TO_INTERVENOR'
+  | 'RECEIVED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'SUPERSEDED'
+
+type CraOfficialDocument = {
+  id: string
+  type: 'IFICS_TO_SIGN'
+  status: CraOfficialDocumentStatus
+  version: number
+  reportRevision: number
+  reference: string
+  createdAt: string
+  sentToIntervenorAt: string | null
+}
+
 type CraReport = {
   id: string
   intervenorId: string
@@ -74,6 +94,7 @@ type CraReport = {
   publicHolidayDays: number
   project: { id: string; title: string; reference: string | null }
   intervenor: { id: string; firstName: string; lastName: string }
+  officialDocument: CraOfficialDocument | null
   days: CraDay[]
 }
 
@@ -110,6 +131,16 @@ const statusLabels: Record<CraStatus, string> = {
   CLIENT_PENDING: 'En attente du client',
   VALIDATED: 'Validé',
   REFUSED: 'À corriger',
+}
+
+const officialDocumentStatusLabels:
+Record<CraOfficialDocumentStatus, string> = {
+  GENERATED: 'Généré',
+  SENT_TO_INTERVENOR: 'Envoyé à l’intervenant',
+  RECEIVED: 'Document signé reçu',
+  APPROVED: 'Approuvé',
+  REJECTED: 'Rejeté',
+  SUPERSEDED: 'Remplacé',
 }
 
 const holidays: Record<string, string> = holidayData
@@ -197,6 +228,25 @@ const canReview = computed(() =>
   && hasPermission('cra:review'),
 )
 
+const canGenerateOfficial = computed(() =>
+  reportReady.value
+  && report.value?.status === 'REVIEWED'
+  && hasPermission('cra:read:all')
+  && hasPermission('cra:manage'),
+)
+
+const canViewOfficialDocumentPanel = computed(() =>
+  reportReady.value
+  && hasPermission('cra:read:all')
+  && Boolean(
+    report.value
+    && (
+      report.value.status === 'REVIEWED'
+      || report.value.officialDocument
+    ),
+  ),
+)
+
 const correctionReasonValid = computed(() => {
   const reason = correctionReason.value.trim()
 
@@ -220,7 +270,7 @@ const readOnlyMessage = computed(() => {
     case 'SUBMITTED':
       return 'Ce CRA a été transmis à IFICS pour vérification. Les journées sont verrouillées.'
     case 'REVIEWED':
-      return 'IFICS a vérifié ce CRA. Il est prêt pour l’envoi au client ; les journées restent verrouillées.'
+      return 'IFICS a vérifié ce CRA. Il est prêt pour la génération du document officiel à faire signer par l’intervenant ; les journées restent verrouillées.'
     case 'CLIENT_PENDING':
       return 'Ce CRA est en attente de validation par le client. Les journées sont verrouillées.'
     case 'VALIDATED':
@@ -657,7 +707,7 @@ async function reviewReport(decision: ReviewDecision) {
       ...(decision === 'REFUSED' ? { correctionReason: reason } : {}),
     },
     decision === 'REVIEWED'
-      ? 'CRA vérifié par IFICS. Il est prêt pour l’envoi au client.'
+      ? 'CRA vérifié par IFICS. Il est prêt pour la génération du document officiel à faire signer par l’intervenant.'
       : 'Correction demandée. L’intervenant peut modifier puis transmettre à nouveau son CRA.',
     'review',
   )
@@ -667,6 +717,72 @@ async function reviewReport(decision: ReviewDecision) {
     showCorrectionForm.value = false
   }
 }
+
+async function generateOfficialDocument() {
+  const current = report.value
+
+  if (
+    !current
+    || !canGenerateOfficial.value
+    || busy.value
+  ) return
+
+  const existing = current.officialDocument
+
+  const confirmed = window.confirm(
+    existing
+      ? `Générer une nouvelle version du CRA officiel de ${period.value} ? La version ${existing.version} (${existing.reference}) restera conservée dans l’historique mais sera remplacée par la nouvelle version active.`
+      : `Générer le CRA officiel de ${period.value} à faire signer par ${current.intervenor.firstName} ${current.intervenor.lastName} ? La signature officielle IFICS sera intégrée au PDF.`,
+  )
+
+  if (!confirmed) return
+
+  busy.value = true
+  feedback.value = ''
+  actionError.value = ''
+
+  try {
+    const response = await $fetch<ApiSuccess<CraOfficialDocument>>(
+      `${reportUrl}/generate-official`,
+      {
+        method: 'POST',
+        body: {
+          confirmed: true,
+          revision: current.revision,
+        },
+      },
+    )
+
+    feedback.value
+      = `Document officiel ${response.data.reference} généré avec succès.`
+  }
+  catch (cause) {
+    actionError.value = apiErrorMessage(
+      cause,
+      'Le document officiel n’a pas pu être généré. Vérifiez le CRA et la signature officielle configurée.',
+    )
+  }
+  finally {
+    try {
+      await refresh()
+
+      if (error.value || !report.value) {
+        feedback.value = ''
+        actionError.value
+          = 'Impossible de recharger le CRA après la génération. Actualisez la page avant de continuer.'
+      }
+    }
+    catch {
+      feedback.value = ''
+      actionError.value
+        = 'Impossible de recharger le CRA après la génération. Actualisez la page avant de continuer.'
+    }
+    finally {
+      busy.value = false
+    }
+  }
+}
+
 </script>
 
 <template>
@@ -979,6 +1095,74 @@ async function reviewReport(decision: ReviewDecision) {
       </section>
 
       <section
+        v-if="canViewOfficialDocumentPanel"
+        class="official-document-panel"
+        aria-labelledby="official-document-heading"
+      >
+        <h2 id="official-document-heading">
+          Document officiel
+        </h2>
+
+        <template v-if="report.officialDocument">
+          <div class="official-document-summary">
+            <div>
+              <strong class="official-document-reference">
+                {{ report.officialDocument.reference }}
+              </strong>
+
+              <p class="muted">
+                Version {{ report.officialDocument.version }}
+                · générée le
+                {{ dateLabel(report.officialDocument.createdAt) }}
+                — heure de Paris
+              </p>
+            </div>
+
+            <span class="badge">
+              {{
+                officialDocumentStatusLabels[
+                  report.officialDocument.status
+                ]
+              }}
+            </span>
+          </div>
+
+          <p
+            v-if="report.officialDocument.sentToIntervenorAt"
+            class="muted"
+          >
+            Envoyé à l’intervenant le
+            {{ dateLabel(report.officialDocument.sentToIntervenorAt) }}
+            — heure de Paris.
+          </p>
+        </template>
+
+        <p v-else>
+          Aucun document officiel n’a encore été généré pour ce CRA.
+        </p>
+
+        <div v-if="canGenerateOfficial" class="actions">
+          <button
+            type="button"
+            class="button primary"
+            :disabled="busy"
+            @click="generateOfficialDocument"
+          >
+            {{
+              report.officialDocument
+                ? 'Générer une nouvelle version'
+                : 'Générer le CRA officiel à signer'
+            }}
+          </button>
+        </div>
+
+        <p v-if="canGenerateOfficial" class="muted">
+          La signature officielle IFICS sera intégrée au PDF.
+          Le document généré restera archivé et traçable.
+        </p>
+      </section>
+
+      <section
         v-if="canReview"
         class="review-panel"
         aria-labelledby="review-heading"
@@ -1148,6 +1332,7 @@ async function reviewReport(decision: ReviewDecision) {
 
 .correction-notice h2,
 .review-panel h2,
+.official-document-panel h2,
 .notes h2 {
   margin-top: 0;
   font-size: 1.2rem;
@@ -1442,7 +1627,8 @@ async function reviewReport(decision: ReviewDecision) {
 }
 
 .notes,
-.review-panel {
+.review-panel,
+.official-document-panel {
   padding: 20px;
   border: 1px solid #dce6df;
   border-radius: 14px;
@@ -1451,6 +1637,27 @@ async function reviewReport(decision: ReviewDecision) {
 
 .notes article + article {
   border-top: 1px solid #dce6df;
+}
+
+.official-document-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 14px 0;
+}
+
+.official-document-summary p {
+  margin: 6px 0 0;
+}
+
+.official-document-reference {
+  overflow-wrap: anywhere;
+  color: #1d4933;
+}
+
+.official-document-panel > .muted:last-child {
+  margin-bottom: 0;
 }
 
 .correction-form {

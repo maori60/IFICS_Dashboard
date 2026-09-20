@@ -21,6 +21,7 @@ const request = vi.hoisted(() => ({
   associationId: '',
   userId: 'cra-generator-admin',
   roleCode: 'ADMIN',
+  intervenorId: null as string | null,
   permissions: ['*'] as string[],
   body: {} as Record<string, unknown>,
 }))
@@ -43,7 +44,7 @@ vi.mock('../../server/utils/auth', () => ({
     userId: request.userId,
     associationId: request.associationId,
     clientId: null,
-    intervenorId: null,
+    intervenorId: request.intervenorId,
     email: 'admin@example.invalid',
     firstName: 'Admin',
     lastName: 'CRA',
@@ -72,6 +73,7 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
   () => {
     let prisma: typeof import('../../server/utils/prisma')['prisma']
     let handler: typeof import('../../server/api/cra/[id]/generate-official.post')['default']
+    let readHandler: typeof import('../../server/api/cra/[id]/index.get')['default']
 
     let reportId: string
     let intervenorId: string
@@ -180,6 +182,12 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
       handler = (
         await import(
           '../../server/api/cra/[id]/generate-official.post'
+        )
+      ).default
+
+      readHandler = (
+        await import(
+          '../../server/api/cra/[id]/index.get'
         )
       ).default
 
@@ -354,6 +362,8 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
 
       request.reportId = reportId
       request.associationId = associationId
+      request.roleCode = 'ADMIN'
+      request.intervenorId = null
       request.permissions = ['*']
       request.body = {
         confirmed: true,
@@ -712,6 +722,45 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
 
       expect(writeAuditLog)
         .not.toHaveBeenCalled()
+    })
+
+    it('retourne au lecteur global uniquement les métadonnées sûres du dernier document officiel', async () => {
+      const generated = await handler(event)
+
+      const result = await readHandler(event)
+
+      expect(result.data.officialDocument).toMatchObject({
+        id: generated.data.id,
+        type: 'IFICS_TO_SIGN',
+        status: 'GENERATED',
+        version: 1,
+        reportRevision: 3,
+        reference: generated.data.reference,
+      })
+
+      expect(result.data.officialDocument)
+        .not.toHaveProperty('filePath')
+
+      expect(result.data.officialDocument)
+        .not.toHaveProperty('storedName')
+
+      expect(result.data.officialDocument)
+        .not.toHaveProperty('sha256')
+
+      expect(result.data.officialDocument)
+        .not.toHaveProperty('fileSize')
+    })
+
+    it('masque le document officiel en lecture personnelle', async () => {
+      await handler(event)
+
+      request.roleCode = 'INTERVENOR'
+      request.intervenorId = intervenorId
+      request.permissions = ['cra:read:own']
+
+      const result = await readHandler(event)
+
+      expect(result.data.officialDocument).toBeNull()
     })
 
     it('transforme une collision de version Prisma en HTTP 409 et nettoie le PDF', async () => {

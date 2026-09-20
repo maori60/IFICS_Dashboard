@@ -181,7 +181,7 @@ export default defineEventHandler(async (event) => {
               ? 'CRA vérifié par IFICS'
               : 'Correction demandée sur votre CRA',
             message: decision === 'REVIEWED'
-              ? `Votre CRA de ${period} pour le projet « ${projectTitle} » a été vérifié par IFICS. Il est prêt pour l’envoi au client.`
+              ? `Votre CRA de ${period} pour le projet « ${projectTitle} » a été vérifié par IFICS. La prochaine étape est la génération du document officiel à vous faire signer.`
               : `IFICS demande une correction de votre CRA de ${period} pour le projet « ${projectTitle} » : ${correctionReason}`,
             href: `/dashboard/cra/${report.id}`,
           },

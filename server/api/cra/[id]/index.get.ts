@@ -92,6 +92,25 @@ export default defineEventHandler(async (event) => {
           incident: true,
         },
       },
+      documents: {
+        where: {
+          type: 'IFICS_TO_SIGN',
+        },
+        orderBy: {
+          version: 'desc',
+        },
+        take: 1,
+        select: {
+          id: true,
+          type: true,
+          status: true,
+          version: true,
+          reportRevision: true,
+          reference: true,
+          createdAt: true,
+          sentToIntervenorAt: true,
+        },
+      },
     },
   })
 
@@ -99,13 +118,21 @@ export default defineEventHandler(async (event) => {
     httpError(404, 'CRA introuvable ou inaccessible.', 'CRA_NOT_FOUND')
   }
 
-  const { assignment, days, ...details } = report
+  const {
+    assignment,
+    days,
+    documents,
+    ...details
+  } = report
   const summary = summarizeCraDays(days)
 
   return success({
     ...details,
     project: assignment.project,
     intervenor: assignment.intervenor,
+    officialDocument: canReadAll
+      ? documents[0] ?? null
+      : null,
     days: days.map(day => ({
       ...day,
       date: day.date.toISOString().slice(0, 10),
