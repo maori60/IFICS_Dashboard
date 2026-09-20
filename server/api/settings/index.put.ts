@@ -15,6 +15,7 @@ import {
   safeObject,
 } from '../../utils/validation'
 import { writeAuditLog } from '../../utils/audit'
+import { FINANCE_SETTINGS_CLIENT_SELECT } from '../../utils/settings'
 
 export default defineEventHandler(async (event) => {
   const context = await requirePermission(event, PERMISSIONS.SETTINGS_MANAGE)
@@ -61,6 +62,7 @@ export default defineEventHandler(async (event) => {
       where: { associationId: context.associationId },
       create: { associationId: context.associationId, ...financeData },
       update: financeData,
+      select: FINANCE_SETTINGS_CLIENT_SELECT,
     }),
   ])
 
