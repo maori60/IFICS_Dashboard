@@ -112,7 +112,7 @@ export async function validatePdf(buffer: Buffer, maxBytes = maxUploadBytes()): 
 }
 
 export async function storePdf(
-  scope: 'projects' | 'intervenors' | 'accounting' | 'reports' | 'assets' | 'contracts',
+  scope: 'projects' | 'intervenors' | 'accounting' | 'reports' | 'assets' | 'contracts' | 'cra',
   ownerId: string,
   originalFilename: string,
   buffer: Buffer,
