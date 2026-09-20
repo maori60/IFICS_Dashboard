@@ -27,6 +27,11 @@ export default defineEventHandler(async (event) => {
     PERMISSIONS.PROJECT_CONFIDENTIAL_READ,
   )
 
+  const canManageCra = hasPermission(
+    context,
+    PERMISSIONS.CRA_MANAGE,
+  )
+
   const report = await prisma.craReport.findFirst({
     where: {
       id: reportId,
@@ -77,6 +82,7 @@ export default defineEventHandler(async (event) => {
               id: true,
               firstName: true,
               lastName: true,
+              email: true,
             },
           },
         },
@@ -133,7 +139,14 @@ export default defineEventHandler(async (event) => {
   return success({
     ...details,
     project: assignment.project,
-    intervenor: assignment.intervenor,
+    intervenor: {
+      id: assignment.intervenor.id,
+      firstName: assignment.intervenor.firstName,
+      lastName: assignment.intervenor.lastName,
+      email: canReadAll && canManageCra
+        ? assignment.intervenor.email
+        : null,
+    },
     officialDocument: canReadAll && documents[0]
       ? {
           ...documents[0],

@@ -99,7 +99,12 @@ type CraReport = {
   otherAbsenceDays: number
   publicHolidayDays: number
   project: { id: string; title: string; reference: string | null }
-  intervenor: { id: string; firstName: string; lastName: string }
+  intervenor: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string | null
+  }
   officialDocument: CraOfficialDocument | null
   periodPolicy: CraPeriodPolicy
   days: CraDay[]
@@ -186,6 +191,11 @@ const showGenerationForm = ref(false)
 const generationIficsVisaDate = ref('')
 const generationIntervenorSignatureDate = ref('')
 
+const showSendToIntervenorForm = ref(false)
+const sendToIntervenorEmail = ref('')
+const sendToIntervenorSubject = ref('')
+const sendToIntervenorMessage = ref('')
+
 const showDayEditor = ref(false)
 const dayEditorDate = ref('')
 const dayEditorType = ref<CraWritableDayType>('WORK')
@@ -257,6 +267,23 @@ const canViewOfficialDocumentPanel = computed(() =>
     ),
   ),
 )
+
+const canSendOfficialToIntervenor = computed(() => {
+  const current = report.value
+  const document = current?.officialDocument
+
+  return Boolean(
+    reportReady.value
+    && current?.status === 'REVIEWED'
+    && hasPermission('cra:read:all')
+    && hasPermission('cra:manage')
+    && document
+    && (
+      document.status === 'GENERATED'
+      || document.status === 'SENT_TO_INTERVENOR'
+    ),
+  )
+})
 
 const officialDocumentViewUrl = computed(() => {
   const documentId = report.value?.officialDocument?.id
@@ -332,6 +359,18 @@ const generationDatesValid = computed(() =>
     generationIntervenorSignatureDate.value,
   ),
 )
+
+const sendToIntervenorFormValid = computed(() => {
+  const email = sendToIntervenorEmail.value.trim()
+  const subject = sendToIntervenorSubject.value.trim()
+  const message = sendToIntervenorMessage.value.trim()
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    && subject.length >= 1
+    && subject.length <= 200
+    && message.length >= 1
+    && message.length <= 12000
+})
 
 const selectedDays = computed(() =>
   new Map(report.value?.days.map(day => [day.date, day]) ?? []),
@@ -884,6 +923,167 @@ async function generateOfficialDocument() {
   }
 }
 
+function defaultSendToIntervenorSubject(): string {
+  const current = report.value
+
+  if (!current) return ''
+
+  return `CRA ${period.value} à signer — ${current.project.title}`
+}
+
+function defaultSendToIntervenorMessage(): string {
+  const current = report.value
+
+  if (!current) return ''
+
+  const mission = current.project.reference
+    ? `${current.project.title} (${current.project.reference})`
+    : current.project.title
+
+  const lines = [
+    `Bonjour ${current.intervenor.firstName},`,
+    '',
+    `Veuillez trouver en pièce jointe votre CRA officiel IFICS pour la période de ${period.value}, concernant la mission « ${mission} ».`,
+    '',
+    'Récapitulatif :',
+    `- Journées renseignées : ${current.declaredDays}`,
+    `- Journées travaillées : ${current.workedDays}`,
+    `- Temps travaillé : ${formatMinutes(current.workedMinutes)}`,
+  ]
+
+  if (current.trainingDays > 0) {
+    lines.push(
+      `- Formation : ${current.trainingDays} journée(s) — ${formatMinutes(current.trainingMinutes)}`,
+    )
+  }
+
+  if (current.absenceDays > 0) {
+    lines.push(
+      `- Congés / absences : ${current.absenceDays} journée(s)`,
+    )
+
+    for (const item of absenceItems.value) {
+      lines.push(`  • ${item.label} : ${item.count}`)
+    }
+  }
+
+  lines.push(
+    '',
+    'Merci de signer le document joint puis de le retourner à IFICS.',
+    '',
+    'Cordialement,',
+    'IFICS',
+  )
+
+  return lines.join('\n')
+}
+
+function openSendToIntervenorForm() {
+  const current = report.value
+
+  if (
+    !current
+    || !canSendOfficialToIntervenor.value
+    || busy.value
+  ) return
+
+  sendToIntervenorEmail.value
+    = current.intervenor.email ?? ''
+
+  sendToIntervenorSubject.value
+    = defaultSendToIntervenorSubject()
+
+  sendToIntervenorMessage.value
+    = defaultSendToIntervenorMessage()
+
+  feedback.value = ''
+  actionError.value = ''
+  showSendToIntervenorForm.value = true
+}
+
+function closeSendToIntervenorForm() {
+  if (busy.value) return
+
+  showSendToIntervenorForm.value = false
+  sendToIntervenorEmail.value = ''
+  sendToIntervenorSubject.value = ''
+  sendToIntervenorMessage.value = ''
+}
+
+async function sendOfficialToIntervenor() {
+  const current = report.value
+  const document = current?.officialDocument
+
+  if (
+    !current
+    || !document
+    || !canSendOfficialToIntervenor.value
+    || !sendToIntervenorFormValid.value
+    || busy.value
+  ) return
+
+  const recipient = sendToIntervenorEmail.value.trim()
+  const resend = document.status === 'SENT_TO_INTERVENOR'
+
+  const confirmed = window.confirm(
+    resend
+      ? `Renvoyer ${document.reference} à ${recipient} ? Le même PDF immuable sera joint au message.`
+      : `Envoyer ${document.reference} à ${recipient} pour signature ? Le PDF officiel actuellement affiché sera joint au message.`,
+  )
+
+  if (!confirmed) return
+
+  busy.value = true
+  feedback.value = ''
+  actionError.value = ''
+
+  try {
+    await $fetch(
+      `${reportUrl}/send-to-intervenor`,
+      {
+        method: 'POST',
+        body: {
+          to: recipient,
+          subject: sendToIntervenorSubject.value.trim(),
+          message: sendToIntervenorMessage.value.trim(),
+          confirmed: true,
+        },
+      },
+    )
+
+    showSendToIntervenorForm.value = false
+
+    feedback.value = resend
+      ? `CRA ${document.reference} renvoyé à ${recipient}.`
+      : `CRA ${document.reference} envoyé à ${recipient} pour signature.`
+  }
+  catch (cause) {
+    actionError.value = apiErrorMessage(
+      cause,
+      'Le CRA n’a pas pu être envoyé à l’intervenant.',
+    )
+  }
+  finally {
+    try {
+      await refresh()
+
+      if (error.value || !report.value) {
+        feedback.value = ''
+        actionError.value
+          = 'Le CRA a peut-être été envoyé, mais son état n’a pas pu être rechargé. Actualisez la page avant de recommencer.'
+      }
+    }
+    catch {
+      feedback.value = ''
+      actionError.value
+        = 'Le CRA a peut-être été envoyé, mais son état n’a pas pu être rechargé. Actualisez la page avant de recommencer.'
+    }
+    finally {
+      busy.value = false
+    }
+  }
+}
+
 </script>
 
 <template>
@@ -1267,7 +1467,7 @@ async function generateOfficialDocument() {
           <div class="official-document-file-actions">
             <a
               :href="officialDocumentViewUrl"
-              class="button primary"
+              class="button"
               target="_blank"
               rel="noopener"
             >
@@ -1280,7 +1480,101 @@ async function generateOfficialDocument() {
             >
               Télécharger le PDF
             </a>
+
+            <button
+              v-if="canSendOfficialToIntervenor && !showSendToIntervenorForm"
+              type="button"
+              class="button primary"
+              :disabled="busy"
+              @click="openSendToIntervenorForm"
+            >
+              {{
+                report.officialDocument.status === 'SENT_TO_INTERVENOR'
+                  ? 'Renvoyer à l’intervenant'
+                  : 'Envoyer à l’intervenant pour signature'
+              }}
+            </button>
           </div>
+
+          <form
+            v-if="canSendOfficialToIntervenor && showSendToIntervenorForm"
+            class="mail-form"
+            @submit.prevent="sendOfficialToIntervenor"
+          >
+            <div class="mail-form-heading">
+              <div>
+                <strong>Envoi du CRA pour signature</strong>
+                <p class="muted">
+                  Expéditeur : IFICS - CRA &lt;cra@ifics.org&gt;
+                </p>
+              </div>
+            </div>
+
+            <label class="field">
+              <span>Destinataire</span>
+              <input
+                v-model="sendToIntervenorEmail"
+                class="input"
+                type="email"
+                maxlength="255"
+                autocomplete="email"
+                required
+                :disabled="busy"
+              >
+            </label>
+
+            <label class="field">
+              <span>Objet</span>
+              <input
+                v-model="sendToIntervenorSubject"
+                class="input"
+                type="text"
+                maxlength="200"
+                required
+                :disabled="busy"
+              >
+            </label>
+
+            <label class="field">
+              <span>Message</span>
+              <textarea
+                v-model="sendToIntervenorMessage"
+                rows="12"
+                maxlength="12000"
+                required
+                :disabled="busy"
+              />
+            </label>
+
+            <p class="muted">
+              La pièce jointe sera exactement
+              <strong>{{ report.officialDocument.reference }}</strong>.
+              Aucun PDF ne sera régénéré pendant l’envoi.
+            </p>
+
+            <div class="actions">
+              <button
+                type="button"
+                class="button"
+                :disabled="busy"
+                @click="closeSendToIntervenorForm"
+              >
+                Annuler
+              </button>
+
+              <button
+                type="submit"
+                class="button primary"
+                :disabled="busy || !sendToIntervenorFormValid"
+              >
+                {{
+                  report.officialDocument.status === 'SENT_TO_INTERVENOR'
+                    ? 'Confirmer le renvoi'
+                    : 'Envoyer pour signature'
+                }}
+              </button>
+            </div>
+          </form>
         </template>
 
         <p v-else>
@@ -1288,12 +1582,16 @@ async function generateOfficialDocument() {
         </p>
 
         <div
-          v-if="canGenerateOfficial && !showGenerationForm"
-          class="actions"
+          v-if="
+            canGenerateOfficial
+              && !showGenerationForm
+              && !showSendToIntervenorForm
+          "
+          class="official-document-generation-actions"
         >
           <button
             type="button"
-            class="button primary"
+            class="button"
             :disabled="busy"
             @click="openGenerationForm"
           >
@@ -1885,9 +2183,16 @@ async function generateOfficialDocument() {
 
 .official-document-file-actions {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 14px 0;
+  margin: 18px 0 10px;
+}
+
+.official-document-generation-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin: 10px 0 0;
 }
 
 .official-document-file-actions .button {
@@ -1901,6 +2206,7 @@ async function generateOfficialDocument() {
   margin-bottom: 0;
 }
 
+.mail-form,
 .generation-form {
   display: grid;
   gap: 16px;
@@ -1911,8 +2217,43 @@ async function generateOfficialDocument() {
   background: #f8fbf9;
 }
 
-.generation-form > p {
+.generation-form > p,
+.mail-form > p {
   margin: 0;
+}
+
+.mail-form-heading p {
+  margin: 6px 0 0;
+}
+
+.mail-form .field {
+  display: grid;
+  gap: 8px;
+}
+
+.mail-form .field > span {
+  color: #40584a;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.mail-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 220px;
+  padding: 12px;
+  border: 1px solid #b9ccbf;
+  border-radius: 10px;
+  background: #fff;
+  color: #20392b;
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.mail-form textarea:focus-visible {
+  outline: 3px solid #438660;
+  outline-offset: 3px;
 }
 
 .generation-grid {
