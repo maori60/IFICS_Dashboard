@@ -11,9 +11,12 @@ definePageMeta({
 type CraStatus =
   | 'DRAFT'
   | 'SUBMITTED'
+  | 'REVIEWED'
   | 'CLIENT_PENDING'
   | 'VALIDATED'
   | 'REFUSED'
+
+type ReviewDecision = 'REVIEWED' | 'REFUSED'
 
 type CraDay = {
   id: string
@@ -31,6 +34,13 @@ type CraReport = {
   month: number
   status: CraStatus
   revision: number
+  submittedAt: string | null
+  validatedAt: string | null
+  reviewedAt: string | null
+  reviewedById: string | null
+  correctionRequestedAt: string | null
+  correctionRequestedById: string | null
+  correctionReason: string | null
   totalDays: number
   totalHours: number
   project: { id: string; title: string; reference: string | null }
@@ -41,6 +51,7 @@ type CraReport = {
 const statusLabels: Record<CraStatus, string> = {
   DRAFT: 'Brouillon',
   SUBMITTED: 'À vérifier par IFICS',
+  REVIEWED: 'Vérifié par IFICS',
   CLIENT_PENDING: 'En attente du client',
   VALIDATED: 'Validé',
   REFUSED: 'À corriger',
@@ -61,15 +72,34 @@ const {
   refresh,
 } = await useFetch<ApiSuccess<CraReport>>(reportUrl)
 
-const { data: sessionResponse } = await useFetch<ApiSuccess<SessionPayload>>(
-  '/api/auth/me',
-)
+const {
+  data: sessionResponse,
+  error: sessionError,
+  refresh: refreshSession,
+} = await useFetch<ApiSuccess<SessionPayload>>('/api/auth/me')
 
 const report = computed(() => data.value?.data ?? null)
-const user = computed(() => sessionResponse.value?.data.user)
+const user = computed(() =>
+  sessionError.value ? undefined : sessionResponse.value?.data.user,
+)
+
 const busy = ref(false)
 const feedback = ref('')
 const actionError = ref('')
+const showCorrectionForm = ref(false)
+const correctionReason = ref('')
+
+const reportReady = computed(() =>
+  Boolean(report.value)
+  && !error.value
+  && status.value !== 'pending',
+)
+
+function hasPermission(permission: string): boolean {
+  const permissions = user.value?.permissions ?? []
+
+  return permissions.includes('*') || permissions.includes(permission)
+}
 
 const isOwner = computed(() => {
   const currentUser = user.value
@@ -84,40 +114,60 @@ const isOwner = computed(() => {
   )
 })
 
-const canWriteOwn = computed(() => {
-  const permissions = user.value?.permissions ?? []
+const canWriteOwn = computed(() =>
+  isOwner.value && hasPermission('cra:write:own'),
+)
 
-  return isOwner.value
-    && (
-      permissions.includes('*')
-      || permissions.includes('cra:write:own')
+const canEdit = computed(() => {
+  const current = report.value
+
+  return reportReady.value
+    && canWriteOwn.value
+    && Boolean(
+      current
+      && (current.status === 'DRAFT' || current.status === 'REFUSED'),
     )
 })
 
-const canEdit = computed(() =>
-  canWriteOwn.value && report.value?.status === 'DRAFT',
+const canReview = computed(() =>
+  reportReady.value
+  && report.value?.status === 'SUBMITTED'
+  && hasPermission('cra:read:all')
+  && hasPermission('cra:review'),
 )
+
+const correctionReasonValid = computed(() => {
+  const reason = correctionReason.value.trim()
+
+  return reason.length > 0 && reason.length <= 2000
+})
 
 const readOnlyMessage = computed(() => {
   const current = report.value
 
   if (!current) return ''
 
-  if (current.status === 'DRAFT') {
-    return isOwner.value
-      ? 'Ce CRA est en lecture seule : votre compte ne dispose pas de la permission de saisie.'
-      : 'Ce brouillon est en lecture seule. Seul l’intervenant concerné peut déclarer ses journées et transmettre son CRA.'
+  if (sessionError.value) {
+    return 'Vos droits n’ont pas pu être chargés. Les actions sont désactivées.'
   }
 
   switch (current.status) {
+    case 'DRAFT':
+      return isOwner.value
+        ? 'Ce CRA est en lecture seule : votre compte ne dispose pas de la permission de saisie.'
+        : 'Ce brouillon est en lecture seule. Seul l’intervenant concerné peut déclarer ses journées et transmettre son CRA.'
     case 'SUBMITTED':
       return 'Ce CRA a été transmis à IFICS pour vérification. Les journées sont verrouillées.'
+    case 'REVIEWED':
+      return 'IFICS a vérifié ce CRA. Il est prêt pour l’envoi au client ; les journées restent verrouillées.'
     case 'CLIENT_PENDING':
       return 'Ce CRA est en attente de validation par le client. Les journées sont verrouillées.'
     case 'VALIDATED':
       return 'Ce CRA est validé. Les journées sont en lecture seule.'
     case 'REFUSED':
-      return 'Ce CRA est à corriger. La saisie reste verrouillée tant qu’IFICS ne l’a pas rouvert en brouillon.'
+      return isOwner.value
+        ? 'Une correction est demandée, mais votre compte ne dispose pas de la permission de saisie.'
+        : 'Une correction est demandée. Seul l’intervenant concerné peut modifier ses journées et transmettre à nouveau le CRA.'
     default:
       return 'Ce CRA est en lecture seule.'
   }
@@ -144,6 +194,20 @@ const period = computed(() => {
     1,
   )))
 })
+
+const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+  timeZone: 'Europe/Paris',
+})
+
+function dateLabel(value: string | null): string {
+  if (!value) return '—'
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? '—' : dateFormatter.format(date)
+}
 
 useHead({
   title: computed(() => `CRA — ${period.value} — IFICS`),
@@ -192,7 +256,7 @@ function mutationErrorMessage(cause: unknown): string {
   const code = failure?.statusCode ?? failure?.response?.status
 
   if (code === 409) {
-    return 'Le CRA a changé, a été verrouillé, ou cette journée est déjà déclarée sur un autre projet. Vérifiez les données actualisées.'
+    return 'Le CRA a changé, a été verrouillé, ou cette journée est déjà déclarée sur un autre projet. Vérifiez les données actualisées avant de réessayer.'
   }
 
   if (code === 403 || code === 404) {
@@ -200,7 +264,7 @@ function mutationErrorMessage(cause: unknown): string {
   }
 
   if (code === 400) {
-    return 'La demande a été refusée. Vérifiez les journées sélectionnées.'
+    return 'La demande a été refusée. Vérifiez les journées sélectionnées et, pour une correction, le motif renseigné.'
   }
 
   return 'La réponse du serveur n’a pas pu être confirmée. Vérifiez le CRA actualisé avant de réessayer.'
@@ -211,15 +275,21 @@ async function saveAction(
   method: 'PUT' | 'POST',
   body: Record<string, unknown>,
   message: string,
-) {
-  if (!canEdit.value || busy.value) return
+  action: 'edit' | 'review',
+): Promise<boolean> {
+  const allowed = action === 'review' ? canReview.value : canEdit.value
+
+  if (!allowed || busy.value || !reportReady.value) return false
 
   busy.value = true
   feedback.value = ''
   actionError.value = ''
 
+  let succeeded = false
+
   try {
     await $fetch(url, { method, body })
+    succeeded = true
     feedback.value = message
   }
   catch (cause) {
@@ -229,7 +299,7 @@ async function saveAction(
     try {
       await refresh()
 
-      if (error.value) {
+      if (error.value || !report.value) {
         feedback.value = ''
         actionError.value = 'Impossible de recharger le CRA. Actualisez la page avant de continuer.'
       }
@@ -242,6 +312,8 @@ async function saveAction(
       busy.value = false
     }
   }
+
+  return succeeded
 }
 
 async function toggleDay(date: string) {
@@ -252,8 +324,6 @@ async function toggleDay(date: string) {
     || !canEdit.value
     || !calendarAvailable.value
     || busy.value
-    || error.value
-    || status.value === 'pending'
   ) return
 
   const cell = calendar.value.find(day => day?.iso === date)
@@ -279,6 +349,7 @@ async function toggleDay(date: string) {
     'PUT',
     { date, selected, revision: current.revision },
     selected ? 'Journée enregistrée : 7 h.' : 'Journée retirée.',
+    'edit',
   )
 }
 
@@ -291,12 +362,12 @@ async function submitReport() {
     || !calendarAvailable.value
     || current.totalDays === 0
     || busy.value
-    || error.value
-    || status.value === 'pending'
   ) return
 
+  const corrected = current.status === 'REFUSED'
+
   const confirmed = window.confirm(
-    `Clôturer le CRA de ${period.value} avec ${current.totalDays} journée(s) et ${current.totalHours} h au forfait ? Les journées seront verrouillées après transmission.`,
+    `${corrected ? 'Transmettre à nouveau' : 'Clôturer et transmettre'} le CRA de ${period.value} avec ${current.totalDays} journée(s) et ${current.totalHours} h au forfait ? Les journées seront verrouillées après transmission.`,
   )
 
   if (!confirmed) return
@@ -306,7 +377,49 @@ async function submitReport() {
     'POST',
     { confirmed: true, revision: current.revision },
     'CRA transmis à IFICS pour vérification. Les journées sont verrouillées.',
+    'edit',
   )
+}
+
+async function reviewReport(decision: ReviewDecision) {
+  const current = report.value
+
+  if (!current || !canReview.value || busy.value) return
+
+  const reason = correctionReason.value.trim()
+
+  if (decision === 'REFUSED' && !correctionReasonValid.value) {
+    actionError.value = 'Indiquez un motif de correction de 1 à 2 000 caractères.'
+    return
+  }
+
+  const confirmed = window.confirm(
+    decision === 'REVIEWED'
+      ? `Confirmer la vérification IFICS du CRA de ${period.value} pour ${current.intervenor.firstName} ${current.intervenor.lastName} ? Cette étape ne l’envoie pas encore au client.`
+      : `Demander une correction du CRA de ${period.value} ? L’intervenant pourra modifier ses journées et recevra le motif renseigné.`,
+  )
+
+  if (!confirmed) return
+
+  const succeeded = await saveAction(
+    `${reportUrl}/review`,
+    'POST',
+    {
+      decision,
+      confirmed: true,
+      revision: current.revision,
+      ...(decision === 'REFUSED' ? { correctionReason: reason } : {}),
+    },
+    decision === 'REVIEWED'
+      ? 'CRA vérifié par IFICS. Il est prêt pour l’envoi au client.'
+      : 'Correction demandée. L’intervenant peut modifier puis transmettre à nouveau son CRA.',
+    'review',
+  )
+
+  if (succeeded) {
+    correctionReason.value = ''
+    showCorrectionForm.value = false
+  }
 }
 </script>
 
@@ -337,8 +450,22 @@ async function submitReport() {
         :title="`CRA — ${period}`"
         :subtitle="`${report.intervenor.firstName} ${report.intervenor.lastName} · ${report.project.title}`"
       >
-        <span class="badge">{{ statusLabels[report.status] }}</span>
+        <span class="badge" :class="`state-${report.status}`">
+          {{ statusLabels[report.status] }}
+        </span>
       </PageHeader>
+
+      <div v-if="sessionError" class="notice error" role="alert">
+        <p>Impossible de charger vos droits. Les actions sont désactivées.</p>
+        <button
+          type="button"
+          class="button"
+          :disabled="busy"
+          @click="refreshSession()"
+        >
+          Recharger mes droits
+        </button>
+      </div>
 
       <div class="totals">
         <div>
@@ -354,6 +481,34 @@ async function submitReport() {
           <span>Par journée cochée</span>
         </div>
       </div>
+
+      <section
+        v-if="report.correctionReason"
+        class="notice correction-notice"
+        aria-labelledby="correction-heading"
+      >
+        <h2 id="correction-heading">
+          {{ report.status === 'REFUSED'
+            ? 'Correction demandée'
+            : 'Dernière demande de correction' }}
+        </h2>
+        <p v-if="report.correctionRequestedAt" class="muted">
+          Le {{ dateLabel(report.correctionRequestedAt) }} — heure de Paris
+        </p>
+        <p class="preserve-text">{{ report.correctionReason }}</p>
+        <p v-if="report.status === 'REFUSED' && canEdit">
+          Corrigez les journées concernées, puis transmettez à nouveau votre CRA.
+        </p>
+        <p v-else-if="report.status === 'SUBMITTED'">
+          Le CRA a été transmis à nouveau. Ce motif rappelle la correction
+          précédemment demandée ; une nouvelle vérification IFICS est attendue.
+        </p>
+      </section>
+
+      <p v-if="report.reviewedAt" class="notice">
+        Vérification IFICS enregistrée le
+        {{ dateLabel(report.reviewedAt) }} — heure de Paris.
+      </p>
 
       <p v-if="!calendarAvailable" class="notice error" role="alert">
         Le calendrier des jours fériés doit être actualisé pour cette année.
@@ -408,18 +563,16 @@ async function submitReport() {
         </template>
       </div>
 
-      <div v-if="canEdit || busy" class="actions">
-        <span v-if="busy" role="status">
-          Enregistrement et actualisation…
-        </span>
+      <div v-if="canEdit" class="actions">
         <button
-          v-if="canEdit"
           type="button"
           class="button primary"
           :disabled="busy || report.totalDays === 0 || !calendarAvailable"
           @click="submitReport"
         >
-          Clôturer et transmettre à IFICS
+          {{ report.status === 'REFUSED'
+            ? 'Transmettre le CRA corrigé à IFICS'
+            : 'Clôturer et transmettre à IFICS' }}
         </button>
       </div>
 
@@ -433,8 +586,84 @@ async function submitReport() {
           </p>
         </article>
       </section>
+
+      <section
+        v-if="canReview"
+        class="review-panel"
+        aria-labelledby="review-heading"
+      >
+        <h2 id="review-heading">Vérification IFICS</h2>
+        <p>
+          Contrôlez les journées déclarées et les éventuels commentaires.
+          Vous pouvez marquer le CRA comme vérifié ou demander une correction.
+        </p>
+
+        <template v-if="!showCorrectionForm">
+          <div class="actions">
+            <button
+              type="button"
+              class="button"
+              :disabled="busy"
+              @click="showCorrectionForm = true"
+            >
+              Demander une correction
+            </button>
+            <button
+              type="button"
+              class="button primary"
+              :disabled="busy"
+              @click="reviewReport('REVIEWED')"
+            >
+              Marquer comme vérifié
+            </button>
+          </div>
+          <p class="muted">
+            La vérification IFICS ne déclenche pas l’envoi au client.
+          </p>
+        </template>
+
+        <form v-else class="correction-form" @submit.prevent="reviewReport('REFUSED')">
+          <label for="correction-reason">
+            Corrections attendues de l’intervenant *
+          </label>
+          <textarea
+            id="correction-reason"
+            v-model="correctionReason"
+            rows="5"
+            maxlength="2000"
+            required
+            :disabled="busy"
+            aria-describedby="correction-help"
+          />
+          <p id="correction-help" class="muted">
+            Précisez les journées et les éléments à corriger.
+            Ce motif sera visible par l’intervenant.
+            {{ correctionReason.length }} / 2 000 caractères.
+          </p>
+          <div class="actions">
+            <button
+              type="button"
+              class="button"
+              :disabled="busy"
+              @click="showCorrectionForm = false"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              class="button primary"
+              :disabled="busy || !correctionReasonValid"
+            >
+              Confirmer la demande de correction
+            </button>
+          </div>
+        </form>
+      </section>
     </template>
 
+    <p v-if="busy" class="notice" role="status">
+      Enregistrement et actualisation…
+    </p>
     <p v-if="actionError" class="notice error" role="alert">
       {{ actionError }}
     </p>
@@ -464,6 +693,22 @@ async function submitReport() {
   font-weight: 700;
 }
 
+.state-SUBMITTED,
+.state-CLIENT_PENDING {
+  background: #fff3d6;
+  color: #775400;
+}
+
+.state-REVIEWED {
+  background: #e7efff;
+  color: #284c86;
+}
+
+.state-REFUSED {
+  background: #fce8e5;
+  color: #993d31;
+}
+
 .totals {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -484,7 +729,8 @@ async function submitReport() {
   font-size: 1.8rem;
 }
 
-.totals span {
+.totals span,
+.muted {
   color: #52665b;
 }
 
@@ -501,6 +747,25 @@ async function submitReport() {
   border-color: #efc2ba;
   background: #fff0ed;
   color: #993d31;
+}
+
+.correction-notice {
+  border-color: #ead49b;
+  background: #fff8e6;
+  color: #694a13;
+}
+
+.correction-notice h2,
+.review-panel h2,
+.notes h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+
+.preserve-text,
+.notes p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .calendar {
@@ -566,7 +831,8 @@ async function submitReport() {
 
 .day:focus-visible,
 .button:focus-visible,
-.back-link:focus-visible {
+.back-link:focus-visible,
+.correction-form textarea:focus-visible {
   outline: 3px solid #438660;
   outline-offset: 3px;
 }
@@ -601,7 +867,8 @@ async function submitReport() {
   cursor: not-allowed;
 }
 
-.notes {
+.notes,
+.review-panel {
   padding: 20px;
   border: 1px solid #dce6df;
   border-radius: 14px;
@@ -612,9 +879,29 @@ async function submitReport() {
   border-top: 1px solid #dce6df;
 }
 
-.notes p {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+.correction-form {
+  display: grid;
+  gap: 12px;
+}
+
+.correction-form label {
+  font-weight: 700;
+}
+
+.correction-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #b9ccbf;
+  border-radius: 10px;
+  background: #fff;
+  color: #20392b;
+  font: inherit;
+  resize: vertical;
+}
+
+.correction-form p {
+  margin: 0;
 }
 
 @media (max-width: 600px) {

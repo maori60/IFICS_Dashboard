@@ -1,6 +1,7 @@
 enum CraStatus {
   DRAFT
   SUBMITTED
+  REVIEWED
   CLIENT_PENDING
   VALIDATED
   REFUSED
@@ -15,13 +16,22 @@ model CraReport {
   month         Int
   status        CraStatus @default(DRAFT)
   revision      Int       @default(1)
-  submittedAt   DateTime?
-  validatedAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+
+  submittedAt DateTime?
+  validatedAt DateTime?
+
+  reviewedAt   DateTime?
+  reviewedById String?
+
+  correctionRequestedAt   DateTime?
+  correctionRequestedById String?
+  correctionReason        String?   @db.VarChar(2000)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   assignment ProjectIntervenor @relation(fields: [projectId, intervenorId], references: [projectId, intervenorId], onDelete: Restrict)
-  days CraDay[]
+  days       CraDay[]
 
   @@unique([projectId, intervenorId, year, month])
   @@unique([id, intervenorId])

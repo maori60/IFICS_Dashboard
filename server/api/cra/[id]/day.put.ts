@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
         where: {
           id: report.id,
           associationId: context.associationId,
-          status: 'DRAFT',
+          status: { in: ['DRAFT', 'REFUSED'] },
           revision,
         },
         data: {

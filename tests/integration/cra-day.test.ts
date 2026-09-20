@@ -207,6 +207,11 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
           revision: 1,
           submittedAt: null,
           validatedAt: null,
+          reviewedAt: null,
+          reviewedById: null,
+          correctionRequestedAt: null,
+          correctionRequestedById: null,
+          correctionReason: null,
         },
       })
 
@@ -595,6 +600,111 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
         date: '2026-09-18',
         selected: false,
         revision: 3,
+      }
+
+      await expect(handler(event)).rejects.toMatchObject({
+        statusCode: 409,
+      })
+
+      expect(await reportSnapshot()).toEqual(submitted)
+    })
+
+    it('retransmet un CRA refusé après correction puis verrouille les journées', async () => {
+      request.body = {
+        date: '2026-09-18',
+        selected: true,
+        revision: 1,
+      }
+
+      await handler(event)
+
+      request.body = {
+        date: '2026-09-21',
+        selected: true,
+        revision: 2,
+      }
+
+      await handler(event)
+
+      request.body = {
+        confirmed: true,
+        revision: 3,
+      }
+
+      const firstSubmission = await submitHandler(event)
+
+      expect(firstSubmission.data).toMatchObject({
+        status: 'SUBMITTED',
+        revision: 4,
+        totalDays: 2,
+        totalHours: 14,
+      })
+
+      const correctionRequestedAt = new Date(
+        '2026-09-20T07:00:00.000Z',
+      )
+
+      await prisma.craReport.update({
+        where: { id: firstReportId },
+        data: {
+          status: 'REFUSED',
+          revision: 5,
+          correctionRequestedAt,
+          correctionRequestedById: 'admin-test',
+          correctionReason: 'Retirer la journée du 21 septembre 2026.',
+        },
+      })
+
+      request.body = {
+        date: '2026-09-21',
+        selected: false,
+        revision: 5,
+      }
+
+      const corrected = await handler(event)
+
+      expect(corrected.data).toMatchObject({
+        selected: false,
+        revision: 6,
+        totalDays: 1,
+        totalHours: 7,
+      })
+
+      request.body = {
+        confirmed: true,
+        revision: 6,
+      }
+
+      const resubmitted = await submitHandler(event)
+
+      expect(resubmitted.data).toMatchObject({
+        status: 'SUBMITTED',
+        revision: 7,
+        totalDays: 1,
+        totalHours: 7,
+      })
+
+      const submitted = await reportSnapshot()
+
+      expect(submitted.status).toBe('SUBMITTED')
+      expect(submitted.revision).toBe(7)
+      expect(submitted.days).toHaveLength(1)
+      expect(submitted.submittedAt).toBeInstanceOf(Date)
+
+      expect(submitted.correctionReason).toBe(
+        'Retirer la journée du 21 septembre 2026.',
+      )
+
+      expect(submitted.correctionRequestedAt).toEqual(
+        correctionRequestedAt,
+      )
+
+      expect(submitted.correctionRequestedById).toBe('admin-test')
+
+      request.body = {
+        date: '2026-09-18',
+        selected: false,
+        revision: 7,
       }
 
       await expect(handler(event)).rejects.toMatchObject({

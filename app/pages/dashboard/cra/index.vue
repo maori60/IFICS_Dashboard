@@ -46,6 +46,7 @@ const emptyMessage = computed(() => (
 type CraStatus =
   | 'DRAFT'
   | 'SUBMITTED'
+  | 'REVIEWED'
   | 'CLIENT_PENDING'
   | 'VALIDATED'
   | 'REFUSED'
@@ -83,6 +84,7 @@ type CraList = {
 const statusLabels: Record<CraStatus, string> = {
   DRAFT: 'Brouillon',
   SUBMITTED: 'À vérifier par IFICS',
+  REVIEWED: 'Vérifié par IFICS',
   CLIENT_PENDING: 'En attente du client',
   VALIDATED: 'Validé',
   REFUSED: 'À corriger',
@@ -385,6 +387,11 @@ function nextPage() {
 .state-REFUSED {
   background: #fce8e5;
   color: #993d31;
+}
+
+.state-REVIEWED {
+  background: #e7efff;
+  color: #284c86;
 }
 
 .cra-open {

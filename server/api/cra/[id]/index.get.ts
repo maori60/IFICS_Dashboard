@@ -55,6 +55,11 @@ export default defineEventHandler(async (event) => {
       revision: true,
       submittedAt: true,
       validatedAt: true,
+      reviewedAt: true,
+      reviewedById: true,
+      correctionRequestedAt: true,
+      correctionRequestedById: true,
+      correctionReason: true,
       createdAt: true,
       updatedAt: true,
       assignment: {
