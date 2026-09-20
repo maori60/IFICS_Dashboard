@@ -80,6 +80,13 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
     }
 
     beforeAll(async () => {
+      vi.useFakeTimers({
+        toFake: ['Date'],
+      })
+      vi.setSystemTime(
+        new Date('2026-09-23T12:00:00.000Z'),
+      )
+
       vi.stubGlobal('defineEventHandler', defineEventHandler)
 
       prisma = (await import('../../server/utils/prisma')).prisma
@@ -181,6 +188,10 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
     })
 
     beforeEach(async () => {
+      vi.setSystemTime(
+        new Date('2026-09-23T12:00:00.000Z'),
+      )
+
       request.reportId = firstReportId
       request.associationId = associationId
       request.roleCode = 'INTERVENOR'
@@ -251,6 +262,7 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
         }
       }
       finally {
+        vi.useRealTimers()
         vi.unstubAllGlobals()
 
         if (prisma) {
@@ -627,6 +639,31 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
 
       expect(report.revision).toBe(2)
       expect(report.days).toHaveLength(1)
+    })
+
+    it('refuse la soumission avant la fenêtre J-7 sans modifier le CRA', async () => {
+      await handler(event)
+
+      const before = await reportSnapshot()
+
+      vi.setSystemTime(
+        new Date('2026-09-22T12:00:00.000Z'),
+      )
+
+      request.body = {
+        confirmed: true,
+        revision: 2,
+      }
+
+      await expect(
+        submitHandler(event),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+      })
+
+      expect(
+        await reportSnapshot(),
+      ).toEqual(before)
     })
 
     it('refuse une soumission sans confirmation', async () => {

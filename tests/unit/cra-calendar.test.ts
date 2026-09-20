@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { validateCraDate } from '../../server/utils/cra-calendar'
+import {
+  craPeriodPolicy,
+  validateCraDate,
+  validateCraSubmissionWindow,
+} from '../../server/utils/cra-calendar'
 
 describe('Calendrier CRA', () => {
   afterEach(() => {
@@ -54,20 +58,78 @@ describe('Calendrier CRA', () => {
   })
 
   it('accepte le 29 février lors d’une année bissextile', () => {
-    const result = validateCraDate('2028-02-29', {
-      year: 2028,
-      month: 2,
-    })
+    const result = validateCraDate(
+      '2028-02-29',
+      {
+        year: 2028,
+        month: 2,
+      },
+      {
+        now: new Date('2028-02-29T12:00:00.000Z'),
+      },
+    )
 
-    expect(result.toISOString()).toBe('2028-02-29T00:00:00.000Z')
+    expect(result.toISOString())
+      .toBe('2028-02-29T00:00:00.000Z')
   })
 
-  it('autorise une journée future', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-09-01T12:00:00.000Z'))
-
+  it('refuse une journée future avant J-7', () => {
     expect(() =>
-      validateCraDate('2026-09-30', { year: 2026, month: 9 }),
+      validateCraDate(
+        '2026-09-23',
+        { year: 2026, month: 9 },
+        {
+          now: new Date('2026-09-22T12:00:00.000Z'),
+        },
+      ),
+    ).toThrow(
+      'Les journées futures du CRA sont autorisées uniquement à partir de 7 jours avant la fin du mois.',
+    )
+  })
+
+  it('autorise les journées restantes à partir de J-7', () => {
+    expect(() =>
+      validateCraDate(
+        '2026-09-30',
+        { year: 2026, month: 9 },
+        {
+          now: new Date('2026-09-23T12:00:00.000Z'),
+        },
+      ),
+    ).not.toThrow()
+  })
+
+  it('ouvre septembre 2026 le 23 septembre', () => {
+    expect(
+      craPeriodPolicy(
+        { year: 2026, month: 9 },
+        new Date('2026-09-23T12:00:00.000Z'),
+      ),
+    ).toMatchObject({
+      earlyClosureStart: '2026-09-23',
+      periodEnd: '2026-09-30',
+      futureDaysAllowed: true,
+      submissionAllowed: true,
+    })
+  })
+
+  it('refuse la soumission avant J-7', () => {
+    expect(() =>
+      validateCraSubmissionWindow(
+        { year: 2026, month: 9 },
+        new Date('2026-09-22T12:00:00.000Z'),
+      ),
+    ).toThrow(
+      'Le CRA mensuel peut être transmis à partir de 7 jours avant la fin du mois.',
+    )
+  })
+
+  it('autorise la soumission à partir de J-7', () => {
+    expect(() =>
+      validateCraSubmissionWindow(
+        { year: 2026, month: 9 },
+        new Date('2026-09-23T12:00:00.000Z'),
+      ),
     ).not.toThrow()
   })
 

@@ -8,6 +8,7 @@ import {
 } from '../../../utils/api'
 import { writeAuditLog } from '../../../utils/audit'
 import { PERMISSIONS } from '../../../utils/constants'
+import { validateCraDate } from '../../../utils/cra-calendar'
 import { summarizeCraDays } from '../../../utils/cra-summary'
 import {
   readStoredFile,
@@ -191,6 +192,13 @@ export default defineEventHandler(async (event) => {
       409,
       'Ce CRA a été modifié. Rechargez-le avant de générer le document officiel.',
       'CRA_GENERATION_CONFLICT',
+    )
+  }
+
+  for (const day of report.days) {
+    validateCraDate(
+      day.date.toISOString().slice(0, 10),
+      report,
     )
   }
 

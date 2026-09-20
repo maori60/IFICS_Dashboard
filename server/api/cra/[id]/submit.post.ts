@@ -9,7 +9,10 @@ import {
   requireCraAssignmentForCreation,
   requireCraWriter,
 } from '../../../utils/cra'
-import { validateCraDate } from '../../../utils/cra-calendar'
+import {
+  validateCraDate,
+  validateCraSubmissionWindow,
+} from '../../../utils/cra-calendar'
 import { summarizeCraDays } from '../../../utils/cra-summary'
 import { prisma } from '../../../utils/prisma'
 import { badRequest, safeObject } from '../../../utils/validation'
@@ -65,6 +68,8 @@ export default defineEventHandler(async (event) => {
     report.projectId,
     report.intervenorId,
   )
+
+  validateCraSubmissionWindow(report)
 
   const result = await prisma.$transaction(async (tx) => {
     const submittedAt = new Date()
