@@ -18,9 +18,23 @@ type CraStatus =
 
 type ReviewDecision = 'REVIEWED' | 'REFUSED'
 
+type CraWritableDayType =
+  | 'WORK'
+  | 'PAID_LEAVE'
+  | 'RTT'
+  | 'SICK_LEAVE'
+  | 'AUTHORIZED_ABSENCE'
+  | 'UNJUSTIFIED_ABSENCE'
+  | 'TRAINING'
+  | 'OTHER'
+
+type CraDayType = CraWritableDayType | 'PUBLIC_HOLIDAY'
+
 type CraDay = {
   id: string
   date: string
+  dayType: CraDayType
+  durationMinutes: number
   hours: number
   comment: string | null
   hasIncident: boolean
@@ -41,12 +55,53 @@ type CraReport = {
   correctionRequestedAt: string | null
   correctionRequestedById: string | null
   correctionReason: string | null
+  declaredDays: number
   totalDays: number
+  totalMinutes: number
   totalHours: number
+  workedDays: number
+  workedMinutes: number
+  trainingDays: number
+  trainingMinutes: number
+  trainingHours: number
+  absenceDays: number
+  paidLeaveDays: number
+  rttDays: number
+  sickLeaveDays: number
+  authorizedAbsenceDays: number
+  unjustifiedAbsenceDays: number
+  otherAbsenceDays: number
+  publicHolidayDays: number
   project: { id: string; title: string; reference: string | null }
   intervenor: { id: string; firstName: string; lastName: string }
   days: CraDay[]
 }
+
+const dayTypeLabels: Record<CraDayType, string> = {
+  WORK: 'Travail',
+  PAID_LEAVE: 'Congé payé',
+  RTT: 'RTT',
+  SICK_LEAVE: 'Maladie',
+  AUTHORIZED_ABSENCE: 'Absence autorisée',
+  UNJUSTIFIED_ABSENCE: 'Absence injustifiée',
+  TRAINING: 'Formation',
+  PUBLIC_HOLIDAY: 'Jour férié',
+  OTHER: 'Autre',
+}
+
+const writableDayTypes: Array<{
+  value: CraWritableDayType
+  label: string
+}> = [
+  { value: 'WORK', label: 'Travail' },
+  { value: 'PAID_LEAVE', label: 'Congé payé' },
+  { value: 'RTT', label: 'RTT' },
+  { value: 'SICK_LEAVE', label: 'Maladie' },
+  { value: 'TRAINING', label: 'Formation' },
+  { value: 'AUTHORIZED_ABSENCE', label: 'Absence autorisée' },
+  { value: 'UNJUSTIFIED_ABSENCE', label: 'Absence injustifiée' },
+  { value: 'OTHER', label: 'Autre' },
+]
 
 const statusLabels: Record<CraStatus, string> = {
   DRAFT: 'Brouillon',
@@ -88,6 +143,12 @@ const feedback = ref('')
 const actionError = ref('')
 const showCorrectionForm = ref(false)
 const correctionReason = ref('')
+
+const showDayEditor = ref(false)
+const dayEditorDate = ref('')
+const dayEditorType = ref<CraWritableDayType>('WORK')
+const dayEditorHours = ref(7)
+const dayEditorMinutes = ref(0)
 
 const reportReady = computed(() =>
   Boolean(report.value)
@@ -181,6 +242,46 @@ const selectedDays = computed(() =>
   new Map(report.value?.days.map(day => [day.date, day]) ?? []),
 )
 
+const dayEditorExisting = computed(() =>
+  Boolean(
+    dayEditorDate.value
+    && selectedDays.value.has(dayEditorDate.value),
+  ),
+)
+
+const dayEditorDurationMinutes = computed(() => {
+  const hours = Number(dayEditorHours.value)
+  const minutes = Number(dayEditorMinutes.value)
+
+  if (
+    !Number.isSafeInteger(hours)
+    || !Number.isSafeInteger(minutes)
+    || hours < 0
+    || hours > 12
+    || minutes < 0
+    || minutes > 59
+  ) return null
+
+  const total = hours * 60 + minutes
+
+  return total >= 1 && total <= 720 ? total : null
+})
+
+const absenceItems = computed(() => {
+  const current = report.value
+
+  if (!current) return []
+
+  return [
+    { label: 'Congés payés', count: current.paidLeaveDays },
+    { label: 'RTT', count: current.rttDays },
+    { label: 'Maladie', count: current.sickLeaveDays },
+    { label: 'Absences autorisées', count: current.authorizedAbsenceDays },
+    { label: 'Absences injustifiées', count: current.unjustifiedAbsenceDays },
+    { label: 'Autres absences', count: current.otherAbsenceDays },
+  ].filter(item => item.count > 0)
+})
+
 const period = computed(() => {
   if (!report.value) return 'Compte rendu d’activité'
 
@@ -207,6 +308,58 @@ function dateLabel(value: string | null): string {
   const date = new Date(value)
 
   return Number.isNaN(date.getTime()) ? '—' : dateFormatter.format(date)
+}
+
+function formatMinutes(value: number): string {
+  const safe = Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
+  const hours = Math.floor(safe / 60)
+  const minutes = safe % 60
+
+  if (!minutes) return `${hours} h`
+  if (!hours) return `${minutes} min`
+
+  return `${hours} h ${String(minutes).padStart(2, '0')}`
+}
+
+function dayDateLabel(value: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
+
+  const date = new Date(`${value}T00:00:00.000Z`)
+
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'full',
+    timeZone: 'UTC',
+  }).format(date)
+}
+
+function dayTypeClass(date: string): string {
+  const day = selectedDays.value.get(date)
+
+  return day ? `type-${day.dayType.toLowerCase()}` : ''
+}
+
+function calendarDaySummary(date: string): string {
+  const day = selectedDays.value.get(date)
+
+  if (!day) return '—'
+
+  return `${dayTypeLabels[day.dayType]} · ${formatMinutes(day.durationMinutes)}`
+}
+
+function calendarDayAriaLabel(
+  date: string,
+  number: number,
+  weekend: boolean,
+  holiday: string | null,
+): string {
+  if (holiday) return `${number} ${period.value}, ${holiday}`
+  if (weekend) return `${number} ${period.value}, week-end`
+
+  const day = selectedDays.value.get(date)
+
+  if (!day) return `${number} ${period.value}, non déclaré`
+
+  return `${number} ${period.value}, ${dayTypeLabels[day.dayType]}, ${formatMinutes(day.durationMinutes)}`
 }
 
 useHead({
@@ -316,7 +469,7 @@ async function saveAction(
   return succeeded
 }
 
-async function toggleDay(date: string) {
+function openDayEditor(date: string) {
   const current = report.value
 
   if (
@@ -330,27 +483,104 @@ async function toggleDay(date: string) {
 
   if (!cell || cell.weekend || cell.holiday) return
 
-  const selected = !selectedDays.value.has(date)
+  const existing = selectedDays.value.get(date)
 
-  if (!selected) {
-    const day = selectedDays.value.get(date)
+  dayEditorDate.value = date
 
-    if (
-      day
-      && (day.comment || day.hasIncident)
-      && !window.confirm(
-        'Retirer cette journée supprimera aussi son commentaire et son incident. Continuer ?',
-      )
-    ) return
+  if (existing) {
+    dayEditorType.value = existing.dayType === 'PUBLIC_HOLIDAY'
+      ? 'WORK'
+      : existing.dayType
+
+    dayEditorHours.value = Math.floor(existing.durationMinutes / 60)
+    dayEditorMinutes.value = existing.durationMinutes % 60
+  }
+  else {
+    dayEditorType.value = 'WORK'
+    dayEditorHours.value = 7
+    dayEditorMinutes.value = 0
   }
 
-  await saveAction(
+  actionError.value = ''
+  feedback.value = ''
+  showDayEditor.value = true
+}
+
+function closeDayEditor() {
+  if (busy.value) return
+
+  showDayEditor.value = false
+  dayEditorDate.value = ''
+  dayEditorType.value = 'WORK'
+  dayEditorHours.value = 7
+  dayEditorMinutes.value = 0
+}
+
+async function saveDayEntry() {
+  const current = report.value
+  const durationMinutes = dayEditorDurationMinutes.value
+
+  if (
+    !current
+    || !canEdit.value
+    || !dayEditorDate.value
+    || busy.value
+  ) return
+
+  if (durationMinutes === null) {
+    actionError.value = 'La durée doit être comprise entre 1 minute et 12 heures.'
+    return
+  }
+
+  const succeeded = await saveAction(
     `${reportUrl}/day`,
     'PUT',
-    { date, selected, revision: current.revision },
-    selected ? 'Journée enregistrée : 7 h.' : 'Journée retirée.',
+    {
+      date: dayEditorDate.value,
+      selected: true,
+      revision: current.revision,
+      dayType: dayEditorType.value,
+      durationMinutes,
+    },
+    `${dayTypeLabels[dayEditorType.value]} enregistré : ${formatMinutes(durationMinutes)}.`,
     'edit',
   )
+
+  if (succeeded) closeDayEditor()
+}
+
+async function removeDayEntry() {
+  const current = report.value
+  const date = dayEditorDate.value
+  const day = selectedDays.value.get(date)
+
+  if (
+    !current
+    || !canEdit.value
+    || !date
+    || !day
+    || busy.value
+  ) return
+
+  const warning = day.comment || day.hasIncident
+    ? 'Retirer cette journée supprimera aussi son commentaire et son incident. Continuer ?'
+    : `Retirer la journée du ${dayDateLabel(date)} ?`
+
+  if (!window.confirm(warning)) return
+
+  const succeeded = await saveAction(
+    `${reportUrl}/day`,
+    'PUT',
+    {
+      date,
+      selected: false,
+      revision: current.revision,
+    },
+    'Journée retirée.',
+    'edit',
+  )
+
+  if (succeeded) closeDayEditor()
 }
 
 async function submitReport() {
@@ -360,14 +590,30 @@ async function submitReport() {
     !current
     || !canEdit.value
     || !calendarAvailable.value
-    || current.totalDays === 0
+    || current.declaredDays === 0
     || busy.value
   ) return
 
   const corrected = current.status === 'REFUSED'
 
+  const summary = [
+    `${current.declaredDays} journée(s) renseignée(s)`,
+    `${current.totalDays} journée(s) travaillée(s)`,
+    `${formatMinutes(current.workedMinutes)} de travail`,
+  ]
+
+  if (current.trainingDays > 0) {
+    summary.push(
+      `${current.trainingDays} journée(s) de formation (${formatMinutes(current.trainingMinutes)})`,
+    )
+  }
+
+  if (current.absenceDays > 0) {
+    summary.push(`${current.absenceDays} absence(s) / congé(s)`)
+  }
+
   const confirmed = window.confirm(
-    `${corrected ? 'Transmettre à nouveau' : 'Clôturer et transmettre'} le CRA de ${period.value} avec ${current.totalDays} journée(s) et ${current.totalHours} h au forfait ? Les journées seront verrouillées après transmission.`,
+    `${corrected ? 'Transmettre à nouveau' : 'Clôturer et transmettre'} le CRA de ${period.value} avec ${summary.join(', ')} ? Les journées seront verrouillées après transmission.`,
   )
 
   if (!confirmed) return
@@ -467,19 +713,37 @@ async function reviewReport(decision: ReviewDecision) {
         </button>
       </div>
 
-      <div class="totals">
+      <div class="totals totals-detailed">
+        <div>
+          <strong>{{ report.declaredDays }}</strong>
+          <span>Journées renseignées</span>
+        </div>
         <div>
           <strong>{{ report.totalDays }}</strong>
-          <span>Journées déclarées</span>
+          <span>Jours travaillés</span>
         </div>
         <div>
-          <strong>{{ report.totalHours }} h</strong>
-          <span>Total au forfait</span>
+          <strong>{{ formatMinutes(report.workedMinutes) }}</strong>
+          <span>Temps travaillé</span>
         </div>
         <div>
-          <strong>7 h</strong>
-          <span>Par journée cochée</span>
+          <strong>{{ report.trainingDays }}</strong>
+          <span>Formation · {{ formatMinutes(report.trainingMinutes) }}</span>
         </div>
+        <div>
+          <strong>{{ report.absenceDays }}</strong>
+          <span>Congés / absences</span>
+        </div>
+      </div>
+
+      <div v-if="absenceItems.length" class="absence-summary">
+        <span
+          v-for="item in absenceItems"
+          :key="item.label"
+          class="absence-chip"
+        >
+          {{ item.label }} : <strong>{{ item.count }}</strong>
+        </span>
       </div>
 
       <section
@@ -516,13 +780,130 @@ async function reviewReport(decision: ReviewDecision) {
       </p>
 
       <p v-if="canEdit && calendarAvailable" class="notice">
-        Cliquez sur une journée pour la cocher ou la décocher.
-        Les journées futures sont autorisées ; les week-ends et jours fériés
-        sont désactivés. Chaque modification est enregistrée automatiquement.
+        Cliquez sur une journée pour renseigner son activité :
+        travail, congé, RTT, maladie, formation ou absence.
+        Les week-ends et jours fériés sont désactivés.
       </p>
       <p v-else-if="!canEdit" class="notice">
         {{ readOnlyMessage }}
       </p>
+
+      <section
+        v-if="showDayEditor"
+        class="day-editor"
+        aria-labelledby="day-editor-title"
+      >
+        <div class="day-editor-heading">
+          <div>
+            <p class="eyebrow">Journée CRA</p>
+            <h2 id="day-editor-title">
+              {{ dayDateLabel(dayEditorDate) }}
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            class="day-editor-close"
+            :disabled="busy"
+            aria-label="Fermer l’éditeur de journée"
+            @click="closeDayEditor"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="day-editor-grid">
+          <label class="field">
+            <span>Type de journée</span>
+            <select
+              v-model="dayEditorType"
+              class="input"
+              :disabled="busy"
+            >
+              <option
+                v-for="option in writableDayTypes"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
+
+          <fieldset class="duration-field">
+            <legend>Durée</legend>
+
+            <div class="duration-inputs">
+              <label>
+                <span>Heures</span>
+                <input
+                  v-model.number="dayEditorHours"
+                  class="input"
+                  type="number"
+                  min="0"
+                  max="12"
+                  step="1"
+                  :disabled="busy"
+                >
+              </label>
+
+              <label>
+                <span>Minutes</span>
+                <input
+                  v-model.number="dayEditorMinutes"
+                  class="input"
+                  type="number"
+                  min="0"
+                  max="59"
+                  step="1"
+                  :disabled="busy"
+                >
+              </label>
+            </div>
+
+            <p class="duration-preview">
+              Durée enregistrée :
+              <strong>
+                {{ dayEditorDurationMinutes === null
+                  ? 'Durée invalide'
+                  : formatMinutes(dayEditorDurationMinutes) }}
+              </strong>
+            </p>
+          </fieldset>
+        </div>
+
+        <div class="day-editor-actions">
+          <button
+            v-if="dayEditorExisting"
+            type="button"
+            class="button danger"
+            :disabled="busy"
+            @click="removeDayEntry"
+          >
+            Retirer cette journée
+          </button>
+
+          <div class="day-editor-actions-right">
+            <button
+              type="button"
+              class="button"
+              :disabled="busy"
+              @click="closeDayEditor"
+            >
+              Annuler
+            </button>
+
+            <button
+              type="button"
+              class="button primary"
+              :disabled="busy || dayEditorDurationMinutes === null"
+              @click="saveDayEntry"
+            >
+              {{ dayEditorExisting ? 'Enregistrer les modifications' : 'Ajouter la journée' }}
+            </button>
+          </div>
+        </div>
+      </section>
 
       <div class="calendar" aria-label="Calendrier mensuel des journées">
         <div
@@ -538,10 +919,13 @@ async function reviewReport(decision: ReviewDecision) {
             v-if="day"
             type="button"
             class="day"
-            :class="{
-              selected: day.selected,
-              unavailable: day.weekend || Boolean(day.holiday),
-            }"
+            :class="[
+              {
+                selected: day.selected,
+                unavailable: day.weekend || Boolean(day.holiday),
+              },
+              dayTypeClass(day.iso),
+            ]"
             :disabled="
               !canEdit
                 || !calendarAvailable
@@ -550,13 +934,20 @@ async function reviewReport(decision: ReviewDecision) {
                 || Boolean(day.holiday)
             "
             :aria-pressed="day.selected"
-            :aria-label="`${day.number} ${period}, ${day.holiday || (day.weekend ? 'week-end' : day.selected ? 'déclaré, 7 heures' : 'non déclaré')}`"
-            @click="toggleDay(day.iso)"
+            :aria-label="calendarDayAriaLabel(
+              day.iso,
+              day.number,
+              day.weekend,
+              day.holiday,
+            )"
+            @click="openDayEditor(day.iso)"
           >
             <strong>{{ day.number }}</strong>
             <span v-if="day.holiday">{{ day.holiday }}</span>
             <span v-else-if="day.weekend">Repos</span>
-            <span v-else-if="day.selected">✓ 7 h</span>
+            <span v-else-if="day.selected">
+              {{ calendarDaySummary(day.iso) }}
+            </span>
             <span v-else>—</span>
           </button>
           <div v-else class="empty-day" aria-hidden="true" />
@@ -567,7 +958,7 @@ async function reviewReport(decision: ReviewDecision) {
         <button
           type="button"
           class="button primary"
-          :disabled="busy || report.totalDays === 0 || !calendarAvailable"
+          :disabled="busy || report.declaredDays === 0 || !calendarAvailable"
           @click="submitReport"
         >
           {{ report.status === 'REFUSED'
@@ -814,6 +1205,54 @@ async function reviewReport(decision: ReviewDecision) {
   color: #fff;
 }
 
+.day.selected.type-work {
+  background: #1d4933;
+  border-color: #1d4933;
+  color: #fff;
+}
+
+.day.selected.type-training {
+  background: #e8f1fb;
+  border-color: #76a6d8;
+  color: #173b5d;
+}
+
+.day.selected.type-paid_leave {
+  background: #fff4d8;
+  border-color: #d7ae4b;
+  color: #5d4818;
+}
+
+.day.selected.type-rtt {
+  background: #f0eafe;
+  border-color: #9b83d1;
+  color: #403365;
+}
+
+.day.selected.type-sick_leave {
+  background: #fdebec;
+  border-color: #d9868b;
+  color: #692d31;
+}
+
+.day.selected.type-authorized_absence {
+  background: #fff0e0;
+  border-color: #dc9a52;
+  color: #68421d;
+}
+
+.day.selected.type-unjustified_absence {
+  background: #f9dddd;
+  border-color: #c96767;
+  color: #672323;
+}
+
+.day.selected.type-other {
+  background: #edf0ee;
+  border-color: #9aa79f;
+  color: #37443c;
+}
+
 .day.unavailable {
   background: #e9eeeb;
   border-color: #e0e6e2;
@@ -835,6 +1274,141 @@ async function reviewReport(decision: ReviewDecision) {
 .correction-form textarea:focus-visible {
   outline: 3px solid #438660;
   outline-offset: 3px;
+}
+
+.totals-detailed {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.absence-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: -4px;
+}
+
+.absence-chip {
+  padding: 7px 10px;
+  border: 1px solid #d6e2da;
+  border-radius: 999px;
+  background: #f6f9f7;
+  color: #40584a;
+  font-size: .82rem;
+}
+
+.day-editor {
+  padding: 22px;
+  border: 1px solid #c8dacf;
+  border-radius: 16px;
+  background: #f8fbf9;
+  box-shadow: 0 12px 30px rgb(27 65 45 / 8%);
+}
+
+.day-editor-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.day-editor-heading h2 {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+  text-transform: capitalize;
+}
+
+.day-editor-heading .eyebrow {
+  margin: 0;
+  color: #52705d;
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.day-editor-close {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #c4d4c9;
+  border-radius: 10px;
+  background: #fff;
+  color: #294533;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.day-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr);
+  gap: 24px;
+}
+
+.day-editor .field {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.day-editor .field > span,
+.duration-field legend,
+.duration-inputs label > span {
+  color: #40584a;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.duration-field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.duration-field legend {
+  margin-bottom: 8px;
+}
+
+.duration-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.duration-inputs label {
+  display: grid;
+  gap: 6px;
+}
+
+.duration-preview {
+  margin: 10px 0 0;
+  color: #52665b;
+  font-size: .85rem;
+}
+
+.day-editor-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.day-editor-actions-right {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.button.danger {
+  border-color: #d8aaaa;
+  background: #fff;
+  color: #8b3030;
+}
+
+.button.danger:not(:disabled):hover {
+  background: #fff1f1;
 }
 
 .actions {
@@ -919,6 +1493,28 @@ async function reviewReport(decision: ReviewDecision) {
 
   .totals span {
     font-size: .8rem;
+  }
+
+  .totals-detailed {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .day-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .day-editor-actions {
+    flex-direction: column;
+  }
+
+  .day-editor-actions-right {
+    width: 100%;
+    margin-left: 0;
+    flex-direction: column-reverse;
+  }
+
+  .day-editor-actions .button {
+    width: 100%;
   }
 
   .calendar {
