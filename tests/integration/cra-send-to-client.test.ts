@@ -847,6 +847,190 @@ describe.skipIf(
     )
 
     it(
+      'bloque un second envoi concurrent avant SMTP',
+      async () => {
+        const before = Date.now()
+
+        let releaseMail:
+          (() => void) | undefined
+
+        const mailBlocked
+          = new Promise<void>((resolve) => {
+            releaseMail = resolve
+          })
+
+        mail.send.mockImplementationOnce(
+          async () => {
+            await mailBlocked
+
+            return {
+              delivered: true,
+
+              messageId:
+                '<cra-client-concurrent@example.invalid>',
+            }
+          },
+        )
+
+        const firstSend
+          = handler(event)
+
+        await vi.waitFor(() => {
+          expect(mail.send)
+            .toHaveBeenCalledTimes(1)
+        })
+
+        const pending
+          = await prisma.craClientAccess
+            .findMany({
+              where: {
+                reportId,
+                documentId,
+
+                purpose:
+                  'INITIAL_CONFIRMATION',
+
+                status:
+                  'PENDING',
+              },
+            })
+
+        expect(pending)
+          .toHaveLength(1)
+
+        expect(
+          pending[0]!.expiresAt.getTime(),
+        ).toBeGreaterThanOrEqual(
+          before
+          + 9 * 60 * 1000,
+        )
+
+        expect(
+          pending[0]!.expiresAt.getTime(),
+        ).toBeLessThanOrEqual(
+          before
+          + 11 * 60 * 1000,
+        )
+
+        await expect(
+          handler(event),
+        ).rejects.toMatchObject({
+          statusCode: 409,
+
+          data: {
+            code:
+              'CRA_SEND_CLIENT_IN_PROGRESS',
+          },
+        })
+
+        expect(mail.send)
+          .toHaveBeenCalledTimes(1)
+
+        releaseMail!()
+
+        const result
+          = await firstSend
+
+        expect(result.data.status)
+          .toBe('ACTIVE')
+
+        const active
+          = await prisma.craClientAccess
+            .findMany({
+              where: {
+                reportId,
+                documentId,
+
+                purpose:
+                  'INITIAL_CONFIRMATION',
+
+                status:
+                  'ACTIVE',
+              },
+            })
+
+        expect(active)
+          .toHaveLength(1)
+
+        expect(active[0]!.id)
+          .toBe(result.data.accessId)
+      },
+    )
+
+    it(
+      'expire un verrou PENDING abandonné puis autorise un nouvel envoi',
+      async () => {
+        const abandoned
+          = await prisma.craClientAccess.create({
+            data: {
+              reportId,
+              documentId,
+
+              purpose:
+                'INITIAL_CONFIRMATION',
+
+              status:
+                'PENDING',
+
+              tokenHash:
+                hashToken(
+                  `expired-${randomUUID()}`,
+                ),
+
+              recipientEmail:
+                contactEmail,
+
+              createdByUserId:
+                'cra-send-client-admin',
+
+              expiresAt:
+                new Date(
+                  Date.now() - 1000,
+                ),
+            },
+          })
+
+        const result
+          = await handler(event)
+
+        const expired
+          = await prisma.craClientAccess
+            .findUniqueOrThrow({
+              where: {
+                id: abandoned.id,
+              },
+            })
+
+        expect(expired.status)
+          .toBe('EXPIRED')
+
+        expect(mail.send)
+          .toHaveBeenCalledTimes(1)
+
+        const active
+          = await prisma.craClientAccess
+            .findMany({
+              where: {
+                reportId,
+                documentId,
+
+                purpose:
+                  'INITIAL_CONFIRMATION',
+
+                status:
+                  'ACTIVE',
+              },
+            })
+
+        expect(active)
+          .toHaveLength(1)
+
+        expect(active[0]!.id)
+          .toBe(result.data.accessId)
+      },
+    )
+
+    it(
       'autorise aussi l’adresse générale du client rattaché',
       async () => {
         request.body = {

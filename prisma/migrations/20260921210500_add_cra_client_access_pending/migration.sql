@@ -1,0 +1,2 @@
+ALTER TYPE "CraClientAccessStatus"
+ADD VALUE 'PENDING' BEFORE 'ACTIVE';

@@ -47,6 +47,7 @@ enum CraClientAccessPurpose {
 }
 
 enum CraClientAccessStatus {
+  PENDING
   ACTIVE
   COMPLETED
   EXPIRED

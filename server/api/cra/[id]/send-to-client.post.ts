@@ -9,6 +9,7 @@ import {
 } from '../../../utils/auth'
 import {
   httpError,
+  prismaErrorCode,
   requireRouterId,
   success,
 } from '../../../utils/api'
@@ -33,6 +34,9 @@ import {
 
 const CLIENT_ACCESS_TTL_MS
   = 7 * 24 * 60 * 60 * 1000
+
+const CLIENT_SEND_LOCK_TTL_MS
+  = 10 * 60 * 1000
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase()
@@ -388,19 +392,45 @@ export default defineEventHandler(async (event) => {
 
   const createdAt = new Date()
 
-  const expiresAt = new Date(
+  const pendingExpiresAt = new Date(
     createdAt.getTime()
-    + CLIENT_ACCESS_TTL_MS,
+    + CLIENT_SEND_LOCK_TTL_MS,
   )
 
   /*
-   * L’accès est créé dans un état non utilisable avant
-   * l’envoi du mail. Ainsi, si SMTP échoue, aucun nouveau
-   * lien actif n’est laissé en base et l’ancien lien reste
-   * utilisable.
+   * Un processus interrompu peut laisser un verrou
+   * PENDING derrière lui. Avant de tenter un nouvel
+   * envoi, seuls les verrous réellement expirés pour
+   * ce document/purpose sont libérés.
    */
-  const access
-    = await prisma.craClientAccess.create({
+  await prisma.craClientAccess.updateMany({
+    where: {
+      reportId: report.id,
+      documentId: document.id,
+
+      purpose:
+        'INITIAL_CONFIRMATION',
+
+      status:
+        'PENDING',
+
+      expiresAt: {
+        lte: createdAt,
+      },
+    },
+
+    data: {
+      status:
+        'EXPIRED',
+    },
+  })
+
+  let access: {
+    id: string
+  }
+
+  try {
+    access = await prisma.craClientAccess.create({
       data: {
         reportId: report.id,
         documentId: document.id,
@@ -408,8 +438,8 @@ export default defineEventHandler(async (event) => {
         purpose:
           'INITIAL_CONFIRMATION',
 
-        status: 'REVOKED',
-        revokedAt: createdAt,
+        status:
+          'PENDING',
 
         tokenHash,
         recipientEmail: recipient,
@@ -417,13 +447,65 @@ export default defineEventHandler(async (event) => {
         createdByUserId:
           context.userId,
 
-        expiresAt,
+        expiresAt:
+          pendingExpiresAt,
       },
 
       select: {
         id: true,
       },
     })
+  }
+  catch (cause) {
+    /*
+     * Seule une violation d'unicité peut correspondre
+     * au verrou de concurrence. Toute autre erreur DB
+     * doit remonter telle quelle.
+     */
+    if (prismaErrorCode(cause) !== 'P2002') {
+      throw cause
+    }
+
+    /*
+     * L'index unique partiel garantit qu'un second
+     * envoi concurrent ne peut pas passer jusqu'à SMTP.
+     *
+     * On confirme qu'un verrou PENDING encore valide
+     * existe réellement avant de convertir P2002 en
+     * erreur métier.
+     */
+    const pending
+      = await prisma.craClientAccess.findFirst({
+        where: {
+          reportId: report.id,
+          documentId: document.id,
+
+          purpose:
+            'INITIAL_CONFIRMATION',
+
+          status:
+            'PENDING',
+
+          expiresAt: {
+            gt: createdAt,
+          },
+        },
+
+        select: {
+          id: true,
+        },
+      })
+
+    if (pending) {
+      httpError(
+        409,
+        'Un envoi de ce CRA au client est déjà en cours.',
+        'CRA_SEND_CLIENT_IN_PROGRESS',
+      )
+    }
+
+    throw cause
+  }
 
   const baseUrl = (
     process.env.APP_BASE_URL
@@ -468,7 +550,7 @@ export default defineEventHandler(async (event) => {
       .deleteMany({
         where: {
           id: access.id,
-          status: 'REVOKED',
+          status: 'PENDING',
         },
       })
 
@@ -484,7 +566,7 @@ export default defineEventHandler(async (event) => {
       .deleteMany({
         where: {
           id: access.id,
-          status: 'REVOKED',
+          status: 'PENDING',
         },
       })
 
@@ -496,6 +578,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const sentAt = new Date()
+
+  const activeExpiresAt = new Date(
+    sentAt.getTime()
+    + CLIENT_ACCESS_TTL_MS,
+  )
 
   const activated
     = await prisma.$transaction(
@@ -530,25 +617,42 @@ export default defineEventHandler(async (event) => {
               },
             })
 
-        const current
+        const activatedPending
           = await tx.craClientAccess
-            .update({
+            .updateMany({
               where: {
                 id: access.id,
+
+                status:
+                  'PENDING',
               },
 
               data: {
                 status:
                   'ACTIVE',
 
-                revokedAt:
-                  null,
+                expiresAt:
+                  activeExpiresAt,
 
                 emailSentAt:
                   sentAt,
 
                 emailMessageId:
                   delivery.messageId,
+              },
+            })
+
+        if (activatedPending.count !== 1) {
+          throw new Error(
+            'CRA_CLIENT_PENDING_ACCESS_NOT_ACTIVATABLE',
+          )
+        }
+
+        const current
+          = await tx.craClientAccess
+            .findUniqueOrThrow({
+              where: {
+                id: access.id,
               },
 
               select: {
