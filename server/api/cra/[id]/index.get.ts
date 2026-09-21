@@ -6,6 +6,7 @@ import {
   success,
 } from '../../../utils/api'
 import { PERMISSIONS } from '../../../utils/constants'
+import { getCraClientRecipients } from '../../../utils/cra-client-recipients'
 import { craPeriodPolicy } from '../../../utils/cra-calendar'
 import { summarizeCraDays } from '../../../utils/cra-summary'
 import { prisma } from '../../../utils/prisma'
@@ -30,6 +31,14 @@ export default defineEventHandler(async (event) => {
   const canManageCra = hasPermission(
     context,
     PERMISSIONS.CRA_MANAGE,
+  )
+
+  const canReadClientPublication = Boolean(
+    canReadAll
+    && hasPermission(
+      context,
+      PERMISSIONS.CRA_SEND_CLIENT,
+    ),
   )
 
   const report = await prisma.craReport.findFirst({
@@ -164,6 +173,162 @@ export default defineEventHandler(async (event) => {
     },
   })
 
+  const clientRecipientMap
+    = canReadClientPublication
+      ? await getCraClientRecipients(
+          report.assignment.project.id,
+          context.associationId,
+        )
+      : null
+
+  const clientRecipients
+    = clientRecipientMap
+      ? Array.from(
+          clientRecipientMap.values(),
+        )
+          .map(recipient => ({
+            email:
+              recipient.email,
+
+            clientName:
+              recipient.clientName,
+
+            contactFirstName:
+              recipient.contactFirstName,
+
+            contactLastName:
+              recipient.contactLastName,
+
+            isPrimary:
+              recipient.isPrimary,
+          }))
+          .sort((left, right) =>
+            left.clientName.localeCompare(
+              right.clientName,
+              'fr',
+            )
+            || Number(right.isPrimary)
+              - Number(left.isPrimary)
+            || left.email.localeCompare(
+              right.email,
+              'fr',
+            ),
+          )
+      : []
+
+  /*
+   * On ne rattache l'état de publication qu'au
+   * document signé approuvé correspondant à la
+   * révision actuelle du CRA.
+   *
+   * Un verrou PENDING déjà expiré est ignoré ici :
+   * il ne doit pas masquer un éventuel accès ACTIVE
+   * précédent dans l'interface d'administration.
+   */
+  const latestClientAccess
+    = canReadClientPublication
+      && signedDocument?.status === 'APPROVED'
+      && signedDocument.antivirusStatus === 'CLEAN'
+      && signedDocument.reportRevision === report.revision
+      ? await prisma.craClientAccess.findFirst({
+          where: {
+            reportId:
+              report.id,
+
+            documentId:
+              signedDocument.id,
+
+            OR: [
+              {
+                status: {
+                  not: 'PENDING',
+                },
+              },
+              {
+                status:
+                  'PENDING',
+
+                expiresAt: {
+                  gt: new Date(),
+                },
+              },
+            ],
+          },
+
+          orderBy: {
+            createdAt:
+              'desc',
+          },
+
+          select: {
+            purpose: true,
+            status: true,
+            recipientEmail: true,
+
+            expiresAt: true,
+            firstViewedAt: true,
+            downloadedAt: true,
+            confirmedAt: true,
+            completedAt: true,
+            revokedAt: true,
+            emailSentAt: true,
+            createdAt: true,
+          },
+        })
+      : null
+
+  const clientPublication
+    = latestClientAccess
+      ? {
+          purpose:
+            latestClientAccess.purpose,
+
+          status:
+            latestClientAccess.status,
+
+          recipientEmail:
+            latestClientAccess.recipientEmail,
+
+          expiresAt:
+            latestClientAccess.expiresAt
+              .toISOString(),
+
+          firstViewedAt:
+            latestClientAccess.firstViewedAt
+              ?.toISOString()
+            ?? null,
+
+          downloadedAt:
+            latestClientAccess.downloadedAt
+              ?.toISOString()
+            ?? null,
+
+          confirmedAt:
+            latestClientAccess.confirmedAt
+              ?.toISOString()
+            ?? null,
+
+          completedAt:
+            latestClientAccess.completedAt
+              ?.toISOString()
+            ?? null,
+
+          revokedAt:
+            latestClientAccess.revokedAt
+              ?.toISOString()
+            ?? null,
+
+          emailSentAt:
+            latestClientAccess.emailSentAt
+              ?.toISOString()
+            ?? null,
+
+          createdAt:
+            latestClientAccess.createdAt
+              .toISOString(),
+        }
+      : null
+
   const latestOfficialDocument = report.documents[0] ?? null
 
   const canUploadSignedDocument = Boolean(
@@ -227,6 +392,9 @@ export default defineEventHandler(async (event) => {
       : null,
 
     canUploadSignedDocument,
+
+    clientRecipients,
+    clientPublication,
 
     periodPolicy,
     days: days.map(day => ({
