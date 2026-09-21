@@ -20,6 +20,10 @@ function redact(value: unknown, depth = 0): unknown {
     return '[TRUNCATED]'
   }
 
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
   if (Array.isArray(value)) {
     return value.slice(0, 100).map(item => redact(item, depth + 1))
   }
@@ -44,34 +48,89 @@ function auditMetadata(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(redact(value))) as Prisma.InputJsonValue
 }
 
-export async function writeAuditLog(
+type AuditDbClient
+  = Pick<
+    Prisma.TransactionClient,
+    'auditLog'
+  >
+
+export async function writeAuditLogStrict(
   event: H3Event,
   context: AuthContext | null,
   input: AuditInput,
+  db: AuditDbClient = prisma,
 ): Promise<void> {
-  const associationId = input.associationId || context?.associationId
+  const associationId
+    = input.associationId
+      || context?.associationId
 
   if (!associationId) {
     return
   }
 
-  try {
-    await prisma.auditLog.create({
-      data: {
-        associationId,
-        userId: input.userId === undefined ? context?.userId ?? null : input.userId,
-        action: input.action.slice(0, 100),
-        outcome: input.outcome || 'SUCCESS',
-        entityType: input.entityType?.slice(0, 100) || null,
-        entityId: input.entityId?.slice(0, 191) || null,
-        requestId: typeof event.context.requestId === 'string'
-          ? event.context.requestId.slice(0, 100)
+  await db.auditLog.create({
+    data: {
+      associationId,
+
+      userId:
+        input.userId === undefined
+          ? context?.userId ?? null
+          : input.userId,
+
+      action:
+        input.action.slice(0, 100),
+
+      outcome:
+        input.outcome || 'SUCCESS',
+
+      entityType:
+        input.entityType?.slice(0, 100)
+        || null,
+
+      entityId:
+        input.entityId?.slice(0, 191)
+        || null,
+
+      requestId:
+        typeof event.context.requestId
+          === 'string'
+          ? event.context.requestId.slice(
+              0,
+              100,
+            )
           : null,
-        ipHash: getIpHash(event),
-        userAgent: getRequestHeader(event, 'user-agent')?.slice(0, 500) || null,
-        metadata: input.metadata === undefined ? undefined : auditMetadata(input.metadata),
-      },
-    })
+
+      ipHash:
+        getIpHash(event),
+
+      userAgent:
+        getRequestHeader(
+          event,
+          'user-agent',
+        )?.slice(0, 500)
+        || null,
+
+      metadata:
+        input.metadata === undefined
+          ? undefined
+          : auditMetadata(
+              input.metadata,
+            ),
+    },
+  })
+}
+
+export async function writeAuditLog(
+  event: H3Event,
+  context: AuthContext | null,
+  input: AuditInput,
+): Promise<void> {
+  try {
+    await writeAuditLogStrict(
+      event,
+      context,
+      input,
+    )
   }
   catch (error) {
     // Audit failures must be visible in operational logs. They do not mask the
@@ -81,7 +140,10 @@ export async function writeAuditLog(
       event: 'audit_write_failed',
       action: input.action,
       requestId: event.context.requestId,
-      error: error instanceof Error ? error.message : String(error),
+      error:
+        error instanceof Error
+          ? error.message
+          : String(error),
     }))
   }
 }
