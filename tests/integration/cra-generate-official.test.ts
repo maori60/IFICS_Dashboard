@@ -376,6 +376,27 @@ describe.skipIf(process.env.CRA_INTEGRATION_TESTS !== '1')(
     afterAll(async () => {
       try {
         if (prisma) {
+          if (
+            !associationId.startsWith('cra-generate-')
+          ) {
+            throw new Error(
+              'Refus du nettoyage : association de test invalide.',
+            )
+          }
+
+          /*
+           * Un échec partiel de beforeAll ne doit jamais
+           * transformer un filtre Prisma en suppression
+           * non bornée.
+           */
+          if (
+            !reportId
+            || !projectId
+            || !intervenorId
+          ) {
+            return
+          }
+
           await cleanupDocuments()
 
           await prisma.associationFinanceSettings.deleteMany({

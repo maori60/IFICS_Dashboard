@@ -554,6 +554,29 @@ describe.skipIf(
     afterAll(async () => {
       try {
         if (prisma) {
+          if (
+            !associationId.startsWith('cra-signed-')
+          ) {
+            throw new Error(
+              'Refus du nettoyage : association de test invalide.',
+            )
+          }
+
+          /*
+           * Sécurité critique :
+           * si beforeAll échoue avant l'initialisation
+           * complète du fixture, ne jamais transmettre
+           * un identifiant undefined à Prisma.
+           */
+          if (
+            !reportId
+            || !projectId
+            || !intervenorId
+            || !otherIntervenorId
+          ) {
+            return
+          }
+
           await prisma.craDocument.deleteMany({
             where: {
               reportId,

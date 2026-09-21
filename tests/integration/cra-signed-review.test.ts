@@ -804,6 +804,30 @@ describe.skipIf(
     afterAll(async () => {
       if (!prisma) return
 
+      if (
+        !associationId.startsWith('cra-review-')
+      ) {
+        throw new Error(
+          'Refus du nettoyage : association de test invalide.',
+        )
+      }
+
+      /*
+       * Ne jamais exécuter les deleteMany ci-dessous
+       * avec un identifiant non initialisé si beforeAll
+       * échoue partiellement.
+       */
+      if (
+        !reportId
+        || !projectId
+        || !intervenorId
+        || !intervenorUserId
+        || !adminUserId
+        || !roleId
+      ) {
+        return
+      }
+
       await prisma.notification.deleteMany({
         where: {
           userId:
