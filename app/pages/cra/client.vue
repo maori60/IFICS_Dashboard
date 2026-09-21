@@ -32,7 +32,7 @@ type CraClientPayload = {
     expiresAt: string
     canViewDocument: boolean
     canDownloadDocument: boolean
-    canConfirm: boolean
+    canDecide: boolean
   }
 
   report: {
@@ -65,8 +65,19 @@ type CraClientPayload = {
 }
 
 const loading = ref(true)
-const confirming = ref(false)
-const confirmed = ref(false)
+const deciding = ref(false)
+
+const decisionResult
+  = ref<
+    | 'ACCEPTED'
+    | 'REFUSED'
+    | null
+  >(null)
+
+const decisionFirstName = ref('')
+const decisionLastName = ref('')
+const decisionJobTitle = ref('')
+const decisionComment = ref('')
 
 const errorMessage = ref('')
 
@@ -312,45 +323,108 @@ async function initialize() {
   }
 }
 
-async function confirmReception() {
+async function submitDecision(
+  decision:
+    | 'ACCEPTED'
+    | 'REFUSED',
+) {
   if (
-    confirming.value
-    || !payload.value?.access.canConfirm
+    deciding.value
+    || !payload.value?.access.canDecide
   ) {
     return
   }
 
-  const accepted = window.confirm(
-    'Confirmer la réception de ce CRA ? Cette action clôturera ce lien sécurisé.',
-  )
+  const firstName
+    = decisionFirstName.value.trim()
+
+  const lastName
+    = decisionLastName.value.trim()
+
+  const jobTitle
+    = decisionJobTitle.value.trim()
+
+  const comment
+    = decisionComment.value.trim()
+
+  if (
+    !firstName
+    || !lastName
+    || !jobTitle
+  ) {
+    errorMessage.value
+      = 'Le prénom, le nom et la fonction sont obligatoires.'
+
+    return
+  }
+
+  if (
+    decision === 'REFUSED'
+    && !comment
+  ) {
+    errorMessage.value
+      = 'Le commentaire est obligatoire pour refuser le CRA.'
+
+    return
+  }
+
+  const accepted
+    = window.confirm(
+      decision === 'ACCEPTED'
+        ? [
+            'Confirmer l’acceptation de ce CRA ?',
+            '',
+            'Votre décision sera enregistrée définitivement',
+            'et une attestation horodatée sera générée.',
+          ].join('\n')
+        : [
+            'Confirmer le refus de ce CRA ?',
+            '',
+            'Votre refus et votre commentaire seront enregistrés',
+            'définitivement dans une attestation horodatée.',
+          ].join('\n'),
+    )
 
   if (!accepted) {
     return
   }
 
-  confirming.value = true
+  deciding.value = true
   errorMessage.value = ''
 
   try {
     await $fetch(
-      '/api/cra-client/confirm',
+      '/api/cra-client/decision',
       {
         method: 'POST',
+
+        body: {
+          decision,
+          firstName,
+          lastName,
+          jobTitle,
+
+          comment:
+            comment || null,
+        },
       },
     )
 
-    confirmed.value = true
-    payload.value = null
+    decisionResult.value
+      = decision
+
+    payload.value
+      = null
   }
   catch (error) {
     errorMessage.value
       = apiErrorMessage(
         error,
-        'La confirmation n’a pas pu être enregistrée.',
+        'La décision n’a pas pu être enregistrée.',
       )
   }
   finally {
-    confirming.value = false
+    deciding.value = false
   }
 }
 
@@ -400,26 +474,50 @@ onBeforeUnmount(() => {
     </div>
 
     <div
-      v-else-if="confirmed"
-      class="state-card success-card"
+      v-else-if="decisionResult"
+      class="state-card"
+      :class="{
+        'success-card':
+          decisionResult === 'ACCEPTED',
+
+        'refusal-card':
+          decisionResult === 'REFUSED',
+      }"
       role="status"
     >
       <span
         class="state-icon"
         aria-hidden="true"
       >
-        ✓
+        {{
+          decisionResult === 'ACCEPTED'
+            ? '✓'
+            : '×'
+        }}
       </span>
 
       <div>
         <h1>
-          Réception confirmée
+          {{
+            decisionResult === 'ACCEPTED'
+              ? 'CRA accepté'
+              : 'CRA refusé'
+          }}
         </h1>
 
-        <p>
-          Votre confirmation a bien été
-          enregistrée. Ce lien sécurisé est
-          maintenant clôturé.
+        <p v-if="decisionResult === 'ACCEPTED'">
+          Votre acceptation a bien été enregistrée.
+          Une attestation horodatée de votre décision
+          a été créée. Ce lien sécurisé est maintenant
+          clôturé.
+        </p>
+
+        <p v-else>
+          Votre refus et votre commentaire ont bien été
+          enregistrés. Une attestation horodatée de votre
+          décision a été créée et IFICS pourra examiner
+          votre retour. Ce lien sécurisé est maintenant
+          clôturé.
         </p>
 
         <p class="state-hint">
@@ -479,7 +577,7 @@ onBeforeUnmount(() => {
             {{
               payload.access.purpose
                 === 'INITIAL_CONFIRMATION'
-                ? 'Confirmation attendue'
+                ? 'Décision attendue'
                 : 'Consultation'
             }}
           </strong>
@@ -632,34 +730,129 @@ onBeforeUnmount(() => {
       </section>
 
       <section
-        v-if="payload.access.canConfirm"
-        class="confirmation-card"
+        v-if="payload.access.canDecide"
+        class="decision-card"
+        aria-labelledby="cra-client-decision-title"
       >
-        <div>
-          <h2>
-            Confirmer la réception
+        <div class="decision-intro">
+          <p class="eyebrow">
+            Décision client
+          </p>
+
+          <h2 id="cra-client-decision-title">
+            Accepter ou refuser ce CRA
           </h2>
 
           <p>
-            Cette action confirme uniquement
-            que vous avez reçu le CRA. Elle ne
-            constitue pas une modification du
-            document.
+            Après examen du document signé, renseignez
+            votre identité professionnelle puis indiquez
+            votre décision.
+          </p>
+
+          <p class="decision-notice">
+            Votre décision sera horodatée et conservée
+            dans une attestation distincte. Le document
+            signé affiché ci-dessus ne sera pas modifié.
           </p>
         </div>
 
-        <button
-          type="button"
-          class="confirm-button"
-          :disabled="confirming"
-          @click="confirmReception"
-        >
-          {{
-            confirming
-              ? 'Confirmation…'
-              : 'Confirmer la réception'
-          }}
-        </button>
+        <div class="decision-fields">
+          <label class="decision-field">
+            <span>
+              Prénom
+              <strong aria-hidden="true">*</strong>
+            </span>
+
+            <input
+              v-model="decisionFirstName"
+              type="text"
+              autocomplete="given-name"
+              maxlength="120"
+              :disabled="deciding"
+              required
+            >
+          </label>
+
+          <label class="decision-field">
+            <span>
+              Nom
+              <strong aria-hidden="true">*</strong>
+            </span>
+
+            <input
+              v-model="decisionLastName"
+              type="text"
+              autocomplete="family-name"
+              maxlength="120"
+              :disabled="deciding"
+              required
+            >
+          </label>
+
+          <label class="decision-field decision-field-wide">
+            <span>
+              Fonction
+              <strong aria-hidden="true">*</strong>
+            </span>
+
+            <input
+              v-model="decisionJobTitle"
+              type="text"
+              autocomplete="organization-title"
+              maxlength="180"
+              :disabled="deciding"
+              placeholder="Ex. Responsable informatique"
+              required
+            >
+          </label>
+
+          <label class="decision-field decision-field-wide">
+            <span>
+              Commentaire
+            </span>
+
+            <textarea
+              v-model="decisionComment"
+              rows="5"
+              maxlength="2000"
+              :disabled="deciding"
+              placeholder="Facultatif en cas d’acceptation. Obligatoire en cas de refus."
+            />
+
+            <small>
+              Le commentaire est obligatoire si vous
+              refusez le CRA.
+            </small>
+          </label>
+        </div>
+
+        <div class="decision-actions">
+          <button
+            type="button"
+            class="decision-button refusal-button"
+            :disabled="deciding"
+            @click="submitDecision('REFUSED')"
+          >
+            {{
+              deciding
+                ? 'Enregistrement…'
+                : 'Refuser le CRA'
+            }}
+          </button>
+
+          <button
+            type="button"
+            class="decision-button acceptance-button"
+            :disabled="deciding"
+            @click="submitDecision('ACCEPTED')"
+          >
+            {{
+              deciding
+                ? 'Enregistrement…'
+                : 'Accepter le CRA'
+            }}
+          </button>
+        </div>
       </section>
     </template>
   </section>
@@ -913,12 +1106,10 @@ onBeforeUnmount(() => {
     var(--ifics-muted, #68786f);
 }
 
-.confirmation-card {
-  padding: 21px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 30px;
+.decision-card {
+  padding: 24px;
+  display: grid;
+  gap: 24px;
   border: 1px solid
     var(--ifics-green-200, #cfe2d7);
   border-radius: 14px;
@@ -926,22 +1117,109 @@ onBeforeUnmount(() => {
     var(--ifics-green-50, #f4f8f5);
 }
 
-.confirmation-card h2 {
-  margin: 0 0 6px;
-  font-size: 1.05rem;
+.decision-intro h2 {
+  margin: 0 0 8px;
+  font-size: 1.18rem;
 }
 
-.confirmation-card p {
-  max-width: 680px;
+.decision-intro > p:not(.eyebrow) {
+  max-width: 780px;
   margin: 0;
   color:
     var(--ifics-muted, #68786f);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
-.confirm-button {
-  flex: 0 0 auto;
+.decision-intro .decision-notice {
+  margin-top: 10px !important;
+  font-size: .88rem;
+}
+
+.decision-fields {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.decision-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.decision-field-wide {
+  grid-column: 1 / -1;
+}
+
+.decision-field > span {
+  color:
+    var(--ifics-green-950, #173428);
+  font-size: .84rem;
+  font-weight: 650;
+}
+
+.decision-field > span strong {
+  color: #9d2d25;
+}
+
+.decision-field input,
+.decision-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid
+    var(--ifics-border, #dfe8e2);
+  border-radius: 9px;
+  background: #fff;
+  color:
+    var(--ifics-green-950, #173428);
+  font: inherit;
+}
+
+.decision-field textarea {
+  resize: vertical;
+  min-height: 118px;
+  line-height: 1.45;
+}
+
+.decision-field input:focus,
+.decision-field textarea:focus {
+  outline: 2px solid
+    var(--ifics-green-200, #cfe2d7);
+  border-color:
+    var(--ifics-green-700, #31704f);
+}
+
+.decision-field input:disabled,
+.decision-field textarea:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+.decision-field small {
+  color:
+    var(--ifics-muted, #68786f);
+  font-size: .76rem;
+}
+
+.decision-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 11px;
+  padding-top: 4px;
+}
+
+.decision-button {
+  min-height: 44px;
   padding: 9px 18px;
+  border-radius: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.acceptance-button {
   border: 1px solid
     var(--ifics-green-800, #24523d);
   background:
@@ -949,7 +1227,13 @@ onBeforeUnmount(() => {
   color: #fff;
 }
 
-.confirm-button:disabled {
+.refusal-button {
+  border: 1px solid #b4473d;
+  background: #fff;
+  color: #96362e;
+}
+
+.decision-button:disabled {
   opacity: .6;
   cursor: wait;
 }
@@ -1009,7 +1293,8 @@ onBeforeUnmount(() => {
   animation: spin .8s linear infinite;
 }
 
-.error-card .state-icon {
+.error-card .state-icon,
+.refusal-card .state-icon {
   background: #fff0ee;
   color: #9d2d25;
 }
@@ -1029,8 +1314,7 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 760px) {
-  .document-heading,
-  .confirmation-card {
+  .document-heading {
     flex-direction: column;
   }
 
@@ -1043,11 +1327,19 @@ onBeforeUnmount(() => {
     grid-template-columns: 1fr;
   }
 
-  .confirmation-card {
-    align-items: stretch;
+  .decision-fields {
+    grid-template-columns: 1fr;
   }
 
-  .confirm-button {
+  .decision-field-wide {
+    grid-column: auto;
+  }
+
+  .decision-actions {
+    flex-direction: column-reverse;
+  }
+
+  .decision-button {
     width: 100%;
   }
 

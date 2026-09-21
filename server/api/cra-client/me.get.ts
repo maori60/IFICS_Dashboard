@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   const report
     = access.document.report
 
-  const canConfirm
+  const canDecide
     = access.purpose
       === 'INITIAL_CONFIRMATION'
 
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
       canDownloadDocument:
         true,
 
-      canConfirm,
+      canDecide,
     },
 
     report: {

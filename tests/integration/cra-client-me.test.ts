@@ -489,7 +489,7 @@ describe.skipIf(
               canDownloadDocument:
                 true,
 
-              canConfirm:
+              canDecide:
                 true,
             },
 
@@ -743,7 +743,7 @@ describe.skipIf(
     )
 
     it(
-      'autorise REDOWNLOAD sans droit de confirmation',
+      'autorise REDOWNLOAD sans droit de décision',
       async () => {
         await prisma.craClientAccess
           .deleteMany({
@@ -771,7 +771,7 @@ describe.skipIf(
             canDownloadDocument:
               true,
 
-            canConfirm:
+            canDecide:
               false,
           })
       },
