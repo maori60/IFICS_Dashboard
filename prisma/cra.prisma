@@ -129,6 +129,10 @@ model CraDocument {
   uploadedByUserId  String?
   reviewedByUserId  String?
 
+  sourceDocumentId String?
+  sourceDocument   CraDocument?  @relation("CraDocumentSource", fields: [sourceDocumentId], references: [id], onDelete: Restrict)
+  derivedDocuments CraDocument[] @relation("CraDocumentSource")
+
   sentToIntervenorAt DateTime?
   receivedAt         DateTime?
   reviewedAt         DateTime?
@@ -152,6 +156,7 @@ model CraDocument {
   @@index([status])
   @@index([antivirusStatus])
   @@index([sha256])
+  @@index([sourceDocumentId])
   @@index([archivedAt])
 }
 

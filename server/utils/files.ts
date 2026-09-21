@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { access, mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { basename, join, resolve, sep } from 'node:path'
 import { PDFDocument } from 'pdf-lib'
@@ -35,6 +35,18 @@ export type StoredImage = {
 }
 
 export type StoredCraSignature = StoredPdf | StoredImage
+
+export type StoredCraSignedDocument = StoredPdf | StoredImage
+
+export type QuarantinedCraSignedDocument = {
+  originalName: string
+  storedName: string
+  quarantinePath: string
+  finalPath: string
+  mimeType: 'application/pdf' | 'image/png' | 'image/jpeg'
+  fileSize: bigint
+  sha256: string
+}
 
 export function uploadRoot(): string {
   return resolve(process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'))
@@ -292,6 +304,178 @@ export async function storeCraSignature(
     fileSize: BigInt(buffer.length),
     sha256: createHash('sha256').update(buffer).digest('hex'),
   }
+}
+
+async function validateCraSignedBuffer(
+  buffer: Buffer,
+): Promise<{
+  mimeType: 'application/pdf' | 'image/png' | 'image/jpeg'
+  extension: 'pdf' | 'png' | 'jpg'
+}> {
+  const maxBytes = maxUploadBytes()
+
+  if (!buffer.length || buffer.length > maxBytes) {
+    httpError(
+      400,
+      `Le CRA signé doit faire entre 1 octet et ${Math.floor(maxBytes / 1024 / 1024)} Mo.`,
+      'INVALID_FILE_SIZE',
+    )
+  }
+
+  if (
+    buffer.length >= PDF_SIGNATURE.length
+    && buffer.subarray(0, PDF_SIGNATURE.length).compare(PDF_SIGNATURE) === 0
+  ) {
+    await validatePdf(buffer, maxBytes)
+
+    return {
+      mimeType: 'application/pdf',
+      extension: 'pdf',
+    }
+  }
+
+  const detected = detectBrandImage(buffer)
+
+  if (!detected) {
+    httpError(
+      400,
+      'Le CRA signé doit être un fichier PDF, PNG ou JPEG valide.',
+      'INVALID_CRA_SIGNED_FILE',
+    )
+  }
+
+  try {
+    const validationPdf = await PDFDocument.create()
+
+    if (detected.mimeType === 'image/png') {
+      await validationPdf.embedPng(buffer)
+    }
+    else {
+      await validationPdf.embedJpg(buffer)
+    }
+  }
+  catch {
+    httpError(
+      400,
+      'L’image du CRA signé est corrompue ou invalide.',
+      'INVALID_CRA_SIGNED_IMAGE',
+    )
+  }
+
+  return detected
+}
+
+export async function quarantineCraSignedDocument(
+  reportId: string,
+  originalFilename: string,
+  buffer: Buffer,
+): Promise<QuarantinedCraSignedDocument> {
+  const detected = await validateCraSignedBuffer(buffer)
+
+  const cleanReportId = safeSegment(reportId)
+  const cleanOriginalName = safeOriginalFilename(originalFilename)
+  const storedName = `${randomUUID()}.${detected.extension}`
+
+  const quarantineDirectory = join(
+    uploadRoot(),
+    'quarantine',
+    'cra',
+    cleanReportId,
+  )
+
+  await mkdir(quarantineDirectory, {
+    recursive: true,
+    mode: 0o750,
+  })
+
+  const quarantinePath = join(
+    'quarantine',
+    'cra',
+    cleanReportId,
+    storedName,
+  )
+
+  const finalPath = join(
+    'cra',
+    cleanReportId,
+    storedName,
+  )
+
+  await writeFile(
+    resolveStoredPath(quarantinePath),
+    buffer,
+    {
+      flag: 'wx',
+      mode: 0o640,
+    },
+  )
+
+  return {
+    originalName: cleanOriginalName,
+    storedName,
+    quarantinePath,
+    finalPath,
+    mimeType: detected.mimeType,
+    fileSize: BigInt(buffer.length),
+    sha256: createHash('sha256')
+      .update(buffer)
+      .digest('hex'),
+  }
+}
+
+export async function promoteCraSignedDocument(
+  document: QuarantinedCraSignedDocument,
+): Promise<StoredCraSignedDocument> {
+  if (
+    !document.quarantinePath.startsWith('quarantine/cra/')
+    || !document.finalPath.startsWith('cra/')
+  ) {
+    httpError(
+      400,
+      'Chemin de quarantaine CRA invalide.',
+      'INVALID_CRA_QUARANTINE_PATH',
+    )
+  }
+
+  const source = resolveStoredPath(
+    document.quarantinePath,
+  )
+
+  const destination = resolveStoredPath(
+    document.finalPath,
+  )
+
+  const finalDirectory = resolve(
+    destination,
+    '..',
+  )
+
+  await mkdir(finalDirectory, {
+    recursive: true,
+    mode: 0o750,
+  })
+
+  await rename(
+    source,
+    destination,
+  )
+
+  return {
+    originalName: document.originalName,
+    storedName: document.storedName,
+    filePath: document.finalPath,
+    mimeType: document.mimeType,
+    fileSize: document.fileSize,
+    sha256: document.sha256,
+  }
+}
+
+export async function discardQuarantinedCraDocument(
+  document: QuarantinedCraSignedDocument,
+): Promise<void> {
+  await removeStoredFile(
+    document.quarantinePath,
+  )
 }
 
 export function resolveStoredPath(filePath: string): string {

@@ -46,7 +46,13 @@ export default defineEventHandler(async (event) => {
     where: {
       id: documentId,
       reportId,
-      type: 'IFICS_TO_SIGN',
+
+      type: {
+        in: [
+          'IFICS_TO_SIGN',
+          'INTERVENOR_SIGNED',
+        ],
+      },
 
       report: {
         associationId: context.associationId,
@@ -72,6 +78,9 @@ export default defineEventHandler(async (event) => {
 
     select: {
       id: true,
+      type: true,
+      status: true,
+      antivirusStatus: true,
       reference: true,
       originalName: true,
       filePath: true,
@@ -89,10 +98,29 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  if (document.mimeType !== 'application/pdf') {
+  if (
+    document.type === 'INTERVENOR_SIGNED'
+    && document.antivirusStatus !== 'CLEAN'
+  ) {
     httpError(
       409,
-      'Le document CRA demandé n’est pas un PDF.',
+      'Le document signé n’a pas passé le contrôle antivirus.',
+      'CRA_SIGNED_DOCUMENT_NOT_CLEAN',
+    )
+  }
+
+  const allowedMimeTypes = document.type === 'IFICS_TO_SIGN'
+    ? ['application/pdf']
+    : [
+        'application/pdf',
+        'image/png',
+        'image/jpeg',
+      ]
+
+  if (!allowedMimeTypes.includes(document.mimeType)) {
+    httpError(
+      409,
+      'Le type du document CRA enregistré n’est pas autorisé.',
       'CRA_DOCUMENT_INVALID_TYPE',
     )
   }
@@ -130,7 +158,7 @@ export default defineEventHandler(async (event) => {
   setResponseHeader(
     event,
     'Content-Type',
-    'application/pdf',
+    document.mimeType,
   )
 
   setResponseHeader(

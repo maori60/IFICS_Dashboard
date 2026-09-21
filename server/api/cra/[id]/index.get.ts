@@ -127,6 +127,61 @@ export default defineEventHandler(async (event) => {
     httpError(404, 'CRA introuvable ou inaccessible.', 'CRA_NOT_FOUND')
   }
 
+  const signedDocument = await prisma.craDocument.findFirst({
+    where: {
+      reportId: report.id,
+      type: 'INTERVENOR_SIGNED',
+      archivedAt: null,
+    },
+
+    orderBy: {
+      version: 'desc',
+    },
+
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      version: true,
+      reportRevision: true,
+      reference: true,
+      originalName: true,
+      mimeType: true,
+      fileSize: true,
+      antivirusStatus: true,
+      receivedAt: true,
+      reviewedAt: true,
+      rejectionReason: true,
+      createdAt: true,
+
+      sourceDocument: {
+        select: {
+          id: true,
+          reference: true,
+          version: true,
+        },
+      },
+    },
+  })
+
+  const latestOfficialDocument = report.documents[0] ?? null
+
+  const canUploadSignedDocument = Boolean(
+    canReadOwn
+    && context.intervenorId === report.intervenorId
+    && hasPermission(
+      context,
+      PERMISSIONS.CRA_WRITE_OWN,
+    )
+    && report.status === 'REVIEWED'
+    && latestOfficialDocument?.status === 'SENT_TO_INTERVENOR'
+    && (
+      !signedDocument
+      || signedDocument.status === 'REJECTED'
+      || signedDocument.status === 'SUPERSEDED'
+    )
+  )
+
   const {
     assignment,
     days,
@@ -162,6 +217,17 @@ export default defineEventHandler(async (event) => {
             ?? null,
         }
       : null,
+
+    signedDocument: signedDocument
+      ? {
+          ...signedDocument,
+          fileSize:
+            signedDocument.fileSize.toString(),
+        }
+      : null,
+
+    canUploadSignedDocument,
+
     periodPolicy,
     days: days.map(day => ({
       ...day,

@@ -63,6 +63,39 @@ type CraOfficialDocument = {
   sentToIntervenorAt: string | null
 }
 
+type CraSignedDocumentStatus =
+  | 'RECEIVED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'SUPERSEDED'
+
+type CraSignedDocument = {
+  id: string
+  type: 'INTERVENOR_SIGNED'
+  status: CraSignedDocumentStatus
+  version: number
+  reportRevision: number
+  reference: string
+  originalName: string
+  mimeType: string
+  fileSize: string
+  antivirusStatus:
+    | 'PENDING'
+    | 'CLEAN'
+    | 'INFECTED'
+    | 'ERROR'
+    | 'NOT_APPLICABLE'
+  receivedAt: string | null
+  reviewedAt: string | null
+  rejectionReason: string | null
+  createdAt: string
+  sourceDocument: {
+    id: string
+    reference: string
+    version: number
+  } | null
+}
+
 type CraPeriodPolicy = {
   periodEnd: string
 }
@@ -106,6 +139,8 @@ type CraReport = {
     email: string | null
   }
   officialDocument: CraOfficialDocument | null
+  signedDocument: CraSignedDocument | null
+  canUploadSignedDocument: boolean
   periodPolicy: CraPeriodPolicy
   days: CraDay[]
 }
@@ -155,6 +190,14 @@ Record<CraOfficialDocumentStatus, string> = {
   SUPERSEDED: 'Remplacé',
 }
 
+const signedDocumentStatusLabels:
+Record<CraSignedDocumentStatus, string> = {
+  RECEIVED: 'Reçu par IFICS',
+  APPROVED: 'Approuvé par IFICS',
+  REJECTED: 'À redéposer',
+  SUPERSEDED: 'Remplacé',
+}
+
 const holidays: Record<string, string> = holidayData
 const coveredYears = new Set(
   Object.keys(holidays).map(date => Number(date.slice(0, 4))),
@@ -195,6 +238,14 @@ const showSendToIntervenorForm = ref(false)
 const sendToIntervenorEmail = ref('')
 const sendToIntervenorSubject = ref('')
 const sendToIntervenorMessage = ref('')
+
+const signedFile = ref<File | null>(null)
+const signedFileInput = ref<HTMLInputElement | null>(null)
+const signedUploadInProgress = ref(false)
+
+const showSignedRejectionForm = ref(false)
+const signedRejectionReason = ref('')
+const signedReviewInProgress = ref(false)
 
 const showDayEditor = ref(false)
 const dayEditorDate = ref('')
@@ -285,6 +336,45 @@ const canSendOfficialToIntervenor = computed(() => {
   )
 })
 
+const canUploadSigned = computed(() =>
+  reportReady.value
+  && canWriteOwn.value
+  && Boolean(
+    report.value?.canUploadSignedDocument,
+  ),
+)
+
+const canViewSignedDocumentPanel = computed(() => {
+  const current = report.value
+
+  if (!reportReady.value || !current) return false
+
+  if (isOwner.value) {
+    return Boolean(
+      current.canUploadSignedDocument
+      || current.signedDocument,
+    )
+  }
+
+  return hasPermission('cra:read:all')
+    && Boolean(current.signedDocument)
+})
+
+const canReviewSignedDocument = computed(() => {
+  const current = report.value
+  const document = current?.signedDocument
+
+  return Boolean(
+    reportReady.value
+    && current?.status === 'REVIEWED'
+    && hasPermission('cra:read:all')
+    && hasPermission('cra:review')
+    && document
+    && document.status === 'RECEIVED'
+    && document.antivirusStatus === 'CLEAN',
+  )
+})
+
 const officialDocumentViewUrl = computed(() => {
   const documentId = report.value?.officialDocument?.id
 
@@ -297,6 +387,26 @@ const officialDocumentDownloadUrl = computed(() => {
   const url = officialDocumentViewUrl.value
 
   return url ? `${url}?download=1` : ''
+})
+
+const signedDocumentViewUrl = computed(() => {
+  const documentId = report.value?.signedDocument?.id
+
+  return documentId
+    ? `${reportUrl}/documents/${encodeURIComponent(documentId)}`
+    : ''
+})
+
+const signedDocumentDownloadUrl = computed(() => {
+  const url = signedDocumentViewUrl.value
+
+  return url ? `${url}?download=1` : ''
+})
+
+const signedRejectionReasonValid = computed(() => {
+  const reason = signedRejectionReason.value.trim()
+
+  return reason.length > 0 && reason.length <= 2000
 })
 
 const correctionReasonValid = computed(() => {
@@ -321,8 +431,40 @@ const readOnlyMessage = computed(() => {
         : 'Ce brouillon est en lecture seule. Seul l’intervenant concerné peut déclarer ses journées et transmettre son CRA.'
     case 'SUBMITTED':
       return 'Ce CRA a été transmis à IFICS pour vérification. Les journées sont verrouillées.'
-    case 'REVIEWED':
+    case 'REVIEWED': {
+      const signedDocument = current.signedDocument
+      const officialDocument = current.officialDocument
+
+      if (signedDocument?.status === 'APPROVED') {
+        return isOwner.value
+          ? 'Votre CRA signé a été vérifié et approuvé par IFICS. Les journées restent verrouillées.'
+          : 'Le CRA signé a été vérifié et approuvé par IFICS. Les journées restent verrouillées.'
+      }
+
+      if (signedDocument?.status === 'RECEIVED') {
+        return isOwner.value
+          ? 'Votre CRA signé a bien été reçu par IFICS et est en attente de vérification. Les journées restent verrouillées.'
+          : 'Le CRA signé a été reçu et attend une décision IFICS. Les journées restent verrouillées.'
+      }
+
+      if (signedDocument?.status === 'REJECTED') {
+        return isOwner.value
+          ? 'Le CRA signé doit être corrigé puis redéposé. Les journées du CRA restent verrouillées.'
+          : 'Le CRA signé a été rejeté et attend un nouveau dépôt de l’intervenant. Les journées restent verrouillées.'
+      }
+
+      if (officialDocument?.status === 'SENT_TO_INTERVENOR') {
+        return isOwner.value
+          ? 'Le document officiel vous a été envoyé pour signature. Après signature, déposez-le dans l’espace prévu ci-dessous.'
+          : 'Le document officiel a été envoyé à l’intervenant pour signature. Les journées restent verrouillées.'
+      }
+
+      if (officialDocument) {
+        return 'IFICS a vérifié ce CRA et le document officiel a été généré. Les journées restent verrouillées.'
+      }
+
       return 'IFICS a vérifié ce CRA. Il est prêt pour la génération du document officiel à faire signer par l’intervenant ; les journées restent verrouillées.'
+    }
     case 'CLIENT_PENDING':
       return 'Ce CRA est en attente de validation par le client. Les journées sont verrouillées.'
     case 'VALIDATED':
@@ -479,6 +621,24 @@ function isoDateLabel(value: string | null): string {
     dateStyle: 'short',
     timeZone: 'UTC',
   }).format(date)
+}
+
+function formatFileSize(value: string): string {
+  const bytes = Number(value)
+
+  if (!Number.isFinite(bytes) || bytes < 0) {
+    return '—'
+  }
+
+  if (bytes < 1024) {
+    return `${bytes} octet${bytes > 1 ? 's' : ''}`
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} Ko`
+  }
+
+  return `${(bytes / 1024 / 1024).toFixed(1)} Mo`
 }
 
 function dayTypeClass(date: string): string {
@@ -821,6 +981,139 @@ async function reviewReport(decision: ReviewDecision) {
   }
 }
 
+function openSignedRejectionForm() {
+  if (
+    !canReviewSignedDocument.value
+    || busy.value
+  ) return
+
+  feedback.value = ''
+  actionError.value = ''
+  signedRejectionReason.value = ''
+  showSignedRejectionForm.value = true
+}
+
+function closeSignedRejectionForm() {
+  if (busy.value) return
+
+  signedRejectionReason.value = ''
+  showSignedRejectionForm.value = false
+}
+
+function signedReviewErrorMessage(cause: unknown): string {
+  const failure = cause as {
+    statusCode?: number
+    response?: { status?: number }
+  }
+
+  const code = failure?.statusCode
+    ?? failure?.response?.status
+
+  if (code === 400) {
+    return 'La décision a été refusée. Vérifiez notamment le motif du rejet.'
+  }
+
+  if (code === 409) {
+    return 'Ce CRA signé a déjà été examiné ou son état a changé. Les données vont être actualisées.'
+  }
+
+  if (code === 403 || code === 404) {
+    return 'Vous n’avez plus les droits nécessaires pour examiner ce CRA signé.'
+  }
+
+  return 'La décision sur le CRA signé n’a pas pu être confirmée. Vérifiez les données actualisées.'
+}
+
+async function reviewSignedDocument(
+  decision: 'APPROVED' | 'REJECTED',
+) {
+  const current = report.value
+  const document = current?.signedDocument
+
+  if (
+    !current
+    || !document
+    || !canReviewSignedDocument.value
+    || busy.value
+  ) return
+
+  const reason = signedRejectionReason.value.trim()
+
+  if (
+    decision === 'REJECTED'
+    && !signedRejectionReasonValid.value
+  ) {
+    actionError.value
+      = 'Indiquez un motif de rejet de 1 à 2 000 caractères.'
+    return
+  }
+
+  const confirmed = window.confirm(
+    decision === 'APPROVED'
+      ? `Approuver le CRA signé ${document.reference} ? Il deviendra le document validé par IFICS pour la prochaine étape client.`
+      : `Rejeter le CRA signé ${document.reference} ? L’intervenant pourra déposer une nouvelle version et verra le motif indiqué.`,
+  )
+
+  if (!confirmed) return
+
+  busy.value = true
+  signedReviewInProgress.value = true
+  feedback.value = ''
+  actionError.value = ''
+
+  let succeeded = false
+
+  try {
+    await $fetch(
+      `${reportUrl}/documents/${encodeURIComponent(document.id)}/review`,
+      {
+        method: 'POST',
+        body: {
+          decision,
+          ...(decision === 'REJECTED'
+            ? { rejectionReason: reason }
+            : {}),
+        },
+      },
+    )
+
+    succeeded = true
+
+    feedback.value = decision === 'APPROVED'
+      ? 'CRA signé approuvé par IFICS.'
+      : 'CRA signé rejeté. L’intervenant peut maintenant déposer une nouvelle version.'
+  }
+  catch (cause) {
+    actionError.value
+      = signedReviewErrorMessage(cause)
+  }
+  finally {
+    try {
+      await refresh()
+
+      if (error.value || !report.value) {
+        feedback.value = ''
+        actionError.value
+          = 'Impossible de recharger le CRA. Actualisez la page avant de continuer.'
+      }
+    }
+    catch {
+      feedback.value = ''
+      actionError.value
+        = 'Impossible de recharger le CRA. Actualisez la page avant de continuer.'
+    }
+    finally {
+      busy.value = false
+      signedReviewInProgress.value = false
+    }
+  }
+
+  if (succeeded) {
+    signedRejectionReason.value = ''
+    showSignedRejectionForm.value = false
+  }
+}
+
 function openGenerationForm() {
   const current = report.value
 
@@ -1083,6 +1376,128 @@ async function sendOfficialToIntervenor() {
     }
   }
 }
+
+function resetSignedFileSelection() {
+  signedFile.value = null
+
+  if (signedFileInput.value) {
+    signedFileInput.value.value = ''
+  }
+}
+
+function handleSignedFileChange(event: Event) {
+  const input = event.currentTarget as HTMLInputElement
+  const file = input.files?.[0] ?? null
+
+  signedFile.value = null
+  feedback.value = ''
+  actionError.value = ''
+
+  if (!file) return
+
+  const filename = file.name.toLowerCase()
+
+  const validExtension
+    = /\.(pdf|png|jpe?g)$/.test(filename)
+
+  const validMimeType
+    = !file.type
+      || [
+        'application/pdf',
+        'image/png',
+        'image/jpeg',
+      ].includes(file.type)
+
+  if (!validExtension || !validMimeType) {
+    actionError.value
+      = 'Sélectionnez un CRA signé au format PDF, PNG, JPG ou JPEG.'
+
+    input.value = ''
+    return
+  }
+
+  signedFile.value = file
+}
+
+async function uploadSignedDocument() {
+  const current = report.value
+  const file = signedFile.value
+
+  if (
+    !current
+    || !file
+    || !canUploadSigned.value
+    || busy.value
+  ) return
+
+  const replacement
+    = current.signedDocument?.status === 'REJECTED'
+
+  const confirmed = window.confirm(
+    replacement
+      ? `Déposer une nouvelle version signée du CRA de ${period.value} avec le fichier « ${file.name} » ?`
+      : `Déposer le CRA signé de ${period.value} avec le fichier « ${file.name} » ? Le fichier sera contrôlé par l’antivirus IFICS avant son enregistrement.`,
+  )
+
+  if (!confirmed) return
+
+  const body = new FormData()
+  body.append('file', file, file.name)
+
+  busy.value = true
+  signedUploadInProgress.value = true
+  feedback.value = ''
+  actionError.value = ''
+
+  try {
+    const response = await $fetch<
+      ApiSuccess<{
+        id: string
+        reference: string
+        version: number
+        status: 'RECEIVED'
+      }>
+    >(
+      `${reportUrl}/upload-signed`,
+      {
+        method: 'POST',
+        body,
+      },
+    )
+
+    resetSignedFileSelection()
+
+    feedback.value
+      = `CRA signé ${response.data.reference} reçu par IFICS — en attente de vérification.`
+  }
+  catch (cause) {
+    actionError.value = apiErrorMessage(
+      cause,
+      'Le CRA signé n’a pas pu être déposé. Vérifiez le fichier puis réessayez.',
+    )
+  }
+  finally {
+    try {
+      await refresh()
+
+      if (error.value || !report.value) {
+        feedback.value = ''
+        actionError.value
+          = 'Le fichier a peut-être été reçu, mais l’état du CRA n’a pas pu être rechargé. Actualisez la page avant de recommencer.'
+      }
+    }
+    catch {
+      feedback.value = ''
+      actionError.value
+        = 'Le fichier a peut-être été reçu, mais l’état du CRA n’a pas pu être rechargé. Actualisez la page avant de recommencer.'
+    }
+    finally {
+      signedUploadInProgress.value = false
+      busy.value = false
+    }
+  }
+}
+
 
 </script>
 
@@ -1405,6 +1820,292 @@ async function sendOfficialToIntervenor() {
             <strong>Incident :</strong> {{ day.incident }}
           </p>
         </article>
+      </section>
+
+      <section
+        v-if="canViewSignedDocumentPanel"
+        class="signed-document-panel"
+        aria-labelledby="signed-document-heading"
+      >
+        <h2 id="signed-document-heading">
+          {{ isOwner ? 'CRA signé' : 'CRA signé retourné' }}
+        </h2>
+
+        <template v-if="report.signedDocument">
+          <div class="official-document-summary">
+            <div>
+              <strong class="official-document-reference">
+                {{ report.signedDocument.originalName }}
+              </strong>
+
+              <p class="muted">
+                Version {{ report.signedDocument.version }}
+                · {{ formatFileSize(report.signedDocument.fileSize) }}
+              </p>
+
+              <p
+                v-if="report.signedDocument.sourceDocument"
+                class="muted"
+              >
+                Document officiel signé :
+                {{ report.signedDocument.sourceDocument.reference }}
+              </p>
+            </div>
+
+            <span class="badge">
+              {{
+                signedDocumentStatusLabels[
+                  report.signedDocument.status
+                ]
+              }}
+            </span>
+          </div>
+
+          <div
+            v-if="!isOwner && signedDocumentViewUrl"
+            class="official-document-file-actions"
+          >
+            <a
+              :href="signedDocumentViewUrl"
+              class="button"
+              target="_blank"
+              rel="noopener"
+            >
+              Visualiser le document signé
+            </a>
+
+            <a
+              :href="signedDocumentDownloadUrl"
+              class="button"
+            >
+              Télécharger le document signé
+            </a>
+          </div>
+
+          <p
+            v-if="report.signedDocument.status === 'RECEIVED'"
+            class="notice"
+            role="status"
+          >
+            <template v-if="isOwner">
+              CRA signé reçu par IFICS
+              <template v-if="report.signedDocument.receivedAt">
+                le {{ dateLabel(report.signedDocument.receivedAt) }}
+              </template>.
+              Il est en attente de vérification.
+            </template>
+
+            <template v-else>
+              CRA signé reçu
+              <template v-if="report.signedDocument.receivedAt">
+                le {{ dateLabel(report.signedDocument.receivedAt) }}
+              </template>.
+              Contrôlez le document avant de l’approuver ou de le rejeter.
+            </template>
+          </p>
+
+          <p
+            v-else-if="report.signedDocument.status === 'APPROVED'"
+            class="notice"
+            role="status"
+          >
+            <template v-if="isOwner">
+              Votre CRA signé a été vérifié et approuvé par IFICS.
+            </template>
+
+            <template v-else>
+              Ce CRA signé a été vérifié et approuvé par IFICS
+              <template v-if="report.signedDocument.reviewedAt">
+                le {{ dateLabel(report.signedDocument.reviewedAt) }}
+              </template>.
+            </template>
+          </p>
+
+          <div
+            v-else-if="report.signedDocument.status === 'REJECTED'"
+            class="notice error"
+            role="alert"
+          >
+            <strong>
+              {{
+                isOwner
+                  ? 'Un nouveau dépôt est nécessaire.'
+                  : 'Ce CRA signé a été rejeté.'
+              }}
+            </strong>
+
+            <p
+              v-if="report.signedDocument.rejectionReason"
+              class="preserve-text"
+            >
+              Motif : {{ report.signedDocument.rejectionReason }}
+            </p>
+
+            <p
+              v-if="!isOwner && report.signedDocument.reviewedAt"
+              class="muted"
+            >
+              Décision enregistrée le
+              {{ dateLabel(report.signedDocument.reviewedAt) }}.
+            </p>
+          </div>
+
+          <p
+            v-else-if="report.signedDocument.status === 'SUPERSEDED'"
+            class="muted"
+          >
+            Cette version a été remplacée par un dépôt plus récent.
+          </p>
+
+          <div
+            v-if="
+              !isOwner
+                && report.signedDocument.antivirusStatus !== 'CLEAN'
+            "
+            class="notice error"
+            role="alert"
+          >
+            Le contrôle antivirus de ce document n’est pas validé.
+            Aucune décision ne peut être prise.
+          </div>
+
+          <template v-if="canReviewSignedDocument">
+            <div v-if="!showSignedRejectionForm">
+              <p>
+                Vérifiez le fichier retourné avant de prendre une décision.
+                L’approbation conserve cette version comme document signé
+                validé par IFICS.
+              </p>
+
+              <div class="actions">
+                <button
+                  type="button"
+                  class="button danger"
+                  :disabled="busy"
+                  @click="openSignedRejectionForm"
+                >
+                  Rejeter le CRA signé
+                </button>
+
+                <button
+                  type="button"
+                  class="button primary"
+                  :disabled="busy"
+                  @click="reviewSignedDocument('APPROVED')"
+                >
+                  Approuver le CRA signé
+                </button>
+              </div>
+            </div>
+
+            <form
+              v-else
+              class="correction-form"
+              @submit.prevent="reviewSignedDocument('REJECTED')"
+            >
+              <label for="signed-rejection-reason">
+                Motif du rejet *
+              </label>
+
+              <textarea
+                id="signed-rejection-reason"
+                v-model="signedRejectionReason"
+                rows="5"
+                maxlength="2000"
+                required
+                :disabled="busy"
+                aria-describedby="signed-rejection-help"
+              />
+
+              <p
+                id="signed-rejection-help"
+                class="muted"
+              >
+                Ce motif sera visible par l’intervenant afin qu’il puisse
+                corriger puis redéposer son document.
+                {{ signedRejectionReason.length }} / 2 000 caractères.
+              </p>
+
+              <div class="actions">
+                <button
+                  type="button"
+                  class="button"
+                  :disabled="busy"
+                  @click="closeSignedRejectionForm"
+                >
+                  Annuler
+                </button>
+
+                <button
+                  type="submit"
+                  class="button danger"
+                  :disabled="busy || !signedRejectionReasonValid"
+                >
+                  Confirmer le rejet
+                </button>
+              </div>
+            </form>
+          </template>
+        </template>
+
+        <p v-else>
+          Votre CRA officiel vous a été envoyé pour signature.
+          Après l’avoir signé, déposez ici le document complet.
+        </p>
+
+        <form
+          v-if="canUploadSigned"
+          class="signed-upload-form"
+          @submit.prevent="uploadSignedDocument"
+        >
+          <label class="field">
+            <span>
+              {{
+                report.signedDocument?.status === 'REJECTED'
+                  ? 'Nouveau CRA signé'
+                  : 'CRA signé'
+              }}
+            </span>
+
+            <input
+              ref="signedFileInput"
+              class="input"
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+              :disabled="busy"
+              required
+              @change="handleSignedFileChange"
+            >
+          </label>
+
+          <p class="muted">
+            Formats acceptés : PDF, PNG, JPG ou JPEG.
+            Le contenu du fichier est vérifié avant son stockage
+            et analysé par l’antivirus IFICS.
+          </p>
+
+          <div
+            v-if="signedFile"
+            class="signed-file-selection"
+          >
+            <strong>{{ signedFile.name }}</strong>
+            <span>{{ formatFileSize(String(signedFile.size)) }}</span>
+          </div>
+
+          <div class="actions">
+            <button
+              type="submit"
+              class="button primary"
+              :disabled="busy || !signedFile"
+            >
+              {{
+                report.signedDocument?.status === 'REJECTED'
+                  ? 'Déposer une nouvelle version'
+                  : 'Déposer mon CRA signé'
+              }}
+            </button>
+          </div>
+        </form>
       </section>
 
       <section
@@ -1762,7 +2463,13 @@ async function sendOfficialToIntervenor() {
     </template>
 
     <p v-if="busy" class="notice" role="status">
-      Enregistrement et actualisation…
+      {{
+        signedUploadInProgress
+          ? 'Analyse antivirus et dépôt du CRA signé en cours…'
+          : signedReviewInProgress
+            ? 'Décision IFICS sur le CRA signé en cours…'
+            : 'Enregistrement et actualisation…'
+      }}
     </p>
     <p v-if="actionError" class="notice error" role="alert">
       {{ actionError }}
@@ -1776,6 +2483,8 @@ async function sendOfficialToIntervenor() {
 <style scoped>
 .cra-agenda {
   display: grid;
+  width: 100%;
+  min-width: 0;
   gap: 22px;
 }
 
@@ -1858,6 +2567,7 @@ async function sendOfficialToIntervenor() {
 .correction-notice h2,
 .review-panel h2,
 .official-document-panel h2,
+.signed-document-panel h2,
 .notes h2 {
   margin-top: 0;
   font-size: 1.2rem;
@@ -2153,7 +2863,8 @@ async function sendOfficialToIntervenor() {
 
 .notes,
 .review-panel,
-.official-document-panel {
+.official-document-panel,
+.signed-document-panel {
   padding: 20px;
   border: 1px solid #dce6df;
   border-radius: 14px;
@@ -2204,6 +2915,79 @@ async function sendOfficialToIntervenor() {
 
 .official-document-panel > .muted:last-child {
   margin-bottom: 0;
+}
+
+.signed-upload-form {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #d6e2da;
+  border-radius: 12px;
+  background: #f8fbf9;
+}
+
+.signed-upload-form .field {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.signed-document-panel {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.signed-upload-form input[type="file"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.signed-upload-form .actions {
+  min-width: 0;
+}
+
+.signed-upload-form .button {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.signed-upload-form .field > span {
+  color: #40584a;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.signed-upload-form > p {
+  margin: 0;
+}
+
+.signed-file-selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid #c9ddd0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.signed-file-selection strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #214631;
+}
+
+.signed-file-selection span {
+  flex: 0 0 auto;
+  color: #52665b;
+  font-size: .85rem;
 }
 
 .mail-form,

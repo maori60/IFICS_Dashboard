@@ -17,6 +17,19 @@ services:
       retries: 20
       start_period: 5s
 
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    environment:
+      CLAMAV_NO_CLAMD: "false"
+      CLAMAV_NO_FRESHCLAMD: "false"
+      CLAMAV_NO_MILTERD: "true"
+    healthcheck:
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+
   app:
     build:
       context: .
@@ -24,6 +37,8 @@ services:
     restart: unless-stopped
     depends_on:
       db:
+        condition: service_healthy
+      clamav:
         condition: service_healthy
     environment:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
@@ -40,6 +55,8 @@ services:
       TRUST_PROXY: ${TRUST_PROXY:-false}
       UPLOAD_DIR: /app/uploads
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+      CLAMAV_HOST: ${CLAMAV_HOST:-clamav}
+      CLAMAV_PORT: ${CLAMAV_PORT:-3310}
       INTERNAL_JOB_TOKEN: ${INTERNAL_JOB_TOKEN:?INTERNAL_JOB_TOKEN is required}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
