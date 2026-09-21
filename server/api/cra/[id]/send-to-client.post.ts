@@ -15,6 +15,10 @@ import {
 } from '../../../utils/api'
 import { writeAuditLog } from '../../../utils/audit'
 import { PERMISSIONS } from '../../../utils/constants'
+import {
+  getCraClientRecipients,
+  normalizeCraClientEmail,
+} from '../../../utils/cra-client-recipients'
 import { readStoredFile } from '../../../utils/files'
 import {
   isMailEnabled,
@@ -37,10 +41,6 @@ const CLIENT_ACCESS_TTL_MS
 
 const CLIENT_SEND_LOCK_TTL_MS
   = 10 * 60 * 1000
-
-function normalizeEmail(value: string): string {
-  return value.trim().toLowerCase()
-}
 
 export default defineEventHandler(async (event) => {
   const context = await requireAuth(event)
@@ -97,7 +97,7 @@ export default defineEventHandler(async (event) => {
   )
 
   const normalizedRecipient
-    = normalizeEmail(recipient)
+    = normalizeCraClientEmail(recipient)
 
   const subject = requiredString(
     body.subject,
@@ -263,80 +263,11 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  const projectClients
-    = await prisma.projectClient.findMany({
-      where: {
-        projectId:
-          report.assignment.project.id,
-
-        client: {
-          associationId:
-            context.associationId,
-
-          status: 'ACTIVE',
-          archivedAt: null,
-        },
-      },
-
-      select: {
-        clientId: true,
-
-        client: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-
-            contacts: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                isPrimary: true,
-              },
-            },
-          },
-        },
-      },
-    })
-
-  const allowedRecipients = new Map<
-    string,
-    {
-      clientId: string
-      clientName: string
-      contactId: string | null
-    }
-  >()
-
-  for (const projectClient of projectClients) {
-    const client = projectClient.client
-
-    if (client.email) {
-      allowedRecipients.set(
-        normalizeEmail(client.email),
-        {
-          clientId: client.id,
-          clientName: client.name,
-          contactId: null,
-        },
-      )
-    }
-
-    for (const contact of client.contacts) {
-      if (!contact.email) continue
-
-      allowedRecipients.set(
-        normalizeEmail(contact.email),
-        {
-          clientId: client.id,
-          clientName: client.name,
-          contactId: contact.id,
-        },
-      )
-    }
-  }
+  const allowedRecipients
+    = await getCraClientRecipients(
+      report.assignment.project.id,
+      context.associationId,
+    )
 
   const recipientTarget
     = allowedRecipients.get(
