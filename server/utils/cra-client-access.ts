@@ -87,6 +87,7 @@ export async function requireActiveCraClientAccess(
         documentId: true,
         purpose: true,
         status: true,
+        recipientEmail: true,
         expiresAt: true,
         firstViewedAt: true,
         downloadedAt: true,
