@@ -32,7 +32,7 @@ type ClientDetail = {
 const route = useRoute()
 const clientId = computed(() => String(route.params.id || ''))
 const { data: session } = await useFetch<ApiSuccess<SessionPayload>>('/api/auth/me', { key: 'session-me' })
-const { data, error, refresh } = await useFetch<ApiSuccess<ClientDetail>>(() => `/api/clients/${clientId.value}`)
+const { data, error } = await useFetch<ApiSuccess<ClientDetail>>(() => `/api/clients/${clientId.value}`)
 
 const permissions = computed(() => session.value?.data.user.permissions ?? [])
 const canWrite = computed(() => permissions.value.includes('*') || permissions.value.includes('client:write'))
@@ -99,8 +99,7 @@ async function save() {
   errorMessage.value = ''
   try {
     await $fetch(`/api/clients/${clientId.value}`, { method: 'PUT', body: { ...form } })
-    await refresh()
-    successMessage.value = 'Les informations du client ont été mises à jour.'
+    await navigateTo('/dashboard/clients')
   }
   catch (err) {
     errorMessage.value = apiErrorMessage(err, 'Impossible de mettre à jour le client.')
