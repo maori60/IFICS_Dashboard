@@ -100,6 +100,40 @@ type CraPeriodPolicy = {
   periodEnd: string
 }
 
+type CraClientRecipient = {
+  email: string
+  clientName: string
+  contactFirstName: string | null
+  contactLastName: string | null
+  isPrimary: boolean
+}
+
+type CraClientAccessPurpose =
+  | 'INITIAL_CONFIRMATION'
+  | 'REDOWNLOAD'
+
+type CraClientAccessStatus =
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'EXPIRED'
+  | 'REVOKED'
+
+type CraClientPublication = {
+  purpose: CraClientAccessPurpose
+  status: CraClientAccessStatus
+  recipientEmail: string
+
+  expiresAt: string
+  firstViewedAt: string | null
+  downloadedAt: string | null
+  confirmedAt: string | null
+  completedAt: string | null
+  revokedAt: string | null
+  emailSentAt: string | null
+  createdAt: string
+}
+
 type CraReport = {
   id: string
   intervenorId: string
@@ -141,6 +175,10 @@ type CraReport = {
   officialDocument: CraOfficialDocument | null
   signedDocument: CraSignedDocument | null
   canUploadSignedDocument: boolean
+
+  clientRecipients: CraClientRecipient[]
+  clientPublication: CraClientPublication | null
+
   periodPolicy: CraPeriodPolicy
   days: CraDay[]
 }
@@ -198,6 +236,15 @@ Record<CraSignedDocumentStatus, string> = {
   SUPERSEDED: 'Remplacé',
 }
 
+const clientAccessStatusLabels:
+Record<CraClientAccessStatus, string> = {
+  PENDING: 'Envoi en préparation',
+  ACTIVE: 'Lien actif',
+  COMPLETED: 'Confirmé par le client',
+  EXPIRED: 'Lien expiré',
+  REVOKED: 'Lien remplacé ou révoqué',
+}
+
 const holidays: Record<string, string> = holidayData
 const coveredYears = new Set(
   Object.keys(holidays).map(date => Number(date.slice(0, 4))),
@@ -238,6 +285,12 @@ const showSendToIntervenorForm = ref(false)
 const sendToIntervenorEmail = ref('')
 const sendToIntervenorSubject = ref('')
 const sendToIntervenorMessage = ref('')
+
+const showSendToClientForm = ref(false)
+const sendToClientRecipient = ref('')
+const sendToClientSubject = ref('')
+const sendToClientMessage = ref('')
+const clientSendInProgress = ref(false)
 
 const signedFile = ref<File | null>(null)
 const signedFileInput = ref<HTMLInputElement | null>(null)
@@ -373,6 +426,60 @@ const canReviewSignedDocument = computed(() => {
     && document.status === 'RECEIVED'
     && document.antivirusStatus === 'CLEAN',
   )
+})
+
+const canViewClientPublicationPanel = computed(() => {
+  const current = report.value
+  const document = current?.signedDocument
+
+  return Boolean(
+    reportReady.value
+    && current?.status === 'REVIEWED'
+    && hasPermission('cra:read:all')
+    && hasPermission('cra:send:client')
+    && document
+    && document.status === 'APPROVED'
+    && document.antivirusStatus === 'CLEAN',
+  )
+})
+
+const canSendToClient = computed(() => {
+  const current = report.value
+  const document = current?.signedDocument
+  const publication = current?.clientPublication
+
+  return Boolean(
+    canViewClientPublicationPanel.value
+    && current
+    && document
+    && document.reportRevision === current.revision
+    && current.clientRecipients.length > 0
+    && publication?.status !== 'PENDING'
+    && publication?.status !== 'COMPLETED',
+  )
+})
+
+const sendToClientFormValid = computed(() => {
+  const current = report.value
+
+  if (!current) return false
+
+  const recipient = sendToClientRecipient.value.trim()
+  const subject = sendToClientSubject.value.trim()
+  const message = sendToClientMessage.value.trim()
+
+  const recipientAllowed
+    = current.clientRecipients.some(
+      item =>
+        item.email.toLowerCase()
+        === recipient.toLowerCase(),
+    )
+
+  return recipientAllowed
+    && subject.length >= 1
+    && subject.length <= 200
+    && message.length >= 1
+    && message.length <= 12000
 })
 
 const officialDocumentViewUrl = computed(() => {
@@ -1377,6 +1484,275 @@ async function sendOfficialToIntervenor() {
   }
 }
 
+function clientRecipientLabel(
+  recipient: CraClientRecipient,
+): string {
+  const contactName = [
+    recipient.contactFirstName,
+    recipient.contactLastName,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  const target = contactName
+    ? `${contactName}${recipient.isPrimary ? ' · contact principal' : ''}`
+    : 'Adresse générale du client'
+
+  return `${recipient.clientName} — ${target} — ${recipient.email}`
+}
+
+function selectedClientRecipient():
+CraClientRecipient | null {
+  const current = report.value
+  const email = sendToClientRecipient.value
+    .trim()
+    .toLowerCase()
+
+  if (!current || !email) return null
+
+  return current.clientRecipients.find(
+    recipient =>
+      recipient.email.toLowerCase() === email,
+  ) ?? null
+}
+
+function defaultSendToClientSubject(): string {
+  const current = report.value
+
+  if (!current) return ''
+
+  return `CRA ${period.value} à confirmer — ${current.project.title}`
+}
+
+function defaultSendToClientMessage(): string {
+  const current = report.value
+  const recipient = selectedClientRecipient()
+
+  if (!current) return ''
+
+  const mission = current.project.reference
+    ? `${current.project.title} (${current.project.reference})`
+    : current.project.title
+
+  const greeting = recipient?.contactFirstName
+    ? `Bonjour ${recipient.contactFirstName},`
+    : 'Bonjour,'
+
+  const lines = [
+    greeting,
+    '',
+    `IFICS vous invite à consulter le CRA validé pour la période de ${period.value}, concernant la mission « ${mission} ».`,
+    '',
+    'Récapitulatif :',
+    `- Intervenant : ${current.intervenor.firstName} ${current.intervenor.lastName}`,
+    `- Journées renseignées : ${current.declaredDays}`,
+    `- Journées travaillées : ${current.workedDays}`,
+    `- Temps travaillé : ${formatMinutes(current.workedMinutes)}`,
+  ]
+
+  if (current.trainingDays > 0) {
+    lines.push(
+      `- Formation : ${current.trainingDays} journée(s) — ${formatMinutes(current.trainingMinutes)}`,
+    )
+  }
+
+  if (current.absenceDays > 0) {
+    lines.push(
+      `- Congés / absences : ${current.absenceDays} journée(s)`,
+    )
+  }
+
+  lines.push(
+    '',
+    'Un lien sécurisé personnel vous permettra de consulter le document, de le télécharger et de confirmer sa réception.',
+    'Le lien est valable 7 jours.',
+    'Aucun document n’est joint à cet email.',
+    '',
+    'Cordialement,',
+    'IFICS',
+  )
+
+  return lines.join('\n')
+}
+
+function openSendToClientForm() {
+  const current = report.value
+
+  if (
+    !current
+    || !canSendToClient.value
+    || busy.value
+  ) return
+
+  const previousEmail
+    = current.clientPublication
+      ?.recipientEmail
+      .toLowerCase()
+
+  const previousRecipient
+    = previousEmail
+      ? current.clientRecipients.find(
+          recipient =>
+            recipient.email.toLowerCase()
+            === previousEmail,
+        )
+      : undefined
+
+  const recipient
+    = previousRecipient
+      ?? current.clientRecipients.find(
+        item => item.isPrimary,
+      )
+      ?? current.clientRecipients[0]
+
+  sendToClientRecipient.value
+    = recipient?.email ?? ''
+
+  sendToClientSubject.value
+    = defaultSendToClientSubject()
+
+  sendToClientMessage.value
+    = defaultSendToClientMessage()
+
+  feedback.value = ''
+  actionError.value = ''
+  showSendToClientForm.value = true
+}
+
+function closeSendToClientForm() {
+  if (busy.value) return
+
+  showSendToClientForm.value = false
+  sendToClientRecipient.value = ''
+  sendToClientSubject.value = ''
+  sendToClientMessage.value = ''
+}
+
+function handleClientRecipientChange() {
+  if (!showSendToClientForm.value) return
+
+  sendToClientMessage.value
+    = defaultSendToClientMessage()
+}
+
+function clientSendErrorMessage(
+  cause: unknown,
+): string {
+  const failure = cause as {
+    statusCode?: number
+    response?: { status?: number }
+  }
+
+  const code = failure.statusCode
+    ?? failure.response?.status
+
+  if (code === 409) {
+    return 'L’envoi ne peut pas être effectué pour le moment : un autre envoi est peut-être déjà en cours ou l’état du CRA a changé. Les données vont être actualisées.'
+  }
+
+  if (code === 400) {
+    return 'Le destinataire ou le contenu du message n’est plus autorisé. Vérifiez les données du client puis réessayez.'
+  }
+
+  if (code === 403 || code === 404) {
+    return 'Vous n’avez plus les droits nécessaires pour publier ce CRA au client.'
+  }
+
+  return 'Le lien sécurisé n’a pas pu être envoyé au client. Vérifiez la configuration email et réessayez.'
+}
+
+async function sendSignedDocumentToClient() {
+  const current = report.value
+  const document = current?.signedDocument
+  const recipient = selectedClientRecipient()
+
+  if (
+    !current
+    || !document
+    || !recipient
+    || !canSendToClient.value
+    || !sendToClientFormValid.value
+    || busy.value
+  ) return
+
+  const replacingActiveLink
+    = current.clientPublication?.status === 'ACTIVE'
+
+  const confirmed = window.confirm(
+    replacingActiveLink
+      ? `Envoyer un nouveau lien sécurisé pour ${document.reference} à ${recipient.email} ? L’ancien lien restera utilisable tant que le nouvel email n’aura pas été envoyé avec succès.`
+      : `Envoyer ${document.reference} à ${recipient.email} via un lien sécurisé valable 7 jours ? Aucun document ne sera joint à l’email.`,
+  )
+
+  if (!confirmed) return
+
+  busy.value = true
+  clientSendInProgress.value = true
+  feedback.value = ''
+  actionError.value = ''
+
+  let succeeded = false
+
+  try {
+    await $fetch(
+      `${reportUrl}/send-to-client`,
+      {
+        method: 'POST',
+
+        body: {
+          to:
+            recipient.email,
+
+          subject:
+            sendToClientSubject.value.trim(),
+
+          message:
+            sendToClientMessage.value.trim(),
+
+          confirmed:
+            true,
+        },
+      },
+    )
+
+    succeeded = true
+
+    feedback.value
+      = `Lien sécurisé envoyé à ${recipient.email}.`
+  }
+  catch (cause) {
+    actionError.value
+      = clientSendErrorMessage(cause)
+  }
+  finally {
+    try {
+      await refresh()
+
+      if (error.value || !report.value) {
+        feedback.value = ''
+        actionError.value
+          = 'Le message a peut-être été envoyé, mais l’état de publication n’a pas pu être rechargé. Actualisez la page avant de recommencer.'
+      }
+    }
+    catch {
+      feedback.value = ''
+      actionError.value
+        = 'Le message a peut-être été envoyé, mais l’état de publication n’a pas pu être rechargé. Actualisez la page avant de recommencer.'
+    }
+    finally {
+      busy.value = false
+      clientSendInProgress.value = false
+    }
+  }
+
+  if (succeeded) {
+    showSendToClientForm.value = false
+    sendToClientRecipient.value = ''
+    sendToClientSubject.value = ''
+    sendToClientMessage.value = ''
+  }
+}
+
 function resetSignedFileSelection() {
   signedFile.value = null
 
@@ -2109,6 +2485,249 @@ async function uploadSignedDocument() {
       </section>
 
       <section
+        v-if="canViewClientPublicationPanel"
+        class="official-document-panel client-publication-panel"
+        aria-labelledby="client-publication-heading"
+      >
+        <h2 id="client-publication-heading">
+          Publication client
+        </h2>
+
+        <div class="official-document-summary">
+          <div>
+            <strong class="official-document-reference">
+              {{ report.signedDocument?.reference }}
+            </strong>
+
+            <p class="muted">
+              CRA signé approuvé par IFICS
+              · version {{ report.signedDocument?.version }}
+            </p>
+          </div>
+
+          <span
+            v-if="report.clientPublication"
+            class="badge"
+          >
+            {{
+              clientAccessStatusLabels[
+                report.clientPublication.status
+              ]
+            }}
+          </span>
+
+          <span v-else class="badge">
+            Non publié
+          </span>
+        </div>
+
+        <div
+          v-if="report.clientPublication"
+          class="notice"
+          role="status"
+        >
+          <p>
+            <strong>Destinataire :</strong>
+            {{ report.clientPublication.recipientEmail }}
+          </p>
+
+          <p>
+            <strong>Email envoyé :</strong>
+            {{ dateLabel(report.clientPublication.emailSentAt) }}
+          </p>
+
+          <p>
+            <strong>Première ouverture :</strong>
+            {{ dateLabel(report.clientPublication.firstViewedAt) }}
+          </p>
+
+          <p>
+            <strong>Téléchargement :</strong>
+            {{ dateLabel(report.clientPublication.downloadedAt) }}
+          </p>
+
+          <p>
+            <strong>Confirmation client :</strong>
+            {{ dateLabel(report.clientPublication.confirmedAt) }}
+          </p>
+
+          <p>
+            <strong>Expiration du lien :</strong>
+            {{ dateLabel(report.clientPublication.expiresAt) }}
+          </p>
+        </div>
+
+        <p
+          v-if="report.clientPublication?.status === 'COMPLETED'"
+          class="notice"
+          role="status"
+        >
+          Le client a confirmé la réception du CRA.
+          Cette validation initiale est terminée.
+        </p>
+
+        <p
+          v-else-if="report.clientPublication?.status === 'ACTIVE'"
+          class="muted"
+        >
+          Le lien sécurisé est actuellement actif.
+          Un nouvel envoi remplacera l’ancien lien uniquement
+          après l’envoi réussi du nouvel email.
+        </p>
+
+        <p
+          v-else-if="report.clientPublication?.status === 'PENDING'"
+          class="muted"
+        >
+          Un envoi est actuellement en préparation.
+          Patientez avant de lancer une nouvelle publication.
+        </p>
+
+        <p
+          v-else-if="
+            report.clientPublication?.status === 'EXPIRED'
+              || report.clientPublication?.status === 'REVOKED'
+          "
+          class="muted"
+        >
+          Le précédent lien n’est plus utilisable.
+          Vous pouvez envoyer un nouveau lien sécurisé.
+        </p>
+
+        <p
+          v-else-if="!report.clientPublication"
+          class="muted"
+        >
+          Ce CRA signé n’a pas encore été publié au client.
+        </p>
+
+        <div
+          v-if="report.clientRecipients.length === 0"
+          class="notice error"
+          role="alert"
+        >
+          Aucun destinataire client autorisé n’est disponible
+          pour ce projet. Rattachez d’abord un client actif
+          disposant d’une adresse email ou d’un contact email.
+        </div>
+
+        <div
+          v-if="canSendToClient && !showSendToClientForm"
+          class="official-document-file-actions"
+        >
+          <button
+            type="button"
+            class="button primary"
+            :disabled="busy"
+            @click="openSendToClientForm"
+          >
+            {{
+              report.clientPublication
+                ? 'Envoyer un nouveau lien client'
+                : 'Envoyer au client'
+            }}
+          </button>
+        </div>
+
+        <form
+          v-if="canSendToClient && showSendToClientForm"
+          class="mail-form"
+          @submit.prevent="sendSignedDocumentToClient"
+        >
+          <div class="mail-form-heading">
+            <div>
+              <strong>Publication sécurisée du CRA</strong>
+
+              <p class="muted">
+                Expéditeur : IFICS - CRA &lt;cra@ifics.org&gt;
+              </p>
+            </div>
+          </div>
+
+          <label class="field">
+            <span>Destinataire autorisé</span>
+
+            <select
+              v-model="sendToClientRecipient"
+              class="input"
+              required
+              :disabled="busy"
+              @change="handleClientRecipientChange"
+            >
+              <option value="" disabled>
+                Sélectionner un destinataire
+              </option>
+
+              <option
+                v-for="recipient in report.clientRecipients"
+                :key="`${recipient.clientName}-${recipient.email}`"
+                :value="recipient.email"
+              >
+                {{ clientRecipientLabel(recipient) }}
+              </option>
+            </select>
+          </label>
+
+          <p class="muted">
+            Seules les adresses du ou des clients actifs
+            rattachés à cette mission peuvent être utilisées.
+            Il n’est pas possible de saisir une adresse externe.
+          </p>
+
+          <label class="field">
+            <span>Objet</span>
+
+            <input
+              v-model="sendToClientSubject"
+              class="input"
+              type="text"
+              maxlength="200"
+              required
+              :disabled="busy"
+            >
+          </label>
+
+          <label class="field">
+            <span>Message</span>
+
+            <textarea
+              v-model="sendToClientMessage"
+              rows="12"
+              maxlength="12000"
+              required
+              :disabled="busy"
+            />
+          </label>
+
+          <p class="muted">
+            Aucun fichier n’est joint au message.
+            Le client recevra un lien personnel et sécurisé
+            vers le même CRA signé et approuvé par IFICS.
+            Le lien initial est valable 7 jours.
+          </p>
+
+          <div class="actions">
+            <button
+              type="button"
+              class="button"
+              :disabled="busy"
+              @click="closeSendToClientForm"
+            >
+              Annuler
+            </button>
+
+            <button
+              type="submit"
+              class="button primary"
+              :disabled="busy || !sendToClientFormValid"
+            >
+              Envoyer le lien sécurisé
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section
         v-if="canViewOfficialDocumentPanel"
         class="official-document-panel"
         aria-labelledby="official-document-heading"
@@ -2468,7 +3087,9 @@ async function uploadSignedDocument() {
           ? 'Analyse antivirus et dépôt du CRA signé en cours…'
           : signedReviewInProgress
             ? 'Décision IFICS sur le CRA signé en cours…'
-            : 'Enregistrement et actualisation…'
+            : clientSendInProgress
+              ? 'Envoi du lien sécurisé au client en cours…'
+              : 'Enregistrement et actualisation…'
       }}
     </p>
     <p v-if="actionError" class="notice error" role="alert">
