@@ -22,6 +22,7 @@ enum CraDayType {
 enum CraDocumentType {
   IFICS_TO_SIGN
   INTERVENOR_SIGNED
+  CLIENT_ATTESTED
 }
 
 enum CraDocumentStatus {
@@ -54,6 +55,11 @@ enum CraClientAccessStatus {
   REVOKED
 }
 
+enum CraClientDecisionType {
+  ACCEPTED
+  REFUSED
+}
+
 model CraReport {
   id            String    @id @default(cuid())
   associationId String
@@ -77,9 +83,10 @@ model CraReport {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  assignment ProjectIntervenor @relation(fields: [projectId, intervenorId], references: [projectId, intervenorId], onDelete: Restrict)
-  days       CraDay[]
-  documents  CraDocument[]
+  assignment      ProjectIntervenor   @relation(fields: [projectId, intervenorId], references: [projectId, intervenorId], onDelete: Restrict)
+  days            CraDay[]
+  documents       CraDocument[]
+  clientDecisions CraClientDecision[]
 
   @@unique([projectId, intervenorId, year, month])
   @@unique([id, intervenorId])
@@ -147,8 +154,10 @@ model CraDocument {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  report         CraReport         @relation(fields: [reportId], references: [id], onDelete: Restrict)
-  clientAccesses CraClientAccess[]
+  report                    CraReport           @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  clientAccesses            CraClientAccess[]
+  clientDecisionSources     CraClientDecision[] @relation("CraClientDecisionSource")
+  clientDecisionAttestation CraClientDecision?  @relation("CraClientDecisionAttested")
 
   @@unique([reportId, type, version])
   @@unique([id, reportId])
@@ -186,11 +195,52 @@ model CraClientAccess {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  document CraDocument @relation(fields: [documentId, reportId], references: [id, reportId], onDelete: Restrict)
+  document CraDocument        @relation(fields: [documentId, reportId], references: [id, reportId], onDelete: Restrict)
+  decision CraClientDecision?
 
+  @@unique([id, reportId])
   @@index([reportId, status])
   @@index([documentId])
   @@index([recipientEmail])
   @@index([expiresAt])
   @@index([purpose, status])
+}
+
+model CraClientDecision {
+  id       String @id @default(cuid())
+  accessId String
+  reportId String
+
+  decision CraClientDecisionType
+
+  firstName String  @db.VarChar(120)
+  lastName  String  @db.VarChar(120)
+  jobTitle  String  @db.VarChar(180)
+  comment   String? @db.VarChar(2000)
+
+  recipientEmail   String @db.VarChar(320)
+  organizationName String @db.VarChar(255)
+
+  decidedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  sourceDocumentId        String
+  sourceDocumentReference String @db.VarChar(80)
+  sourceDocumentSha256    String @db.VarChar(64)
+
+  attestedDocumentId String
+
+  access CraClientAccess @relation(fields: [accessId, reportId], references: [id, reportId], onDelete: Restrict)
+  report CraReport       @relation(fields: [reportId], references: [id], onDelete: Restrict)
+
+  sourceDocument CraDocument @relation("CraClientDecisionSource", fields: [sourceDocumentId, reportId], references: [id, reportId], onDelete: Restrict)
+
+  attestedDocument CraDocument @relation("CraClientDecisionAttested", fields: [attestedDocumentId, reportId], references: [id, reportId], onDelete: Restrict)
+
+  @@unique([accessId, reportId])
+  @@unique([attestedDocumentId, reportId])
+  @@index([reportId, decidedAt])
+  @@index([sourceDocumentId])
+  @@index([recipientEmail])
+  @@index([decision])
 }
