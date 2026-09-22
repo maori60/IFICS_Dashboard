@@ -238,6 +238,9 @@ export default defineEventHandler(async (event) => {
             documentId:
               signedDocument.id,
 
+            purpose:
+              'INITIAL_CONFIRMATION',
+
             OR: [
               {
                 status: {
@@ -329,6 +332,116 @@ export default defineEventHandler(async (event) => {
         }
       : null
 
+  /*
+   * La décision client est indépendante du cycle
+   * de vie du lien sécurisé. Elle reste donc visible
+   * même si un futur accès REDOWNLOAD est créé.
+   *
+   * On la rattache au document signé approuvé
+   * correspondant à la révision actuelle du CRA.
+   */
+  const latestClientDecision
+    = canReadClientPublication
+      && signedDocument?.status === 'APPROVED'
+      && signedDocument.antivirusStatus === 'CLEAN'
+      && signedDocument.reportRevision === report.revision
+      ? await prisma.craClientDecision.findFirst({
+          where: {
+            reportId:
+              report.id,
+
+            sourceDocumentId:
+              signedDocument.id,
+          },
+
+          orderBy: {
+            decidedAt:
+              'desc',
+          },
+
+          select: {
+            decision: true,
+            firstName: true,
+            lastName: true,
+            jobTitle: true,
+            comment: true,
+
+            recipientEmail: true,
+            organizationName: true,
+
+            decidedAt: true,
+            createdAt: true,
+
+            sourceDocumentId: true,
+            sourceDocumentReference: true,
+
+            attestedDocument: {
+              select: {
+                id: true,
+                type: true,
+                status: true,
+                version: true,
+                reportRevision: true,
+                reference: true,
+                originalName: true,
+                mimeType: true,
+                fileSize: true,
+              },
+            },
+          },
+        })
+      : null
+
+  const clientDecision
+    = latestClientDecision
+      ? {
+          decision:
+            latestClientDecision.decision,
+
+          firstName:
+            latestClientDecision.firstName,
+
+          lastName:
+            latestClientDecision.lastName,
+
+          jobTitle:
+            latestClientDecision.jobTitle,
+
+          comment:
+            latestClientDecision.comment,
+
+          recipientEmail:
+            latestClientDecision.recipientEmail,
+
+          organizationName:
+            latestClientDecision.organizationName,
+
+          decidedAt:
+            latestClientDecision.decidedAt
+              .toISOString(),
+
+          createdAt:
+            latestClientDecision.createdAt
+              .toISOString(),
+
+          sourceDocumentId:
+            latestClientDecision.sourceDocumentId,
+
+          sourceDocumentReference:
+            latestClientDecision.sourceDocumentReference,
+
+          attestedDocument: {
+            ...latestClientDecision.attestedDocument,
+
+            fileSize:
+              latestClientDecision
+                .attestedDocument
+                .fileSize
+                .toString(),
+          },
+        }
+      : null
+
   const latestOfficialDocument = report.documents[0] ?? null
 
   const canUploadSignedDocument = Boolean(
@@ -395,6 +508,7 @@ export default defineEventHandler(async (event) => {
 
     clientRecipients,
     clientPublication,
+    clientDecision,
 
     periodPolicy,
     days: days.map(day => ({

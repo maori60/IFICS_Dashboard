@@ -397,6 +397,88 @@ describe.skipIf(
       ).toBe(0)
     })
 
+    it(
+      'sert le PDF d’attestation de décision client',
+      async () => {
+        const bytes
+          = await createPdf()
+
+        const stored
+          = await storePdf(
+            'cra',
+            firstReportId,
+            'CRA-client-attestation.pdf',
+            bytes,
+          )
+
+        const attestedDocument
+          = await prisma.craDocument.create({
+            data: {
+              reportId:
+                firstReportId,
+
+              type:
+                'CLIENT_ATTESTED',
+
+              status:
+                'APPROVED',
+
+              version:
+                1,
+
+              reportRevision:
+                1,
+
+              reference:
+                'CRA-CLIENT-ATTESTED-TEST-V1',
+
+              ...stored,
+
+              antivirusStatus:
+                'NOT_APPLICABLE',
+
+              antivirusCheckedAt:
+                new Date(),
+
+              antivirusResult:
+                'Document généré en interne.',
+            },
+          })
+
+        request.documentId
+          = attestedDocument.id
+
+        const buffer
+          = await handler(event)
+
+        expect(
+          Buffer.isBuffer(buffer),
+        ).toBe(true)
+
+        expect(
+          buffer
+            .subarray(0, 5)
+            .toString(),
+        ).toBe('%PDF-')
+
+        expect(
+          request.headers,
+        ).toMatchObject({
+          'Content-Type':
+            'application/pdf',
+
+          'Content-Disposition':
+            'inline; filename="CRA-client-attestation.pdf"',
+
+          'Cache-Control':
+            'private, no-store, max-age=0',
+
+          'X-Content-Type-Options':
+            'nosniff',
+        })
+      },
+    )
+
     it('sert le même PDF en téléchargement attachment', async () => {
       request.query = {
         download: '1',

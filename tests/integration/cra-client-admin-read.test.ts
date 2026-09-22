@@ -184,12 +184,33 @@ describe.skipIf(
         )
 
       if (reportIds.length > 0) {
+        await prisma.craClientDecision
+          .deleteMany({
+            where: {
+              reportId: {
+                in: reportIds,
+              },
+            },
+          })
+
         await prisma.craClientAccess
           .deleteMany({
             where: {
               reportId: {
                 in: reportIds,
               },
+            },
+          })
+
+        await prisma.craDocument
+          .deleteMany({
+            where: {
+              reportId: {
+                in: reportIds,
+              },
+
+              type:
+                'CLIENT_ATTESTED',
             },
           })
 
@@ -639,6 +660,10 @@ describe.skipIf(
         })
 
         expect(
+          response.data.clientDecision,
+        ).toBeNull()
+
+        expect(
           response.data.clientPublication,
         ).not.toHaveProperty(
           'tokenHash',
@@ -659,6 +684,269 @@ describe.skipIf(
     )
 
     it(
+      'expose la décision permanente sans laisser REDOWNLOAD masquer la publication initiale',
+      async () => {
+        const initialAccess
+          = await prisma.craClientAccess
+            .findFirstOrThrow({
+              where: {
+                reportId,
+
+                purpose:
+                  'INITIAL_CONFIRMATION',
+              },
+            })
+
+        const decidedAt
+          = new Date(
+            '2026-09-20T10:00:00.000Z',
+          )
+
+        await prisma.craClientAccess.update({
+          where: {
+            id:
+              initialAccess.id,
+          },
+
+          data: {
+            status:
+              'COMPLETED',
+
+            confirmedAt:
+              decidedAt,
+
+            completedAt:
+              decidedAt,
+          },
+        })
+
+        const attestedDocument
+          = await prisma.craDocument.create({
+            data: {
+              reportId,
+
+              type:
+                'CLIENT_ATTESTED',
+
+              status:
+                'APPROVED',
+
+              version:
+                1,
+
+              reportRevision:
+                4,
+
+              reference:
+                'CRA-CLIENT-READ-CLIENT-ACCEPTED-V1',
+
+              originalName:
+                'CRA-client-read-client-accepted-v1.pdf',
+
+              storedName:
+                'client-accepted-v1.pdf',
+
+              filePath:
+                `cra/${reportId}/client-accepted-v1.pdf`,
+
+              mimeType:
+                'application/pdf',
+
+              fileSize:
+                BigInt(2345),
+
+              sha256:
+                'b'.repeat(64),
+
+              sourceDocumentId:
+                documentId,
+
+              reviewedAt:
+                decidedAt,
+
+              antivirusStatus:
+                'NOT_APPLICABLE',
+
+              antivirusCheckedAt:
+                decidedAt,
+
+              antivirusResult:
+                'Document généré en interne.',
+            },
+          })
+
+        await prisma.craClientDecision.create({
+          data: {
+            accessId:
+              initialAccess.id,
+
+            reportId,
+
+            decision:
+              'ACCEPTED',
+
+            firstName:
+              'Alice',
+
+            lastName:
+              'Responsable',
+
+            jobTitle:
+              'Directrice informatique',
+
+            comment:
+              'CRA conforme et accepté.',
+
+            recipientEmail:
+              contactEmail,
+
+            organizationName:
+              'Client publication CRA',
+
+            decidedAt,
+
+            sourceDocumentId:
+              documentId,
+
+            sourceDocumentReference:
+              'CRA-CLIENT-READ-SIGNED-V1',
+
+            sourceDocumentSha256:
+              'a'.repeat(64),
+
+            attestedDocumentId:
+              attestedDocument.id,
+          },
+        })
+
+        /*
+         * Ce lien plus récent ne doit jamais remplacer
+         * l'état de la publication initiale dans l'admin.
+         */
+        await prisma.craClientAccess.create({
+          data: {
+            reportId,
+            documentId,
+
+            purpose:
+              'REDOWNLOAD',
+
+            status:
+              'ACTIVE',
+
+            tokenHash:
+              createHash('sha256')
+                .update(
+                  `redownload-${randomUUID()}`,
+                )
+                .digest('hex'),
+
+            recipientEmail:
+              contactEmail,
+
+            expiresAt:
+              new Date(
+                '2099-10-01T10:00:00.000Z',
+              ),
+
+            createdAt:
+              new Date(
+                '2026-09-20T11:00:00.000Z',
+              ),
+          },
+        })
+
+        const response
+          = await handler(event)
+
+        expect(
+          response.data.clientPublication,
+        ).toMatchObject({
+          purpose:
+            'INITIAL_CONFIRMATION',
+
+          status:
+            'COMPLETED',
+
+          recipientEmail:
+            contactEmail,
+
+          confirmedAt:
+            decidedAt.toISOString(),
+
+          completedAt:
+            decidedAt.toISOString(),
+        })
+
+        expect(
+          response.data.clientDecision,
+        ).toEqual({
+          decision:
+            'ACCEPTED',
+
+          firstName:
+            'Alice',
+
+          lastName:
+            'Responsable',
+
+          jobTitle:
+            'Directrice informatique',
+
+          comment:
+            'CRA conforme et accepté.',
+
+          recipientEmail:
+            contactEmail,
+
+          organizationName:
+            'Client publication CRA',
+
+          decidedAt:
+            decidedAt.toISOString(),
+
+          createdAt:
+            expect.any(String),
+
+          sourceDocumentId:
+            documentId,
+
+          sourceDocumentReference:
+            'CRA-CLIENT-READ-SIGNED-V1',
+
+          attestedDocument: {
+            id:
+              attestedDocument.id,
+
+            type:
+              'CLIENT_ATTESTED',
+
+            status:
+              'APPROVED',
+
+            version:
+              1,
+
+            reportRevision:
+              4,
+
+            reference:
+              'CRA-CLIENT-READ-CLIENT-ACCEPTED-V1',
+
+            originalName:
+              'CRA-client-read-client-accepted-v1.pdf',
+
+            mimeType:
+              'application/pdf',
+
+            fileSize:
+              '2345',
+          },
+        })
+      },
+    )
+
+    it(
       'masque les informations client sans CRA_SEND_CLIENT',
       async () => {
         request.permissions = [
@@ -674,6 +962,10 @@ describe.skipIf(
 
         expect(
           response.data.clientPublication,
+        ).toBeNull()
+
+        expect(
+          response.data.clientDecision,
         ).toBeNull()
       },
     )
@@ -700,6 +992,10 @@ describe.skipIf(
 
         expect(
           response.data.clientPublication,
+        ).toBeNull()
+
+        expect(
+          response.data.clientDecision,
         ).toBeNull()
 
         expect(

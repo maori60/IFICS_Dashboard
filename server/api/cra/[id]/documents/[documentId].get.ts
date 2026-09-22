@@ -51,6 +51,7 @@ export default defineEventHandler(async (event) => {
         in: [
           'IFICS_TO_SIGN',
           'INTERVENOR_SIGNED',
+          'CLIENT_ATTESTED',
         ],
       },
 
@@ -109,13 +110,16 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  const allowedMimeTypes = document.type === 'IFICS_TO_SIGN'
-    ? ['application/pdf']
-    : [
-        'application/pdf',
-        'image/png',
-        'image/jpeg',
-      ]
+  const allowedMimeTypes
+    = document.type === 'INTERVENOR_SIGNED'
+      ? [
+          'application/pdf',
+          'image/png',
+          'image/jpeg',
+        ]
+      : [
+          'application/pdf',
+        ]
 
   if (!allowedMimeTypes.includes(document.mimeType)) {
     httpError(

@@ -134,6 +134,43 @@ type CraClientPublication = {
   createdAt: string
 }
 
+type CraClientDecisionType =
+  | 'ACCEPTED'
+  | 'REFUSED'
+
+type CraClientAttestedDocument = {
+  id: string
+  type: 'CLIENT_ATTESTED'
+  status: 'APPROVED'
+  version: number
+  reportRevision: number
+  reference: string
+  originalName: string
+  mimeType: string
+  fileSize: string
+}
+
+type CraClientDecision = {
+  decision: CraClientDecisionType
+
+  firstName: string
+  lastName: string
+  jobTitle: string
+  comment: string | null
+
+  recipientEmail: string
+  organizationName: string
+
+  decidedAt: string
+  createdAt: string
+
+  sourceDocumentId: string
+  sourceDocumentReference: string
+
+  attestedDocument:
+    CraClientAttestedDocument
+}
+
 type CraReport = {
   id: string
   intervenorId: string
@@ -178,6 +215,7 @@ type CraReport = {
 
   clientRecipients: CraClientRecipient[]
   clientPublication: CraClientPublication | null
+  clientDecision: CraClientDecision | null
 
   periodPolicy: CraPeriodPolicy
   days: CraDay[]
@@ -240,7 +278,7 @@ const clientAccessStatusLabels:
 Record<CraClientAccessStatus, string> = {
   PENDING: 'Envoi en préparation',
   ACTIVE: 'Lien actif',
-  COMPLETED: 'Confirmé par le client',
+  COMPLETED: 'Décision enregistrée',
   EXPIRED: 'Lien expiré',
   REVOKED: 'Lien remplacé ou révoqué',
 }
@@ -509,6 +547,29 @@ const signedDocumentDownloadUrl = computed(() => {
 
   return url ? `${url}?download=1` : ''
 })
+
+const clientDecisionAttestedDocumentViewUrl
+  = computed(() => {
+    const documentId
+      = report.value
+        ?.clientDecision
+        ?.attestedDocument
+        .id
+
+    return documentId
+      ? `${reportUrl}/documents/${encodeURIComponent(documentId)}`
+      : ''
+  })
+
+const clientDecisionAttestedDocumentDownloadUrl
+  = computed(() => {
+    const url
+      = clientDecisionAttestedDocumentViewUrl.value
+
+    return url
+      ? `${url}?download=1`
+      : ''
+  })
 
 const signedRejectionReasonValid = computed(() => {
   const reason = signedRejectionReason.value.trim()
@@ -1564,7 +1625,7 @@ function defaultSendToClientMessage(): string {
 
   lines.push(
     '',
-    'Un lien sécurisé personnel vous permettra de consulter le document, de le télécharger et de confirmer sa réception.',
+    'Un lien sécurisé personnel vous permettra de consulter le document, de le télécharger puis d’accepter ou de refuser le CRA.',
     'Le lien est valable 7 jours.',
     'Aucun document n’est joint à cet email.',
     '',
@@ -2547,8 +2608,8 @@ async function uploadSignedDocument() {
           </p>
 
           <p>
-            <strong>Confirmation client :</strong>
-            {{ dateLabel(report.clientPublication.confirmedAt) }}
+            <strong>Clôture du lien :</strong>
+            {{ dateLabel(report.clientPublication.completedAt) }}
           </p>
 
           <p>
@@ -2562,8 +2623,8 @@ async function uploadSignedDocument() {
           class="notice"
           role="status"
         >
-          Le client a confirmé la réception du CRA.
-          Cette validation initiale est terminée.
+          Le lien sécurisé initial est clôturé.
+          La décision client est conservée séparément.
         </p>
 
         <p
@@ -2600,6 +2661,155 @@ async function uploadSignedDocument() {
         >
           Ce CRA signé n’a pas encore été publié au client.
         </p>
+
+        <section
+          v-if="report.clientDecision"
+          class="client-decision-card"
+          aria-labelledby="client-decision-heading"
+        >
+          <div class="client-decision-heading">
+            <div>
+              <p class="client-decision-eyebrow">
+                Décision client
+              </p>
+
+              <h3 id="client-decision-heading">
+                {{
+                  report.clientDecision.decision === 'ACCEPTED'
+                    ? 'CRA accepté'
+                    : 'CRA refusé'
+                }}
+              </h3>
+            </div>
+
+            <span
+              class="badge client-decision-badge"
+              :class="
+                report.clientDecision.decision === 'ACCEPTED'
+                  ? 'client-decision-badge-accepted'
+                  : 'client-decision-badge-refused'
+              "
+            >
+              {{
+                report.clientDecision.decision === 'ACCEPTED'
+                  ? 'Accepté'
+                  : 'Refusé'
+              }}
+            </span>
+          </div>
+
+          <div class="client-decision-grid">
+            <div>
+              <span>Décisionnaire</span>
+
+              <strong>
+                {{ report.clientDecision.firstName }}
+                {{ report.clientDecision.lastName }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Fonction</span>
+
+              <strong>
+                {{ report.clientDecision.jobTitle }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Organisation</span>
+
+              <strong>
+                {{ report.clientDecision.organizationName }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Email destinataire</span>
+
+              <strong>
+                {{ report.clientDecision.recipientEmail }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Date de décision</span>
+
+              <strong>
+                {{ dateLabel(report.clientDecision.decidedAt) }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Document source</span>
+
+              <strong>
+                {{ report.clientDecision.sourceDocumentReference }}
+              </strong>
+            </div>
+
+            <div class="client-decision-grid-wide">
+              <span>Attestation</span>
+
+              <strong>
+                {{
+                  report.clientDecision
+                    .attestedDocument
+                    .reference
+                }}
+              </strong>
+            </div>
+          </div>
+
+          <div
+            v-if="report.clientDecision.comment"
+            class="client-decision-comment"
+          >
+            <strong>
+              Commentaire du client
+            </strong>
+
+            <p>
+              {{ report.clientDecision.comment }}
+            </p>
+          </div>
+
+          <div class="official-document-file-actions">
+            <a
+              :href="clientDecisionAttestedDocumentViewUrl"
+              class="button"
+              target="_blank"
+              rel="noopener"
+            >
+              Voir l’attestation
+            </a>
+
+            <a
+              :href="clientDecisionAttestedDocumentDownloadUrl"
+              class="button primary"
+            >
+              Télécharger l’attestation
+            </a>
+          </div>
+
+          <p class="muted client-decision-legal">
+            Cette attestation constitue une trace auditée
+            et horodatée de la décision client. Elle ne
+            constitue pas une signature électronique
+            qualifiée.
+          </p>
+        </section>
+
+        <div
+          v-else-if="
+            report.clientPublication?.status === 'COMPLETED'
+          "
+          class="notice"
+          role="status"
+        >
+          Le lien initial est clôturé mais aucune décision
+          client n’est disponible pour ce CRA.
+        </div>
 
         <div
           v-if="report.clientRecipients.length === 0"
@@ -3760,4 +3970,116 @@ async function uploadSignedDocument() {
     font-size: .65rem;
   }
 }
+
+.client-decision-card {
+  margin-top: 18px;
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+  border: 1px solid
+    var(--ifics-border, #dfe8e2);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.client-decision-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.client-decision-heading h3 {
+  margin: 0;
+}
+
+.client-decision-eyebrow {
+  margin: 0 0 5px;
+  color:
+    var(--ifics-muted, #68786f);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.client-decision-badge-accepted {
+  border-color: #b9d9c5;
+  background: #edf7f0;
+  color: #24523d;
+}
+
+.client-decision-badge-refused {
+  border-color: #efc3be;
+  background: #fff3f1;
+  color: #8f2e27;
+}
+
+.client-decision-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.client-decision-grid > div {
+  min-width: 0;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid
+    var(--ifics-border, #dfe8e2);
+  border-radius: 9px;
+  background:
+    var(--ifics-green-50, #f4f8f5);
+}
+
+.client-decision-grid span {
+  color:
+    var(--ifics-muted, #68786f);
+  font-size: .75rem;
+}
+
+.client-decision-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.client-decision-grid-wide {
+  grid-column: 1 / -1;
+}
+
+.client-decision-comment {
+  padding: 14px 16px;
+  border-left: 4px solid
+    var(--ifics-green-700, #31704f);
+  background:
+    var(--ifics-green-50, #f4f8f5);
+}
+
+.client-decision-comment p {
+  margin: 7px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.client-decision-legal {
+  margin: 0;
+  font-size: .8rem;
+}
+
+@media (max-width: 760px) {
+  .client-decision-heading {
+    flex-direction: column;
+  }
+
+  .client-decision-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .client-decision-grid-wide {
+    grid-column: auto;
+  }
+}
+
 </style>
