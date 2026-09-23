@@ -637,7 +637,11 @@ onBeforeUnmount(() => {
         <div class="viewer-toolbar">
           <div>
             <strong>
-              Document signé
+              {{
+                payload.access.purpose === 'REDOWNLOAD'
+                  ? 'CRA avec attestation client'
+                  : 'Document signé'
+              }}
             </strong>
 
             <span>
