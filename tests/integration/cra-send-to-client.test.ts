@@ -252,6 +252,16 @@ describe.skipIf(
         )
 
       if (testReportIds.length > 0) {
+        await prisma.craClientDecision
+          .deleteMany({
+            where: {
+              reportId: {
+                in:
+                  testReportIds,
+              },
+            },
+          })
+
         await prisma.craClientAccess
           .deleteMany({
             where: {
@@ -395,6 +405,174 @@ describe.skipIf(
             new Date(),
         },
       })
+    }
+
+    async function createDecisionFixture() {
+      const source
+        = await prisma.craDocument
+          .findUniqueOrThrow({
+            where: {
+              id:
+                documentId,
+            },
+
+            select: {
+              reference:
+                true,
+
+              sha256:
+                true,
+            },
+          })
+
+      if (!source.sha256) {
+        throw new Error(
+          'Fixture source SHA manquant.',
+        )
+      }
+
+      const decidedAt
+        = new Date()
+
+      const initialAccess
+        = await prisma.craClientAccess
+          .create({
+            data: {
+              reportId,
+              documentId,
+
+              purpose:
+                'INITIAL_CONFIRMATION',
+
+              status:
+                'COMPLETED',
+
+              tokenHash:
+                hashToken(
+                  `decision-${randomUUID()}`,
+                ),
+
+              recipientEmail:
+                contactEmail,
+
+              createdByUserId:
+                'cra-send-client-admin',
+
+              expiresAt:
+                new Date(
+                  decidedAt.getTime()
+                  + 7 * 24 * 60 * 60 * 1000,
+                ),
+
+              confirmedAt:
+                decidedAt,
+
+              completedAt:
+                decidedAt,
+
+              emailSentAt:
+                decidedAt,
+            },
+          })
+
+      const pdf
+        = await createPdf()
+
+      const stored
+        = await storePdf(
+          'cra',
+          reportId,
+          'CRA-CLIENT-ATTESTED-V1.pdf',
+          pdf,
+        )
+
+      const attestedDocument
+        = await prisma.craDocument.create({
+          data: {
+            reportId,
+
+            type:
+              'CLIENT_ATTESTED',
+
+            status:
+              'APPROVED',
+
+            version:
+              1,
+
+            reportRevision:
+              4,
+
+            reference:
+              `CRA-CLIENT-${randomUUID()
+                .replaceAll('-', '')
+                .slice(0, 12)
+                .toUpperCase()}-ATTESTED-V1`,
+
+            ...stored,
+
+            sourceDocumentId:
+              documentId,
+
+            antivirusStatus:
+              'NOT_APPLICABLE',
+
+            antivirusCheckedAt:
+              decidedAt,
+
+            antivirusResult:
+              'Document généré en interne.',
+          },
+        })
+
+      await prisma.craClientDecision.create({
+        data: {
+          accessId:
+            initialAccess.id,
+
+          reportId,
+
+          decision:
+            'ACCEPTED',
+
+          firstName:
+            'Alice',
+
+          lastName:
+            'Client',
+
+          jobTitle:
+            'Responsable',
+
+          comment:
+            'CRA accepté.',
+
+          recipientEmail:
+            contactEmail,
+
+          organizationName:
+            'Client test CRA',
+
+          decidedAt,
+
+          sourceDocumentId:
+            documentId,
+
+          sourceDocumentReference:
+            source.reference,
+
+          sourceDocumentSha256:
+            source.sha256,
+
+          attestedDocumentId:
+            attestedDocument.id,
+        },
+      })
+
+      return {
+        initialAccess,
+        attestedDocument,
+      }
     }
 
     beforeAll(async () => {
@@ -1046,6 +1224,298 @@ describe.skipIf(
 
         expect(mail.send)
           .toHaveBeenCalledTimes(1)
+      },
+    )
+
+    it(
+      'refuse REDOWNLOAD sans décision client',
+      async () => {
+        request.body = {
+          ...request.body,
+
+          purpose:
+            'REDOWNLOAD',
+        }
+
+        await expect(
+          handler(event),
+        ).rejects.toMatchObject({
+          statusCode:
+            409,
+
+          data: {
+            code:
+              'CRA_CLIENT_REDOWNLOAD_DECISION_REQUIRED',
+          },
+        })
+
+        expect(mail.send)
+          .not.toHaveBeenCalled()
+      },
+    )
+
+    it(
+      'envoie REDOWNLOAD vers le document CLIENT_ATTESTED',
+      async () => {
+        const fixture
+          = await createDecisionFixture()
+
+        request.body = {
+          ...request.body,
+
+          purpose:
+            'REDOWNLOAD',
+
+          subject:
+            'Lien de retéléchargement CRA',
+
+          message:
+            'Bonjour, voici un nouvel accès au CRA décidé.',
+        }
+
+        const result
+          = await handler(event)
+
+        expect(result.data)
+          .toMatchObject({
+            documentId:
+              fixture.attestedDocument.id,
+
+            recipient:
+              contactEmail,
+
+            purpose:
+              'REDOWNLOAD',
+
+            status:
+              'ACTIVE',
+          })
+
+        expect(mail.send)
+          .toHaveBeenCalledTimes(1)
+
+        const sentMessage
+          = mail.send.mock.calls[0]![0]
+
+        expect(sentMessage.attachments)
+          .toBeUndefined()
+
+        expect(sentMessage.text)
+          .toContain(
+            'Aucune nouvelle décision n’est possible.',
+          )
+
+        const access
+          = await prisma.craClientAccess
+            .findUniqueOrThrow({
+              where: {
+                id:
+                  result.data.accessId,
+              },
+            })
+
+        expect(access)
+          .toMatchObject({
+            reportId,
+
+            documentId:
+              fixture.attestedDocument.id,
+
+            purpose:
+              'REDOWNLOAD',
+
+            status:
+              'ACTIVE',
+          })
+      },
+    )
+
+    it(
+      'interdit un nouvel INITIAL_CONFIRMATION après décision',
+      async () => {
+        await createDecisionFixture()
+
+        request.body = {
+          ...request.body,
+
+          purpose:
+            'INITIAL_CONFIRMATION',
+        }
+
+        await expect(
+          handler(event),
+        ).rejects.toMatchObject({
+          statusCode:
+            409,
+
+          data: {
+            code:
+              'CRA_CLIENT_DECISION_ALREADY_RECORDED',
+          },
+        })
+
+        expect(mail.send)
+          .not.toHaveBeenCalled()
+      },
+    )
+
+    it(
+      'conserve l’ancien REDOWNLOAD si SMTP échoue',
+      async () => {
+        const fixture
+          = await createDecisionFixture()
+
+        const previous
+          = await prisma.craClientAccess.create({
+            data: {
+              reportId,
+
+              documentId:
+                fixture.attestedDocument.id,
+
+              purpose:
+                'REDOWNLOAD',
+
+              status:
+                'ACTIVE',
+
+              tokenHash:
+                hashToken(
+                  `redownload-old-${randomUUID()}`,
+                ),
+
+              recipientEmail:
+                contactEmail,
+
+              createdByUserId:
+                'cra-send-client-admin',
+
+              expiresAt:
+                new Date(
+                  Date.now()
+                  + 24 * 60 * 60 * 1000,
+                ),
+
+              emailSentAt:
+                new Date(),
+            },
+          })
+
+        request.body = {
+          ...request.body,
+
+          purpose:
+            'REDOWNLOAD',
+        }
+
+        mail.send.mockRejectedValueOnce(
+          new Error('SMTP down'),
+        )
+
+        await expect(
+          handler(event),
+        ).rejects.toMatchObject({
+          statusCode:
+            502,
+
+          data: {
+            code:
+              'CRA_SEND_CLIENT_MAIL_FAILED',
+          },
+        })
+
+        const oldAccess
+          = await prisma.craClientAccess
+            .findUniqueOrThrow({
+              where: {
+                id:
+                  previous.id,
+              },
+            })
+
+        expect(oldAccess.status)
+          .toBe('ACTIVE')
+
+        expect(oldAccess.revokedAt)
+          .toBeNull()
+      },
+    )
+
+    it(
+      'révoque l’ancien REDOWNLOAD seulement après succès SMTP',
+      async () => {
+        const fixture
+          = await createDecisionFixture()
+
+        const previous
+          = await prisma.craClientAccess.create({
+            data: {
+              reportId,
+
+              documentId:
+                fixture.attestedDocument.id,
+
+              purpose:
+                'REDOWNLOAD',
+
+              status:
+                'ACTIVE',
+
+              tokenHash:
+                hashToken(
+                  `redownload-old-${randomUUID()}`,
+                ),
+
+              recipientEmail:
+                contactEmail,
+
+              createdByUserId:
+                'cra-send-client-admin',
+
+              expiresAt:
+                new Date(
+                  Date.now()
+                  + 24 * 60 * 60 * 1000,
+                ),
+
+              emailSentAt:
+                new Date(),
+            },
+          })
+
+        request.body = {
+          ...request.body,
+
+          purpose:
+            'REDOWNLOAD',
+        }
+
+        const result
+          = await handler(event)
+
+        expect(result.data)
+          .toMatchObject({
+            purpose:
+              'REDOWNLOAD',
+
+            revokedPreviousCount:
+              1,
+          })
+
+        const oldAccess
+          = await prisma.craClientAccess
+            .findUniqueOrThrow({
+              where: {
+                id:
+                  previous.id,
+              },
+            })
+
+        expect(oldAccess.status)
+          .toBe('REVOKED')
+
+        expect(oldAccess.revokedAt)
+          .not.toBeNull()
       },
     )
 

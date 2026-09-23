@@ -95,7 +95,15 @@ describe.skipIf(
     let storedSha256: string
     let storedFileSize: bigint
 
-    async function createAccess() {
+    async function createAccess(
+      options: {
+        purpose?:
+          | 'INITIAL_CONFIRMATION'
+          | 'REDOWNLOAD'
+
+        documentId?: string
+      } = {},
+    ) {
       sessionToken
         = `session-${randomUUID()}-${randomUUID()}`
 
@@ -106,10 +114,14 @@ describe.skipIf(
         = await prisma.craClientAccess.create({
           data: {
             reportId,
-            documentId,
+
+            documentId:
+              options.documentId
+              ?? documentId,
 
             purpose:
-              'INITIAL_CONFIRMATION',
+              options.purpose
+              ?? 'INITIAL_CONFIRMATION',
 
             status:
               'ACTIVE',
@@ -664,6 +676,202 @@ describe.skipIf(
 
         expect(access.downloadedAt)
           .not.toBeNull()
+      },
+    )
+
+    it(
+      'sert le CLIENT_ATTESTED depuis un accès REDOWNLOAD',
+      async () => {
+        await prisma.craClientAccess
+          .deleteMany({
+            where: {
+              reportId,
+            },
+          })
+
+        const attestedDocument
+          = await prisma.craDocument.create({
+            data: {
+              reportId,
+
+              type:
+                'CLIENT_ATTESTED',
+
+              status:
+                'APPROVED',
+
+              version:
+                1,
+
+              reportRevision:
+                3,
+
+              reference:
+                `CRA-CLIENT-REDOWNLOAD-${randomUUID()
+                  .replaceAll('-', '')
+                  .slice(0, 10)
+                  .toUpperCase()}`,
+
+              originalName:
+                'CRA client attesté.pdf',
+
+              storedName:
+                'cra-client-attested.pdf',
+
+              filePath:
+                storedFilePath,
+
+              mimeType:
+                'application/pdf',
+
+              fileSize:
+                storedFileSize,
+
+              sha256:
+                storedSha256,
+
+              sourceDocumentId:
+                documentId,
+
+              antivirusStatus:
+                'NOT_APPLICABLE',
+
+              antivirusCheckedAt:
+                new Date(),
+
+              antivirusResult:
+                'Document généré en interne.',
+            },
+          })
+
+        try {
+          await createAccess({
+            purpose:
+              'REDOWNLOAD',
+
+            documentId:
+              attestedDocument.id,
+          })
+
+          browser.query = {}
+
+          const inlineResult
+            = await handler(event)
+
+          expect(
+            inlineResult.equals(
+              pdfBuffer,
+            ),
+          ).toBe(true)
+
+          expect(
+            browser.setResponseHeader,
+          ).toHaveBeenCalledWith(
+            event,
+            'Content-Disposition',
+            expect.stringContaining(
+              'inline;',
+            ),
+          )
+
+          let access
+            = await prisma.craClientAccess
+              .findUniqueOrThrow({
+                where: {
+                  id:
+                    accessId,
+                },
+              })
+
+          expect(access)
+            .toMatchObject({
+              documentId:
+                attestedDocument.id,
+
+              purpose:
+                'REDOWNLOAD',
+
+              status:
+                'ACTIVE',
+
+              downloadedAt:
+                null,
+            })
+
+          browser.setResponseHeader
+            .mockReset()
+
+          browser.query = {
+            download:
+              '1',
+          }
+
+          const downloadedResult
+            = await handler(event)
+
+          expect(
+            downloadedResult.equals(
+              pdfBuffer,
+            ),
+          ).toBe(true)
+
+          expect(
+            browser.setResponseHeader,
+          ).toHaveBeenCalledWith(
+            event,
+            'Content-Disposition',
+            expect.stringContaining(
+              'attachment;',
+            ),
+          )
+
+          expect(
+            browser.setResponseHeader,
+          ).toHaveBeenCalledWith(
+            event,
+            'Content-Type',
+            'application/pdf',
+          )
+
+          access
+            = await prisma.craClientAccess
+              .findUniqueOrThrow({
+                where: {
+                  id:
+                    accessId,
+                },
+              })
+
+          expect(access.documentId)
+            .toBe(
+              attestedDocument.id,
+            )
+
+          expect(access.purpose)
+            .toBe(
+              'REDOWNLOAD',
+            )
+
+          expect(access.downloadedAt)
+            .not.toBeNull()
+        }
+        finally {
+          await prisma.craClientAccess
+            .deleteMany({
+              where: {
+                documentId:
+                  attestedDocument.id,
+              },
+            })
+
+          await prisma.craDocument
+            .delete({
+              where: {
+                id:
+                  attestedDocument.id,
+              },
+            })
+        }
       },
     )
 

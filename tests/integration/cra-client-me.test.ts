@@ -86,6 +86,7 @@ describe.skipIf(
         expiresAt?: Date
         revokedAt?: Date | null
         completedAt?: Date | null
+        documentId?: string
       } = {},
     ) {
       sessionToken
@@ -98,7 +99,10 @@ describe.skipIf(
         = await prisma.craClientAccess.create({
           data: {
             reportId,
-            documentId,
+
+            documentId:
+              options.documentId
+              ?? documentId,
 
             purpose:
               options.purpose
@@ -752,9 +756,67 @@ describe.skipIf(
             },
           })
 
+        const attestedDocument
+          = await prisma.craDocument.create({
+            data: {
+              reportId,
+
+              type:
+                'CLIENT_ATTESTED',
+
+              status:
+                'APPROVED',
+
+              version:
+                1,
+
+              reportRevision:
+                3,
+
+              reference:
+                `CRA-CLIENT-ME-ATTESTED-${randomUUID()
+                  .replaceAll('-', '')
+                  .slice(0, 10)
+                  .toUpperCase()}`,
+
+              originalName:
+                'CRA client attesté.pdf',
+
+              storedName:
+                'cra-client-attested.pdf',
+
+              filePath:
+                `cra/${reportId}/cra-client-attested.pdf`,
+
+              mimeType:
+                'application/pdf',
+
+              fileSize:
+                BigInt(60000),
+
+              sha256:
+                'b'.repeat(64),
+
+              sourceDocumentId:
+                documentId,
+
+              antivirusStatus:
+                'NOT_APPLICABLE',
+
+              antivirusCheckedAt:
+                new Date(),
+
+              antivirusResult:
+                'Document généré en interne.',
+            },
+          })
+
         await createAccess({
           purpose:
             'REDOWNLOAD',
+
+          documentId:
+            attestedDocument.id,
         })
 
         const result
@@ -773,6 +835,21 @@ describe.skipIf(
 
             canDecide:
               false,
+          })
+
+        expect(result.data.document)
+          .toMatchObject({
+            status:
+              'APPROVED',
+
+            originalName:
+              'CRA client attesté.pdf',
+
+            mimeType:
+              'application/pdf',
+
+            fileSize:
+              '60000',
           })
       },
     )

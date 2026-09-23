@@ -212,6 +212,10 @@ describe.skipIf(
         | 'INITIAL_CONFIRMATION'
         | 'REDOWNLOAD'
         = 'INITIAL_CONFIRMATION',
+
+      targetDocumentId:
+        string
+        = sourceDocumentId,
     ) {
       sessionToken
         = `session-${randomUUID()}-${randomUUID()}`
@@ -223,8 +227,9 @@ describe.skipIf(
         = await prisma.craClientAccess.create({
           data: {
             reportId,
+
             documentId:
-              sourceDocumentId,
+              targetDocumentId,
 
             purpose,
 
@@ -1314,8 +1319,60 @@ describe.skipIf(
             },
           })
 
+        const sourceBytes
+          = await readStoredFile(
+            sourceFilePath,
+          )
+
+        const storedAttested
+          = await storePdf(
+            'cra',
+            reportId,
+            'CRA-CLIENT-ATTESTED-REDOWNLOAD.pdf',
+            sourceBytes,
+          )
+
+        const attestedDocument
+          = await prisma.craDocument.create({
+            data: {
+              reportId,
+
+              type:
+                'CLIENT_ATTESTED',
+
+              status:
+                'APPROVED',
+
+              version:
+                1,
+
+              reportRevision:
+                3,
+
+              reference:
+                `CRA-CLIENT-DECISION-${randomUUID()
+                  .replaceAll('-', '')
+                  .slice(0, 10)
+                  .toUpperCase()}-ATTESTED-V1`,
+
+              ...storedAttested,
+
+              sourceDocumentId,
+
+              antivirusStatus:
+                'NOT_APPLICABLE',
+
+              antivirusCheckedAt:
+                new Date(),
+
+              antivirusResult:
+                'Document généré en interne.',
+            },
+          })
+
         await createAccess(
           'REDOWNLOAD',
+          attestedDocument.id,
         )
 
         browser.body = {

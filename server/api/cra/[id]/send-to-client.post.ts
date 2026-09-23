@@ -71,6 +71,7 @@ export default defineEventHandler(async (event) => {
     'subject',
     'message',
     'confirmed',
+    'purpose',
   ])
 
   if (
@@ -88,6 +89,27 @@ export default defineEventHandler(async (event) => {
       400,
       'La confirmation de l’envoi est obligatoire.',
       'CRA_SEND_CLIENT_CONFIRMATION_REQUIRED',
+    )
+  }
+
+  const purpose
+    = body.purpose === undefined
+      ? 'INITIAL_CONFIRMATION'
+      : requiredString(
+          body.purpose,
+          'Type d’accès client',
+          {
+            min: 1,
+            max: 40,
+          },
+        )
+
+  if (
+    purpose !== 'INITIAL_CONFIRMATION'
+    && purpose !== 'REDOWNLOAD'
+  ) {
+    badRequest(
+      'Le type d’accès client est invalide.',
     )
   }
 
@@ -220,7 +242,7 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  const document = report.documents[0]
+  let document = report.documents[0]
 
   if (!document) {
     httpError(
@@ -261,6 +283,109 @@ export default defineEventHandler(async (event) => {
       'L’empreinte du CRA signé est absente.',
       'CRA_SIGNED_DOCUMENT_HASH_MISSING',
     )
+  }
+
+  const clientDecision
+    = await prisma.craClientDecision.findFirst({
+        where: {
+          reportId:
+            report.id,
+
+          sourceDocumentId:
+            document.id,
+        },
+
+        orderBy: {
+          decidedAt:
+            'desc',
+        },
+
+        select: {
+          sourceDocumentSha256:
+            true,
+
+          attestedDocument: {
+            select: {
+              id: true,
+              reportId: true,
+              type: true,
+              status: true,
+              version: true,
+              reportRevision: true,
+              reference: true,
+              originalName: true,
+              filePath: true,
+              mimeType: true,
+              fileSize: true,
+              sha256: true,
+              antivirusStatus: true,
+              archivedAt: true,
+            },
+          },
+        },
+      })
+
+  if (
+    purpose === 'INITIAL_CONFIRMATION'
+    && clientDecision
+  ) {
+    httpError(
+      409,
+      'Une décision client est déjà enregistrée pour ce CRA.',
+      'CRA_CLIENT_DECISION_ALREADY_RECORDED',
+    )
+  }
+
+  if (purpose === 'REDOWNLOAD') {
+    if (!clientDecision) {
+      httpError(
+        409,
+        'Aucune décision client ne permet de créer un lien de retéléchargement.',
+        'CRA_CLIENT_REDOWNLOAD_DECISION_REQUIRED',
+      )
+    }
+
+    if (
+      clientDecision.sourceDocumentSha256
+      !== document.sha256
+    ) {
+      httpError(
+        409,
+        'Le document source de la décision client ne correspond plus au CRA signé.',
+        'CRA_CLIENT_REDOWNLOAD_SOURCE_MISMATCH',
+      )
+    }
+
+    const attestedDocument
+      = clientDecision.attestedDocument
+
+    if (
+      attestedDocument.type !== 'CLIENT_ATTESTED'
+      || attestedDocument.status !== 'APPROVED'
+      || attestedDocument.reportRevision
+        !== report.revision
+      || attestedDocument.mimeType
+        !== 'application/pdf'
+      || attestedDocument.antivirusStatus
+        !== 'NOT_APPLICABLE'
+      || attestedDocument.archivedAt
+    ) {
+      httpError(
+        409,
+        'L’attestation de décision client n’est pas disponible pour le retéléchargement.',
+        'CRA_CLIENT_REDOWNLOAD_DOCUMENT_INVALID',
+      )
+    }
+
+    if (!attestedDocument.sha256) {
+      httpError(
+        409,
+        'L’empreinte de l’attestation client est absente.',
+        'CRA_CLIENT_REDOWNLOAD_HASH_MISSING',
+      )
+    }
+
+    document = attestedDocument
   }
 
   const allowedRecipients
@@ -339,8 +464,7 @@ export default defineEventHandler(async (event) => {
       reportId: report.id,
       documentId: document.id,
 
-      purpose:
-        'INITIAL_CONFIRMATION',
+      purpose,
 
       status:
         'PENDING',
@@ -366,8 +490,7 @@ export default defineEventHandler(async (event) => {
         reportId: report.id,
         documentId: document.id,
 
-        purpose:
-          'INITIAL_CONFIRMATION',
+        purpose,
 
         status:
           'PENDING',
@@ -411,8 +534,7 @@ export default defineEventHandler(async (event) => {
           reportId: report.id,
           documentId: document.id,
 
-          purpose:
-            'INITIAL_CONFIRMATION',
+          purpose,
 
           status:
             'PENDING',
@@ -449,11 +571,15 @@ export default defineEventHandler(async (event) => {
   const mailText = [
     message.trim(),
     '',
-    'Accès sécurisé au CRA :',
+    purpose === 'REDOWNLOAD'
+      ? 'Accès sécurisé au CRA et à son attestation :'
+      : 'Accès sécurisé au CRA :',
     clientUrl,
     '',
     'Ce lien est personnel et valable pendant 7 jours.',
-    'Après confirmation du CRA, cet accès pourra être clôturé.',
+    purpose === 'REDOWNLOAD'
+      ? 'Cet accès permet uniquement de consulter et télécharger le document déjà décidé. Aucune nouvelle décision n’est possible.'
+      : 'Après votre décision, cet accès sera clôturé.',
   ].join('\n')
 
   let delivery:
@@ -528,8 +654,7 @@ export default defineEventHandler(async (event) => {
                 documentId:
                   document.id,
 
-                purpose:
-                  'INITIAL_CONFIRMATION',
+                purpose,
 
                 status:
                   'ACTIVE',
@@ -612,7 +737,9 @@ export default defineEventHandler(async (event) => {
     context,
     {
       action:
-        'CRA_SIGNED_DOCUMENT_SENT_TO_CLIENT',
+        purpose === 'REDOWNLOAD'
+          ? 'CRA_CLIENT_REDOWNLOAD_SENT'
+          : 'CRA_SIGNED_DOCUMENT_SENT_TO_CLIENT',
 
       entityType:
         'CraClientAccess',

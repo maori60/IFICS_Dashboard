@@ -73,6 +73,7 @@ export default defineEventHandler(async (event) => {
             type: true,
             status: true,
             reportRevision: true,
+            mimeType: true,
             antivirusStatus: true,
             archivedAt: true,
 
@@ -118,13 +119,28 @@ export default defineEventHandler(async (event) => {
     invalidate()
   }
 
+  const documentAllowed
+    = (
+      access.purpose === 'INITIAL_CONFIRMATION'
+      && access.document.type
+        === 'INTERVENOR_SIGNED'
+      && access.document.antivirusStatus
+        === 'CLEAN'
+    )
+    || (
+      access.purpose === 'REDOWNLOAD'
+      && access.document.type
+        === 'CLIENT_ATTESTED'
+      && access.document.antivirusStatus
+        === 'NOT_APPLICABLE'
+      && access.document.mimeType
+        === 'application/pdf'
+    )
+
   if (
-    access.document.type
-      !== 'INTERVENOR_SIGNED'
+    !documentAllowed
     || access.document.status
       !== 'APPROVED'
-    || access.document.antivirusStatus
-      !== 'CLEAN'
     || access.document.archivedAt
     || access.document.report.status
       !== 'REVIEWED'

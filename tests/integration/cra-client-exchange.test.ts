@@ -87,6 +87,12 @@ describe.skipIf(
 
     async function createAccess(
       overrides: {
+        purpose?:
+          | 'INITIAL_CONFIRMATION'
+          | 'REDOWNLOAD'
+
+        documentId?: string
+
         status?:
           | 'ACTIVE'
           | 'COMPLETED'
@@ -105,10 +111,14 @@ describe.skipIf(
         = await prisma.craClientAccess.create({
           data: {
             reportId,
-            documentId,
+
+            documentId:
+              overrides.documentId
+              ?? documentId,
 
             purpose:
-              'INITIAL_CONFIRMATION',
+              overrides.purpose
+              ?? 'INITIAL_CONFIRMATION',
 
             status:
               overrides.status
@@ -582,6 +592,190 @@ describe.skipIf(
                 accessId,
             }),
           )
+      },
+    )
+
+    it(
+      'échange un token REDOWNLOAD lié au CLIENT_ATTESTED',
+      async () => {
+        await prisma.craClientAccess
+          .deleteMany({
+            where: {
+              reportId,
+            },
+          })
+
+        const attestedDocument
+          = await prisma.craDocument.create({
+            data: {
+              reportId,
+
+              type:
+                'CLIENT_ATTESTED',
+
+              status:
+                'APPROVED',
+
+              version:
+                1,
+
+              reportRevision:
+                1,
+
+              reference:
+                `CRA-EXCHANGE-ATTESTED-${randomUUID()
+                  .replaceAll('-', '')
+                  .slice(0, 10)
+                  .toUpperCase()}`,
+
+              originalName:
+                'CRA client attesté.pdf',
+
+              storedName:
+                'cra-client-attested.pdf',
+
+              filePath:
+                `cra/${reportId}/cra-client-attested.pdf`,
+
+              mimeType:
+                'application/pdf',
+
+              fileSize:
+                BigInt(456),
+
+              sha256:
+                'b'.repeat(64),
+
+              sourceDocumentId:
+                documentId,
+
+              antivirusStatus:
+                'NOT_APPLICABLE',
+
+              antivirusCheckedAt:
+                new Date(),
+
+              antivirusResult:
+                'Document généré en interne.',
+            },
+          })
+
+        await createAccess({
+          purpose:
+            'REDOWNLOAD',
+
+          documentId:
+            attestedDocument.id,
+        })
+
+        const emailedTokenHash
+          = hashToken(
+            emailedToken,
+          )
+
+        const result
+          = await handler(event)
+
+        expect(result.data)
+          .toMatchObject({
+            exchanged:
+              true,
+
+            purpose:
+              'REDOWNLOAD',
+          })
+
+        expect(cookie.set)
+          .toHaveBeenCalledTimes(1)
+
+        const [
+          ,
+          cookieName,
+          cookieToken,
+          options,
+        ] = cookie.set.mock.calls[0]!
+
+        expect(cookieName)
+          .toBe(
+            'ifics_cra_client_access',
+          )
+
+        expect(cookieToken)
+          .not.toBe(
+            emailedToken,
+          )
+
+        expect(options)
+          .toMatchObject({
+            httpOnly:
+              true,
+
+            sameSite:
+              'strict',
+
+            path:
+              '/api/cra-client',
+          })
+
+        const stored
+          = await prisma.craClientAccess
+            .findUniqueOrThrow({
+              where: {
+                id:
+                  accessId,
+              },
+            })
+
+        expect(stored)
+          .toMatchObject({
+            documentId:
+              attestedDocument.id,
+
+            purpose:
+              'REDOWNLOAD',
+
+            status:
+              'ACTIVE',
+          })
+
+        expect(stored.tokenHash)
+          .toBe(
+            hashToken(
+              cookieToken,
+            ),
+          )
+
+        expect(stored.tokenHash)
+          .not.toBe(
+            emailedTokenHash,
+          )
+
+        /*
+         * Le secret contenu dans l'email a été
+         * consommé : il ne peut pas être échangé
+         * une deuxième fois.
+         */
+        cookie.set.mockReset()
+
+        request.body = {
+          token:
+            emailedToken,
+        }
+
+        await expect(
+          handler(event),
+        ).rejects.toMatchObject({
+          statusCode:
+            410,
+
+          data: {
+            code:
+              'CRA_CLIENT_ACCESS_INVALID',
+          },
+        })
+
+        expect(cookie.set)
+          .not.toHaveBeenCalled()
       },
     )
 
