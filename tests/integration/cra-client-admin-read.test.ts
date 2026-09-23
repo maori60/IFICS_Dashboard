@@ -664,6 +664,10 @@ describe.skipIf(
         ).toBeNull()
 
         expect(
+          response.data.clientRedownload,
+        ).toBeNull()
+
+        expect(
           response.data.clientPublication,
         ).not.toHaveProperty(
           'tokenHash',
@@ -826,7 +830,9 @@ describe.skipIf(
         await prisma.craClientAccess.create({
           data: {
             reportId,
-            documentId,
+
+            documentId:
+              attestedDocument.id,
 
             purpose:
               'REDOWNLOAD',
@@ -856,6 +862,45 @@ describe.skipIf(
           },
         })
 
+        /*
+         * Un verrou PENDING plus récent mais déjà expiré
+         * ne doit pas masquer le REDOWNLOAD ACTIVE.
+         */
+        await prisma.craClientAccess.create({
+          data: {
+            reportId,
+
+            documentId:
+              attestedDocument.id,
+
+            purpose:
+              'REDOWNLOAD',
+
+            status:
+              'PENDING',
+
+            tokenHash:
+              createHash('sha256')
+                .update(
+                  `redownload-pending-expired-${randomUUID()}`,
+                )
+                .digest('hex'),
+
+            recipientEmail:
+              contactEmail,
+
+            expiresAt:
+              new Date(
+                '2020-01-01T00:00:00.000Z',
+              ),
+
+            createdAt:
+              new Date(
+                '2026-09-20T12:00:00.000Z',
+              ),
+          },
+        })
+
         const response
           = await handler(event)
 
@@ -876,6 +921,43 @@ describe.skipIf(
 
           completedAt:
             decidedAt.toISOString(),
+        })
+
+        expect(
+          response.data.clientRedownload,
+        ).toEqual({
+          purpose:
+            'REDOWNLOAD',
+
+          status:
+            'ACTIVE',
+
+          recipientEmail:
+            contactEmail,
+
+          expiresAt:
+            '2099-10-01T10:00:00.000Z',
+
+          firstViewedAt:
+            null,
+
+          downloadedAt:
+            null,
+
+          confirmedAt:
+            null,
+
+          completedAt:
+            null,
+
+          revokedAt:
+            null,
+
+          emailSentAt:
+            null,
+
+          createdAt:
+            '2026-09-20T11:00:00.000Z',
         })
 
         expect(
@@ -967,6 +1049,10 @@ describe.skipIf(
         expect(
           response.data.clientDecision,
         ).toBeNull()
+
+        expect(
+          response.data.clientRedownload,
+        ).toBeNull()
       },
     )
 
@@ -996,6 +1082,10 @@ describe.skipIf(
 
         expect(
           response.data.clientDecision,
+        ).toBeNull()
+
+        expect(
+          response.data.clientRedownload,
         ).toBeNull()
 
         expect(

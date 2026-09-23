@@ -442,6 +442,121 @@ export default defineEventHandler(async (event) => {
         }
       : null
 
+  /*
+   * Le retéléchargement est indépendant de la
+   * publication initiale et de la décision client.
+   *
+   * Il pointe exclusivement vers le document
+   * CLIENT_ATTESTED issu de la décision permanente.
+   *
+   * Un PENDING expiré ne doit pas masquer un ancien
+   * lien REDOWNLOAD encore actif ou historisé.
+   */
+  const latestClientRedownload
+    = canReadClientPublication
+      && clientDecision
+      ? await prisma.craClientAccess.findFirst({
+          where: {
+            reportId:
+              report.id,
+
+            documentId:
+              clientDecision.attestedDocument.id,
+
+            purpose:
+              'REDOWNLOAD',
+
+            OR: [
+              {
+                status: {
+                  not: 'PENDING',
+                },
+              },
+              {
+                status:
+                  'PENDING',
+
+                expiresAt: {
+                  gt: new Date(),
+                },
+              },
+            ],
+          },
+
+          orderBy: {
+            createdAt:
+              'desc',
+          },
+
+          select: {
+            purpose: true,
+            status: true,
+            recipientEmail: true,
+
+            expiresAt: true,
+            firstViewedAt: true,
+            downloadedAt: true,
+            confirmedAt: true,
+            completedAt: true,
+            revokedAt: true,
+            emailSentAt: true,
+            createdAt: true,
+          },
+        })
+      : null
+
+  const clientRedownload
+    = latestClientRedownload
+      ? {
+          purpose:
+            latestClientRedownload.purpose,
+
+          status:
+            latestClientRedownload.status,
+
+          recipientEmail:
+            latestClientRedownload.recipientEmail,
+
+          expiresAt:
+            latestClientRedownload.expiresAt
+              .toISOString(),
+
+          firstViewedAt:
+            latestClientRedownload.firstViewedAt
+              ?.toISOString()
+            ?? null,
+
+          downloadedAt:
+            latestClientRedownload.downloadedAt
+              ?.toISOString()
+            ?? null,
+
+          confirmedAt:
+            latestClientRedownload.confirmedAt
+              ?.toISOString()
+            ?? null,
+
+          completedAt:
+            latestClientRedownload.completedAt
+              ?.toISOString()
+            ?? null,
+
+          revokedAt:
+            latestClientRedownload.revokedAt
+              ?.toISOString()
+            ?? null,
+
+          emailSentAt:
+            latestClientRedownload.emailSentAt
+              ?.toISOString()
+            ?? null,
+
+          createdAt:
+            latestClientRedownload.createdAt
+              .toISOString(),
+        }
+      : null
+
   const latestOfficialDocument = report.documents[0] ?? null
 
   const canUploadSignedDocument = Boolean(
@@ -509,6 +624,7 @@ export default defineEventHandler(async (event) => {
     clientRecipients,
     clientPublication,
     clientDecision,
+    clientRedownload,
 
     periodPolicy,
     days: days.map(day => ({

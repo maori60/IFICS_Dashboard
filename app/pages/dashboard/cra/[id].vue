@@ -216,6 +216,7 @@ type CraReport = {
   clientRecipients: CraClientRecipient[]
   clientPublication: CraClientPublication | null
   clientDecision: CraClientDecision | null
+  clientRedownload: CraClientPublication | null
 
   periodPolicy: CraPeriodPolicy
   days: CraDay[]
@@ -283,6 +284,15 @@ Record<CraClientAccessStatus, string> = {
   REVOKED: 'Lien remplacé ou révoqué',
 }
 
+const clientRedownloadStatusLabels:
+Record<CraClientAccessStatus, string> = {
+  PENDING: 'Envoi en préparation',
+  ACTIVE: 'Lien de retéléchargement actif',
+  COMPLETED: 'Lien de retéléchargement clôturé',
+  EXPIRED: 'Lien de retéléchargement expiré',
+  REVOKED: 'Lien de retéléchargement remplacé ou révoqué',
+}
+
 const holidays: Record<string, string> = holidayData
 const coveredYears = new Set(
   Object.keys(holidays).map(date => Number(date.slice(0, 4))),
@@ -325,6 +335,10 @@ const sendToIntervenorSubject = ref('')
 const sendToIntervenorMessage = ref('')
 
 const showSendToClientForm = ref(false)
+const sendToClientPurpose
+  = ref<CraClientAccessPurpose>(
+    'INITIAL_CONFIRMATION',
+  )
 const sendToClientRecipient = ref('')
 const sendToClientSubject = ref('')
 const sendToClientMessage = ref('')
@@ -481,7 +495,7 @@ const canViewClientPublicationPanel = computed(() => {
   )
 })
 
-const canSendToClient = computed(() => {
+const canSendInitialToClient = computed(() => {
   const current = report.value
   const document = current?.signedDocument
   const publication = current?.clientPublication
@@ -492,10 +506,40 @@ const canSendToClient = computed(() => {
     && document
     && document.reportRevision === current.revision
     && current.clientRecipients.length > 0
+    && !current.clientDecision
     && publication?.status !== 'PENDING'
     && publication?.status !== 'COMPLETED',
   )
 })
+
+const canSendRedownload = computed(() => {
+  const current = report.value
+  const document = current?.signedDocument
+  const decision = current?.clientDecision
+  const redownload = current?.clientRedownload
+
+  return Boolean(
+    canViewClientPublicationPanel.value
+    && current
+    && document
+    && decision
+    && document.reportRevision === current.revision
+    && decision.attestedDocument.reportRevision
+      === current.revision
+    && decision.attestedDocument.type
+      === 'CLIENT_ATTESTED'
+    && decision.attestedDocument.status
+      === 'APPROVED'
+    && current.clientRecipients.length > 0
+    && redownload?.status !== 'PENDING',
+  )
+})
+
+const canSendToClient = computed(() =>
+  sendToClientPurpose.value === 'REDOWNLOAD'
+    ? canSendRedownload.value
+    : canSendInitialToClient.value,
+)
 
 const sendToClientFormValid = computed(() => {
   const current = report.value
@@ -1582,6 +1626,13 @@ function defaultSendToClientSubject(): string {
 
   if (!current) return ''
 
+  if (
+    sendToClientPurpose.value
+    === 'REDOWNLOAD'
+  ) {
+    return `CRA ${period.value} — nouveau lien de téléchargement — ${current.project.title}`
+  }
+
   return `CRA ${period.value} à confirmer — ${current.project.title}`
 }
 
@@ -1598,6 +1649,28 @@ function defaultSendToClientMessage(): string {
   const greeting = recipient?.contactFirstName
     ? `Bonjour ${recipient.contactFirstName},`
     : 'Bonjour,'
+
+  if (
+    sendToClientPurpose.value
+    === 'REDOWNLOAD'
+  ) {
+    return [
+      greeting,
+      '',
+      `IFICS vous transmet un nouveau lien sécurisé pour consulter et télécharger le CRA de ${period.value}, concernant la mission « ${mission} ».`,
+      '',
+      `Intervenant : ${current.intervenor.firstName} ${current.intervenor.lastName}`,
+      '',
+      'La décision client a déjà été enregistrée.',
+      'Ce lien permet uniquement de consulter et télécharger le CRA accompagné de son attestation de décision.',
+      'Il ne permet pas d’enregistrer une nouvelle décision.',
+      'Le lien est valable 7 jours.',
+      'Aucun document n’est joint à cet email.',
+      '',
+      'Cordialement,',
+      'IFICS',
+    ].join('\n')
+  }
 
   const lines = [
     greeting,
@@ -1636,31 +1709,47 @@ function defaultSendToClientMessage(): string {
   return lines.join('\n')
 }
 
-function openSendToClientForm() {
+function openSendToClientForm(
+  purpose:
+    CraClientAccessPurpose
+      = 'INITIAL_CONFIRMATION',
+) {
   const current = report.value
+
+  const allowed
+    = purpose === 'REDOWNLOAD'
+      ? canSendRedownload.value
+      : canSendInitialToClient.value
 
   if (
     !current
-    || !canSendToClient.value
+    || !allowed
     || busy.value
   ) return
 
-  const previousEmail
-    = current.clientPublication
-      ?.recipientEmail
-      .toLowerCase()
+  sendToClientPurpose.value = purpose
 
-  const previousRecipient
-    = previousEmail
+  const preferredEmail
+    = (
+      purpose === 'REDOWNLOAD'
+        ? current.clientDecision
+          ?.recipientEmail
+        : current.clientPublication
+          ?.recipientEmail
+    )
+      ?.toLowerCase()
+
+  const preferredRecipient
+    = preferredEmail
       ? current.clientRecipients.find(
           recipient =>
             recipient.email.toLowerCase()
-            === previousEmail,
+            === preferredEmail,
         )
       : undefined
 
   const recipient
-    = previousRecipient
+    = preferredRecipient
       ?? current.clientRecipients.find(
         item => item.isPrimary,
       )
@@ -1684,6 +1773,8 @@ function closeSendToClientForm() {
   if (busy.value) return
 
   showSendToClientForm.value = false
+  sendToClientPurpose.value
+    = 'INITIAL_CONFIRMATION'
   sendToClientRecipient.value = ''
   sendToClientSubject.value = ''
   sendToClientMessage.value = ''
@@ -1726,6 +1817,19 @@ async function sendSignedDocumentToClient() {
   const current = report.value
   const document = current?.signedDocument
   const recipient = selectedClientRecipient()
+  const purpose = sendToClientPurpose.value
+  const decision = current?.clientDecision
+
+  const currentAccess
+    = purpose === 'REDOWNLOAD'
+      ? current?.clientRedownload
+      : current?.clientPublication
+
+  const documentReference
+    = purpose === 'REDOWNLOAD'
+      ? decision?.attestedDocument.reference
+        ?? ''
+      : document?.reference ?? ''
 
   if (
     !current
@@ -1737,12 +1841,20 @@ async function sendSignedDocumentToClient() {
   ) return
 
   const replacingActiveLink
-    = current.clientPublication?.status === 'ACTIVE'
+    = currentAccess?.status === 'ACTIVE'
 
   const confirmed = window.confirm(
-    replacingActiveLink
-      ? `Envoyer un nouveau lien sécurisé pour ${document.reference} à ${recipient.email} ? L’ancien lien restera utilisable tant que le nouvel email n’aura pas été envoyé avec succès.`
-      : `Envoyer ${document.reference} à ${recipient.email} via un lien sécurisé valable 7 jours ? Aucun document ne sera joint à l’email.`,
+    purpose === 'REDOWNLOAD'
+      ? (
+          replacingActiveLink
+            ? `Envoyer un nouveau lien de retéléchargement pour ${documentReference} à ${recipient.email} ? L’ancien lien restera utilisable tant que le nouvel email n’aura pas été envoyé avec succès.`
+            : `Envoyer un lien de retéléchargement pour ${documentReference} à ${recipient.email}, valable 7 jours ? La décision client existante ne sera pas modifiée.`
+        )
+      : (
+          replacingActiveLink
+            ? `Envoyer un nouveau lien sécurisé pour ${documentReference} à ${recipient.email} ? L’ancien lien restera utilisable tant que le nouvel email n’aura pas été envoyé avec succès.`
+            : `Envoyer ${documentReference} à ${recipient.email} via un lien sécurisé valable 7 jours ? Aucun document ne sera joint à l’email.`
+        ),
   )
 
   if (!confirmed) return
@@ -1761,6 +1873,8 @@ async function sendSignedDocumentToClient() {
         method: 'POST',
 
         body: {
+          purpose,
+
           to:
             recipient.email,
 
@@ -1779,7 +1893,9 @@ async function sendSignedDocumentToClient() {
     succeeded = true
 
     feedback.value
-      = `Lien sécurisé envoyé à ${recipient.email}.`
+      = purpose === 'REDOWNLOAD'
+        ? `Lien de retéléchargement envoyé à ${recipient.email}.`
+        : `Lien sécurisé envoyé à ${recipient.email}.`
   }
   catch (cause) {
     actionError.value
@@ -1808,6 +1924,8 @@ async function sendSignedDocumentToClient() {
 
   if (succeeded) {
     showSendToClientForm.value = false
+    sendToClientPurpose.value
+      = 'INITIAL_CONFIRMATION'
     sendToClientRecipient.value = ''
     sendToClientSubject.value = ''
     sendToClientMessage.value = ''
@@ -2798,6 +2916,95 @@ async function uploadSignedDocument() {
             constitue pas une signature électronique
             qualifiée.
           </p>
+
+          <div
+            v-if="report.clientRedownload"
+            class="notice"
+            role="status"
+          >
+            <p>
+              <strong>Retéléchargement :</strong>
+              {{
+                clientRedownloadStatusLabels[
+                  report.clientRedownload.status
+                ]
+              }}
+            </p>
+
+            <p>
+              <strong>Destinataire :</strong>
+              {{ report.clientRedownload.recipientEmail }}
+            </p>
+
+            <p>
+              <strong>Email envoyé :</strong>
+              {{ dateLabel(report.clientRedownload.emailSentAt) }}
+            </p>
+
+            <p>
+              <strong>Première ouverture :</strong>
+              {{ dateLabel(report.clientRedownload.firstViewedAt) }}
+            </p>
+
+            <p>
+              <strong>Téléchargement :</strong>
+              {{ dateLabel(report.clientRedownload.downloadedAt) }}
+            </p>
+
+            <p>
+              <strong>Expiration :</strong>
+              {{ dateLabel(report.clientRedownload.expiresAt) }}
+            </p>
+
+            <p v-if="report.clientRedownload.revokedAt">
+              <strong>Révocation :</strong>
+              {{ dateLabel(report.clientRedownload.revokedAt) }}
+            </p>
+          </div>
+
+          <p
+            v-else
+            class="muted"
+          >
+            Aucun lien de retéléchargement n’a encore été
+            envoyé pour cette décision.
+          </p>
+
+          <p
+            v-if="report.clientRedownload?.status === 'ACTIVE'"
+            class="muted"
+          >
+            Un lien de retéléchargement est actuellement actif.
+            Un nouvel envoi ne remplacera ce lien qu’après
+            l’envoi réussi du nouvel email.
+          </p>
+
+          <p
+            v-else-if="report.clientRedownload?.status === 'PENDING'"
+            class="muted"
+          >
+            Un lien de retéléchargement est actuellement
+            en préparation. Aucun nouvel envoi ne peut être
+            lancé pour le moment.
+          </p>
+
+          <div
+            v-if="canSendRedownload && !showSendToClientForm"
+            class="official-document-file-actions"
+          >
+            <button
+              type="button"
+              class="button primary"
+              :disabled="busy"
+              @click="openSendToClientForm('REDOWNLOAD')"
+            >
+              {{
+                report.clientRedownload
+                  ? 'Envoyer un nouveau lien de retéléchargement'
+                  : 'Envoyer un lien de retéléchargement'
+              }}
+            </button>
+          </div>
         </section>
 
         <div
@@ -2822,14 +3029,14 @@ async function uploadSignedDocument() {
         </div>
 
         <div
-          v-if="canSendToClient && !showSendToClientForm"
+          v-if="canSendInitialToClient && !showSendToClientForm"
           class="official-document-file-actions"
         >
           <button
             type="button"
             class="button primary"
             :disabled="busy"
-            @click="openSendToClientForm"
+            @click="openSendToClientForm('INITIAL_CONFIRMATION')"
           >
             {{
               report.clientPublication
@@ -2846,7 +3053,13 @@ async function uploadSignedDocument() {
         >
           <div class="mail-form-heading">
             <div>
-              <strong>Publication sécurisée du CRA</strong>
+              <strong>
+                {{
+                  sendToClientPurpose === 'REDOWNLOAD'
+                    ? 'Retéléchargement sécurisé du CRA'
+                    : 'Publication sécurisée du CRA'
+                }}
+              </strong>
 
               <p class="muted">
                 Expéditeur : IFICS - CRA &lt;cra@ifics.org&gt;
@@ -2909,10 +3122,28 @@ async function uploadSignedDocument() {
             />
           </label>
 
-          <p class="muted">
+          <p
+            v-if="sendToClientPurpose === 'REDOWNLOAD'"
+            class="muted"
+          >
+            Aucun fichier n’est joint au message.
+            Le client recevra un nouveau lien personnel et
+            sécurisé vers le CRA accompagné de l’attestation
+            de la décision déjà enregistrée.
+            Ce lien ne permet pas d’accepter ou de refuser
+            une nouvelle fois le CRA.
+            Il est valable 7 jours.
+          </p>
+
+          <p
+            v-else
+            class="muted"
+          >
             Aucun fichier n’est joint au message.
             Le client recevra un lien personnel et sécurisé
-            vers le même CRA signé et approuvé par IFICS.
+            vers le CRA signé et approuvé par IFICS.
+            Ce lien permet de consulter, télécharger puis
+            accepter ou refuser le CRA.
             Le lien initial est valable 7 jours.
           </p>
 
@@ -2931,7 +3162,11 @@ async function uploadSignedDocument() {
               class="button primary"
               :disabled="busy || !sendToClientFormValid"
             >
-              Envoyer le lien sécurisé
+              {{
+                sendToClientPurpose === 'REDOWNLOAD'
+                  ? 'Envoyer le lien de retéléchargement'
+                  : 'Envoyer le lien sécurisé'
+              }}
             </button>
           </div>
         </form>
