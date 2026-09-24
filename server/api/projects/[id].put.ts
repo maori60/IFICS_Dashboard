@@ -7,6 +7,7 @@ import { optionalDate, optionalInteger, optionalMoney, optionalString, requiredE
 import { writeAuditLog } from '../../utils/audit'
 
 const PROJECT_STATUSES = ['DRAFT', 'VALIDATED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] as const
+const PROJECT_TYPES = ['ASSOCIATIVE_ACTION', 'COMMERCIAL_SERVICE'] as const
 const CLASSIFICATIONS = ['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED'] as const
 
 export default defineEventHandler(async (event) => {
@@ -18,9 +19,18 @@ export default defineEventHandler(async (event) => {
     where: { id: projectId, associationId: context.associationId, archivedAt: null },
     select: {
       id: true,
+      type: true,
       status: true,
       classification: true,
-      projectClients: { where: { isMainClient: true }, take: 1, select: { id: true, clientId: true } },
+      projectClients: {
+        select: {
+          id: true,
+          clientId: true,
+          isMainClient: true,
+          isContractualClient: true,
+          isEndClient: true,
+        },
+      },
     },
   })
   if (!existing) httpError(404, 'Projet introuvable.', 'PROJECT_NOT_FOUND')
@@ -28,8 +38,72 @@ export default defineEventHandler(async (event) => {
   const body = safeObject(await readBody(event))
   const startDate = optionalDate(body.startDate, 'Date de début')
   const endDate = optionalDate(body.endDate, 'Date de fin')
+  const projectType = requiredEnum(
+    body.type || existing.type,
+    PROJECT_TYPES,
+    'Type de projet',
+  )
+
   const classification = requiredEnum(body.classification || existing.classification, CLASSIFICATIONS, 'Classification')
-  const clientId = optionalString(body.clientId, 'Client principal', { max: 191 })
+  const legacyClientId
+    = optionalString(
+      body.clientId,
+      'Client',
+      { max: 191 },
+    )
+
+  const previousMainClientId
+    = existing.projectClients.find(
+      link => link.isMainClient,
+    )?.clientId
+      ?? existing.projectClients[0]?.clientId
+      ?? null
+
+  const previousContractualClientId
+    = existing.projectClients.find(
+      link => link.isContractualClient,
+    )?.clientId
+      ?? previousMainClientId
+
+  const previousEndClientId
+    = existing.projectClients.find(
+      link => link.isEndClient,
+    )?.clientId
+      ?? previousMainClientId
+
+  const contractualClientId
+    = optionalString(
+      body.contractualClientId,
+      'Client contractuel',
+      { max: 191 },
+    )
+      || legacyClientId
+      || previousContractualClientId
+
+  const endClientId
+    = optionalString(
+      body.endClientId,
+      'Client final',
+      { max: 191 },
+    )
+      || legacyClientId
+      || previousEndClientId
+
+  if (!contractualClientId) {
+    httpError(
+      400,
+      'Le client contractuel est obligatoire.',
+      'CONTRACTUAL_CLIENT_REQUIRED',
+    )
+  }
+
+  if (!endClientId) {
+    httpError(
+      400,
+      'Le client final est obligatoire.',
+      'END_CLIENT_REQUIRED',
+    )
+  }
 
   if (['CONFIDENTIAL', 'RESTRICTED'].includes(classification)
     && !hasPermission(context, PERMISSIONS.PROJECT_CONFIDENTIAL_READ)) {
@@ -39,15 +113,38 @@ export default defineEventHandler(async (event) => {
     httpError(400, 'La date de fin doit être postérieure à la date de début.', 'INVALID_DATE_RANGE')
   }
 
-  if (clientId) {
-    const client = await prisma.client.findFirst({
-      where: { id: clientId, associationId: context.associationId, archivedAt: null, status: 'ACTIVE' },
-      select: { id: true },
-    })
-    if (!client) httpError(404, 'Client principal introuvable.', 'CLIENT_NOT_FOUND')
-  }
+  const selectedClientIds
+    = [...new Set([
+      contractualClientId,
+      endClientId,
+    ])]
 
-  const previousMainClientId = existing.projectClients[0]?.clientId || null
+  const selectedClients
+    = await prisma.client.findMany({
+      where: {
+        id: {
+          in: selectedClientIds,
+        },
+        associationId:
+          context.associationId,
+        archivedAt:
+          null,
+        status:
+          'ACTIVE',
+      },
+
+      select: {
+        id: true,
+      },
+    })
+
+  if (selectedClients.length !== selectedClientIds.length) {
+    httpError(
+      404,
+      'Un des clients sélectionnés est introuvable ou inactif.',
+      'PROJECT_CLIENT_NOT_FOUND',
+    )
+  }
   const project = await prisma.$transaction(async (tx) => {
     const updated = await tx.project.update({
       where: { id: projectId },
@@ -55,6 +152,7 @@ export default defineEventHandler(async (event) => {
         reference: optionalString(body.reference, 'Référence', { max: 50 }),
         title: requiredString(body.title, 'Titre', { max: 255 }),
         description: optionalString(body.description, 'Description'),
+        type: projectType,
         status: requiredEnum(body.status || existing.status, PROJECT_STATUSES, 'Statut du projet'),
         classification,
         internalComments: optionalString(body.internalComments, 'Commentaires internes'),
@@ -73,23 +171,116 @@ export default defineEventHandler(async (event) => {
       },
     })
 
-    if (clientId && clientId !== previousMainClientId) {
-      await tx.projectClient.updateMany({
-        where: { projectId, isMainClient: true },
-        data: { isMainClient: false },
-      })
+    /*
+     * On retire d'abord les rôles métier actuels.
+     *
+     * Les anciens liens ProjectClient sont conservés pour
+     * l'historique de rattachement, mais ne portent plus
+     * aucun rôle actif.
+     */
+    await tx.projectClient.updateMany({
+      where: {
+        projectId,
+      },
 
-      const existingLink = await tx.projectClient.findFirst({
-        where: { projectId, clientId },
-        select: { id: true },
-      })
+      data: {
+        isMainClient:
+          false,
+
+        isContractualClient:
+          false,
+
+        isEndClient:
+          false,
+      },
+    })
+
+    const upsertProjectClientRole = async (
+      clientId: string,
+      role: {
+        isMainClient: boolean
+        isContractualClient: boolean
+        isEndClient: boolean
+      },
+    ) => {
+      const existingLink
+        = await tx.projectClient.findFirst({
+          where: {
+            projectId,
+            clientId,
+          },
+
+          select: {
+            id: true,
+          },
+        })
 
       if (existingLink) {
-        await tx.projectClient.update({ where: { id: existingLink.id }, data: { isMainClient: true } })
+        await tx.projectClient.update({
+          where: {
+            id: existingLink.id,
+          },
+
+          data: role,
+        })
+
+        return
       }
-      else {
-        await tx.projectClient.create({ data: { projectId, clientId, isMainClient: true } })
-      }
+
+      await tx.projectClient.create({
+        data: {
+          projectId,
+          clientId,
+          ...role,
+        },
+      })
+    }
+
+    if (contractualClientId === endClientId) {
+      await upsertProjectClientRole(
+        endClientId,
+        {
+          isMainClient:
+            true,
+
+          isContractualClient:
+            true,
+
+          isEndClient:
+            true,
+        },
+      )
+    }
+    else {
+      await upsertProjectClientRole(
+        contractualClientId,
+        {
+          isMainClient:
+            false,
+
+          isContractualClient:
+            true,
+
+          isEndClient:
+            false,
+        },
+      )
+
+      await upsertProjectClientRole(
+        endClientId,
+        {
+          // Compatibilité temporaire :
+          // le client principal historique reste le client final.
+          isMainClient:
+            true,
+
+          isContractualClient:
+            false,
+
+          isEndClient:
+            true,
+        },
+      )
     }
 
     return updated
@@ -100,12 +291,28 @@ export default defineEventHandler(async (event) => {
     entityType: 'Project',
     entityId: projectId,
     metadata: {
-      previousStatus: existing.status,
-      status: project.status,
+      previousType:
+        existing.type,
+      type:
+        project.type,
+
+      previousStatus:
+        existing.status,
+      status:
+        project.status,
       previousClassification: existing.classification,
       classification,
       previousMainClientId,
-      mainClientId: clientId || previousMainClientId,
+
+      previousContractualClientId,
+      contractualClientId,
+
+      previousEndClientId,
+      endClientId,
+
+      // Compatibilité de lecture de l'ancien audit.
+      mainClientId:
+        endClientId,
     },
   })
   return success(jsonSafe(project))

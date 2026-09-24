@@ -21,9 +21,28 @@ export default defineEventHandler(async (event) => {
     },
     orderBy: { createdAt: 'desc' },
     select: {
-      id: true, reference: true, title: true, description: true, status: true, classification: true,
+      id: true, reference: true, title: true, description: true, type: true, status: true, classification: true,
       startDate: true, endDate: true, plannedBudget: true, actualBudget: true, createdAt: true, updatedAt: true,
-      projectClients: { orderBy: { isMainClient: 'desc' }, select: { id: true, isMainClient: true, client: { select: { id: true, name: true, type: true } } } },
+      projectClients: {
+        orderBy: [
+          { isEndClient: 'desc' },
+          { isContractualClient: 'desc' },
+          { createdAt: 'asc' },
+        ],
+        select: {
+          id: true,
+          isMainClient: true,
+          isContractualClient: true,
+          isEndClient: true,
+          client: {
+            select: {
+              id: true,
+              name: true,
+              type: true,
+            },
+          },
+        },
+      },
       projectIntervenors: { select: { id: true, assignmentStatus: true, intervenor: { select: { id: true, firstName: true, lastName: true, specialty: true } } } },
       _count: { select: { documents: true, reports: true, billingDocuments: true } },
     },

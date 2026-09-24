@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
       reference: true,
       title: true,
       description: true,
+      type: true,
       status: true,
       classification: true,
       startDate: true,
@@ -42,6 +43,8 @@ export default defineEventHandler(async (event) => {
         select: {
           id: true,
           isMainClient: true,
+          isContractualClient: true,
+          isEndClient: true,
           client: {
             select: { id: true, name: true, type: true, email: true },
           },

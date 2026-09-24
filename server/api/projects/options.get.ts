@@ -18,7 +18,13 @@ export default defineEventHandler(async (event) => {
         : {}),
     },
     orderBy: { createdAt: 'desc' },
-    select: { id: true, reference: true, title: true, status: true },
+    select: {
+      id: true,
+      reference: true,
+      title: true,
+      type: true,
+      status: true,
+    },
   })
 
   return success(projects)
