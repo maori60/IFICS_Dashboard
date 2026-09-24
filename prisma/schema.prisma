@@ -34,6 +34,11 @@ enum ProjectStatus {
   CANCELLED
 }
 
+enum ProjectType {
+  ASSOCIATIVE_ACTION
+  COMMERCIAL_SERVICE
+}
+
 enum IntervenorStatus {
   ACTIVE
   INACTIVE
@@ -396,6 +401,7 @@ model Project {
   reference           String?            @db.VarChar(50)
   title               String             @db.VarChar(255)
   description         String?
+  type                ProjectType        @default(ASSOCIATIVE_ACTION)
   status              ProjectStatus      @default(DRAFT)
   classification      DataClassification @default(INTERNAL)
   internalComments    String?
@@ -426,6 +432,7 @@ model Project {
   @@unique([associationId, reference])
   @@index([associationId])
   @@index([associationId, status])
+  @@index([associationId, type])
   @@index([archivedAt])
 }
 
