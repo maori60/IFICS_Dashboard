@@ -16,6 +16,10 @@ type ClientOption = {
   status: string
 }
 
+type ProjectType =
+  | 'ASSOCIATIVE_ACTION'
+  | 'COMMERCIAL_SERVICE'
+
 type Assignment = {
   id: string
   assignmentStatus: string
@@ -33,6 +37,7 @@ type ProjectDetail = {
   reference: string | null
   title: string
   description: string | null
+  type: ProjectType
   status: string
   classification: string
   startDate: string | null
@@ -51,6 +56,8 @@ type ProjectDetail = {
   projectClients: {
     id: string
     isMainClient: boolean
+    isContractualClient: boolean
+    isEndClient: boolean
     client: {
       id: string
       name: string
@@ -109,10 +116,49 @@ const clients = computed(() =>
   (clientsData.value?.data ?? []).filter(item => item.status === 'ACTIVE'),
 )
 
-const mainClientName = computed(() => {
+const contractualClientName = computed(() => {
   const links = project.value?.projectClients ?? []
+
   return (
-    links.find(item => item.isMainClient)?.client.name
+    links.find(
+      item => item.isContractualClient,
+    )?.client.name
+    ?? links.find(
+      item => item.isMainClient,
+    )?.client.name
+    ?? links[0]?.client.name
+    ?? 'Non renseigné'
+  )
+})
+
+const endClientName = computed(() => {
+  const links = project.value?.projectClients ?? []
+
+  return (
+    links.find(
+      item => item.isEndClient,
+    )?.client.name
+    ?? links.find(
+      item => item.isMainClient,
+    )?.client.name
+    ?? links[0]?.client.name
+    ?? 'Non renseigné'
+  )
+})
+
+const associativeClientName = computed(() => {
+  const links = project.value?.projectClients ?? []
+
+  return (
+    links.find(
+      item => item.isMainClient,
+    )?.client.name
+    ?? links.find(
+      item => item.isContractualClient,
+    )?.client.name
+    ?? links.find(
+      item => item.isEndClient,
+    )?.client.name
     ?? links[0]?.client.name
     ?? 'Non renseigné'
   )
@@ -145,7 +191,18 @@ function assignmentLabel(status: string): string {
 }
 
 const form = reactive({
-  clientId: '',
+  type:
+    'ASSOCIATIVE_ACTION' as ProjectType,
+
+  clientId:
+    '',
+
+  contractualClientId:
+    '',
+
+  endClientId:
+    '',
+
   reference: '',
   title: '',
   description: '',
@@ -165,6 +222,10 @@ const form = reactive({
   sessionUnitPrice: '',
   internalComments: '',
 })
+
+const isCommercial = computed(
+  () => form.type === 'COMMERCIAL_SERVICE',
+)
 
 const budgetFields = [
   { key: 'plannedBudget', label: 'Budget prévisionnel (€)', min: 0 },
@@ -192,8 +253,29 @@ watch(project, (value) => {
     item => item.isMainClient,
   )?.client ?? value.projectClients[0]?.client
 
+  const contractualClient
+    = value.projectClients.find(
+      item => item.isContractualClient,
+    )?.client ?? mainClient
+
+  const endClient
+    = value.projectClients.find(
+      item => item.isEndClient,
+    )?.client ?? mainClient
+
   Object.assign(form, {
-    clientId: mainClient?.id ?? '',
+    type:
+      value.type,
+
+    clientId:
+      mainClient?.id ?? '',
+
+    contractualClientId:
+      contractualClient?.id ?? '',
+
+    endClientId:
+      endClient?.id ?? '',
+
     reference: value.reference ?? '',
     title: value.title,
     description: value.description ?? '',
@@ -238,17 +320,114 @@ function clearMessages() {
 async function save() {
   if (!canWrite.value || busy.value) return
 
-  saving.value = true
   clearMessages()
 
+  if (isCommercial.value) {
+    if (
+      !form.contractualClientId
+      || !form.endClientId
+    ) {
+      errorMessage.value =
+        'Le client contractuel et le client final sont obligatoires pour une prestation commerciale.'
+
+      return
+    }
+  }
+  else if (!form.clientId) {
+    errorMessage.value =
+      'L’organisme ou client lié à l’action est obligatoire.'
+
+    return
+  }
+
+  saving.value = true
+
   try {
+    const commonBody = {
+      type:
+        form.type,
+
+      reference:
+        form.reference,
+
+      title:
+        form.title,
+
+      description:
+        form.description,
+
+      status:
+        form.status,
+
+      classification:
+        form.classification,
+
+      startDate:
+        form.startDate,
+
+      endDate:
+        form.endDate,
+
+      plannedBudget:
+        form.plannedBudget,
+
+      actualBudget:
+        form.actualBudget,
+
+      totalIntervenorCost:
+        form.totalIntervenorCost,
+
+      materialCost:
+        form.materialCost,
+
+      printingCost:
+        form.printingCost,
+
+      otherCost:
+        form.otherCost,
+
+      estimatedNetMargin:
+        form.estimatedNetMargin,
+
+      actualNetMargin:
+        form.actualNetMargin,
+
+      totalSessions:
+        form.totalSessions,
+
+      sessionUnitPrice:
+        form.sessionUnitPrice,
+
+      internalComments:
+        form.internalComments,
+    }
+
+    const clientBody = isCommercial.value
+      ? {
+          contractualClientId:
+            form.contractualClientId,
+
+          endClientId:
+            form.endClientId,
+        }
+      : {
+          clientId:
+            form.clientId,
+        }
+
     await $fetch(projectUrl.value, {
       method: 'PUT',
-      body: { ...form },
+
+      body: {
+        ...commonBody,
+        ...clientBody,
+      },
     })
 
     await refresh()
-    successMessage.value = 'Le projet a été mis à jour.'
+
+    successMessage.value =
+      'Le projet a été mis à jour.'
   }
   catch (err) {
     errorMessage.value = apiErrorMessage(
@@ -464,7 +643,139 @@ async function respondToAssignment(
       <form class="card card-pad" @submit.prevent="save">
         <div class="form-grid">
           <div class="field field-full">
-            <label for="edit-project-client">Client principal</label>
+            <label for="edit-project-type">
+              Nature du projet
+            </label>
+
+            <select
+              v-if="canWrite"
+              id="edit-project-type"
+              v-model="form.type"
+              class="select"
+              :disabled="busy"
+              required
+            >
+              <option value="ASSOCIATIVE_ACTION">
+                Action associative
+              </option>
+
+              <option value="COMMERCIAL_SERVICE">
+                Prestation commerciale / Business
+              </option>
+            </select>
+
+            <input
+              v-else
+              id="edit-project-type"
+              class="input"
+              :value="
+                form.type === 'COMMERCIAL_SERVICE'
+                  ? 'Prestation commerciale / Business'
+                  : 'Action associative'
+              "
+              disabled
+            >
+
+            <span class="help">
+              La nature du projet est indépendante de son mode de financement.
+            </span>
+          </div>
+
+          <template v-if="isCommercial">
+            <div class="field">
+              <label for="edit-contractual-client">
+                Client contractuel / facturé
+              </label>
+
+              <select
+                v-if="canWrite"
+                id="edit-contractual-client"
+                v-model="form.contractualClientId"
+                class="select"
+                :disabled="busy"
+                required
+              >
+                <option value="" disabled>
+                  Sélectionner le client facturé
+                </option>
+
+                <option
+                  v-for="client in clients"
+                  :key="client.id"
+                  :value="client.id"
+                >
+                  {{ client.name }}
+                </option>
+              </select>
+
+              <input
+                v-else
+                id="edit-contractual-client"
+                class="input"
+                :value="contractualClientName"
+                disabled
+              >
+
+              <span class="help">
+                Structure qui reçoit la facture IFICS.
+              </span>
+            </div>
+
+            <div class="field">
+              <label for="edit-end-client">
+                Client final / bénéficiaire
+              </label>
+
+              <select
+                v-if="canWrite"
+                id="edit-end-client"
+                v-model="form.endClientId"
+                class="select"
+                :disabled="busy"
+                required
+              >
+                <option value="" disabled>
+                  Sélectionner le client final
+                </option>
+
+                <option
+                  v-for="client in clients"
+                  :key="client.id"
+                  :value="client.id"
+                >
+                  {{ client.name }}
+                </option>
+              </select>
+
+              <input
+                v-else
+                id="edit-end-client"
+                class="input"
+                :value="endClientName"
+                disabled
+              >
+
+              <span class="help">
+                Structure bénéficiaire de la mission et validatrice du CRA.
+              </span>
+            </div>
+
+            <div class="field field-full">
+              <div class="alert alert-info">
+                Le client contractuel et le client final peuvent être
+                identiques dans le cas d’un contrat direct.
+              </div>
+            </div>
+          </template>
+
+          <div
+            v-else
+            class="field field-full"
+          >
+            <label for="edit-project-client">
+              Organisme / client lié
+            </label>
+
             <select
               v-if="canWrite"
               id="edit-project-client"
@@ -473,7 +784,10 @@ async function respondToAssignment(
               :disabled="busy"
               required
             >
-              <option value="" disabled>Sélectionner</option>
+              <option value="" disabled>
+                Sélectionner une structure
+              </option>
+
               <option
                 v-for="client in clients"
                 :key="client.id"
@@ -482,13 +796,18 @@ async function respondToAssignment(
                 {{ client.name }}
               </option>
             </select>
+
             <input
               v-else
               id="edit-project-client"
               class="input"
-              :value="mainClientName"
+              :value="associativeClientName"
               disabled
             >
+
+            <span class="help">
+              Une action associative peut également être facturée.
+            </span>
           </div>
 
           <div class="field">
