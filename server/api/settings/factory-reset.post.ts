@@ -5,7 +5,7 @@ import { httpError, success } from '../../utils/api'
 import { prisma } from '../../utils/prisma'
 import { safeObject } from '../../utils/validation'
 import { removeStoredFile } from '../../utils/files'
-import { writeAuditLog } from '../../utils/audit'
+import { writeAuditLogStrict } from '../../utils/audit'
 
 const CONFIRMATION = 'RESTAURER'
 
@@ -38,8 +38,8 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  await prisma.$transaction([
-    prisma.association.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.association.update({
       where: { id: context.associationId },
       data: {
         logoUrl: null,
@@ -54,9 +54,9 @@ export default defineEventHandler(async (event) => {
         maintenanceStartsAt: null,
         maintenanceEndsAt: null,
       },
-    }),
+    })
 
-    prisma.associationFinanceSettings.upsert({
+    await tx.associationFinanceSettings.upsert({
       where: { associationId: context.associationId },
       create: {
         associationId: context.associationId,
@@ -77,8 +77,30 @@ export default defineEventHandler(async (event) => {
         maxAssetDocuments: 20,
         maxAssetDocumentMb: 10,
       },
-    }),
-  ])
+    })
+
+    await writeAuditLogStrict(
+      event,
+      context,
+      {
+        action:
+          'ASSOCIATION_FACTORY_SETTINGS_RESTORED',
+        entityType: 'Association',
+        entityId: context.associationId,
+        metadata: {
+          preservedBusinessData: true,
+          preservedLegalIdentity: true,
+          preservedBankingIdentity: true,
+          resetBranding: true,
+          resetDocumentDefaults: true,
+          resetLocaleAndTimezone: true,
+          resetMaintenance: true,
+          fileCleanupBestEffort: true,
+        },
+      },
+      tx,
+    )
+  })
 
   const cleanupErrors: string[] = []
 
@@ -103,21 +125,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  await writeAuditLog(event, context, {
-    action: 'ASSOCIATION_FACTORY_SETTINGS_RESTORED',
-    entityType: 'Association',
-    entityId: context.associationId,
-    metadata: {
-      preservedBusinessData: true,
-      preservedLegalIdentity: true,
-      preservedBankingIdentity: true,
-      resetBranding: true,
-      resetDocumentDefaults: true,
-      resetLocaleAndTimezone: true,
-      resetMaintenance: true,
-      cleanupErrors,
-    },
-  })
 
   return success({
     restored: true,

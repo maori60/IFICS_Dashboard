@@ -146,6 +146,62 @@ describe.skipIf(process.env.BILLING_PAYMENT_INTEGRATION_TESTS !== '1')(
       request.paymentId = ''
     })
 
+    it(
+      'refuse un horodatage pour une date de règlement métier',
+      async () => {
+        const another
+          = await prisma.billingDocument.create({
+            data: {
+              associationId,
+              clientId,
+              createdByUserId: userId,
+              kind: 'INVOICE',
+              number: `FAC-DATE-${token}`,
+              status: 'ISSUED',
+              issueDate:
+                new Date(
+                  Date.UTC(2026, 8, 25),
+                ),
+              currency: 'EUR',
+              subtotal: '100.00',
+              taxRate: '0.00',
+              taxAmount: '0.00',
+              total: '100.00',
+            },
+          })
+
+        request.invoiceId = another.id
+
+        request.body = {
+          amount: '10.00',
+          paidAt:
+            '2026-09-25T14:30:00Z',
+          method: 'BANK_TRANSFER',
+        }
+
+        await expect(
+          postHandler(event),
+        ).rejects.toMatchObject({
+          statusCode: 400,
+          data: {
+            code:
+              'INVALID_PAYMENT_DATE',
+          },
+        })
+
+        expect(
+          await prisma.billingPayment.count({
+            where: {
+              billingDocumentId:
+                another.id,
+            },
+          }),
+        ).toBe(0)
+
+        request.invoiceId = invoiceId
+      },
+    )
+
     it('refuse un trop-perçu', async () => {
       const another = await prisma.billingDocument.create({ data: { associationId, clientId, createdByUserId: userId, kind: 'INVOICE', number: `FAC-OVER-${token}`, status: 'ISSUED', issueDate: new Date(Date.UTC(2026, 8, 25)), currency: 'EUR', subtotal: '100.00', taxRate: '0.00', taxAmount: '0.00', total: '100.00' } })
       request.invoiceId = another.id

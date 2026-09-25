@@ -4,7 +4,6 @@ import { PERMISSIONS } from '../../../utils/constants'
 import { httpError, jsonSafe, prismaErrorCode, requireRouterId, success } from '../../../utils/api'
 import { prisma } from '../../../utils/prisma'
 import {
-  optionalDate,
   optionalString,
   requiredEnum,
   requiredMoney,
@@ -25,6 +24,47 @@ const PAYMENT_METHODS = [
   'CHEQUE',
   'OTHER',
 ] as const
+
+function optionalBusinessDate(
+  value: unknown,
+  label: string,
+): Date | null {
+  if (
+    value === undefined
+    || value === null
+    || value === ''
+  ) {
+    return null
+  }
+
+  const text = String(value).trim()
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    httpError(
+      400,
+      `${label} doit utiliser le format AAAA-MM-JJ.`,
+      'INVALID_PAYMENT_DATE',
+    )
+  }
+
+  const date = new Date(
+    `${text}T00:00:00.000Z`,
+  )
+
+  if (
+    Number.isNaN(date.getTime())
+    || date.toISOString().slice(0, 10)
+      !== text
+  ) {
+    httpError(
+      400,
+      `${label} invalide.`,
+      'INVALID_PAYMENT_DATE',
+    )
+  }
+
+  return date
+}
 
 function moneyToCents(value: string): bigint {
   const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(value)
@@ -71,7 +111,7 @@ export default defineEventHandler(async (event) => {
     select: { timezone: true, currency: true },
   })
 
-  const paidAt = optionalDate(body.paidAt, 'Date du règlement')
+  const paidAt = optionalBusinessDate(body.paidAt, 'Date du règlement')
     ?? businessDateAsUtc(
       new Date(),
       association?.timezone || DEFAULT_BUSINESS_TIMEZONE,

@@ -108,6 +108,95 @@ describe.skipIf(process.env.SETTINGS_INTEGRATION_TESTS !== '1')(
       expect(finance.taxExemptionText).toBeNull()
       expect(finance.maxAssetDocuments).toBe(20)
       expect(finance.maxAssetDocumentMb).toBe(10)
+
+      const audit
+        = await prisma.auditLog.findFirst({
+          where: {
+            associationId,
+            action:
+              'ASSOCIATION_FACTORY_SETTINGS_RESTORED',
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        })
+
+      expect(audit).not.toBeNull()
+      expect(audit?.outcome).toBe('SUCCESS')
     })
+
+    it(
+      'annule la restauration si l’audit strict échoue',
+      async () => {
+        await prisma.association.update({
+          where: {
+            id: associationId,
+          },
+          data: {
+            primaryColor: '#112233',
+          },
+        })
+
+        await prisma.associationFinanceSettings.update({
+          where: {
+            associationId,
+          },
+          data: {
+            paymentTerms:
+              '45 jours test rollback',
+          },
+        })
+
+        const validUserId = request.userId
+
+        request.userId
+          = `missing-user-${token}`
+
+        request.body = {
+          confirmation: 'RESTAURER',
+        }
+
+        try {
+          await expect(
+            handler({
+              context: {
+                requestId:
+                  'reset-audit-rollback',
+              },
+            } as never),
+          ).rejects.toBeDefined()
+        }
+        finally {
+          request.userId = validUserId
+        }
+
+        const association
+          = await prisma.association
+            .findUniqueOrThrow({
+              where: {
+                id: associationId,
+              },
+            })
+
+        expect(
+          association.primaryColor,
+        ).toBe('#112233')
+
+        const finance
+          = await prisma
+            .associationFinanceSettings
+            .findUniqueOrThrow({
+              where: {
+                associationId,
+              },
+            })
+
+        expect(
+          finance.paymentTerms,
+        ).toBe(
+          '45 jours test rollback',
+        )
+      },
+    )
   },
 )
