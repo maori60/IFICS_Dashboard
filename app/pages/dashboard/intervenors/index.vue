@@ -20,6 +20,7 @@ type Intervenor = {
 }
 
 const route = useRoute()
+const deleted = computed(() => route.query.deleted === '1')
 const { data: session } = await useFetch<ApiSuccess<SessionPayload>>('/api/auth/me', { key: 'session-me' })
 const { data, error, refresh } = await useFetch<ApiSuccess<Intervenor[]>>('/api/intervenors')
 
@@ -32,6 +33,7 @@ const archived = computed(() => route.query.archived === '1')
 
 <template>
   <div>
+    <div v-if="deleted" class="alert alert-success" style="margin-bottom:18px">L’intervenant a été supprimé définitivement.</div>
     <div class="page-head">
       <div>
         <h1>Intervenants</h1>

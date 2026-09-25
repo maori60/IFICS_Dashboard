@@ -232,6 +232,7 @@ async function review(status: 'VALIDATED' | 'REFUSED') {
         <p v-if="latestVersion" class="muted" style="margin-bottom: 0">Dernière version : v{{ latestVersion.version }}</p>
       </section>
     </template>
+    <PermanentDeletePanel v-if="report" entity="report" :entity-id="report.id" :label="report.title || 'Bilan'" return-to="/dashboard/reports" />
   </div>
 </template>
 

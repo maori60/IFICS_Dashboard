@@ -1047,6 +1047,7 @@ async function respondToAssignment(
     </template>
 
     <p v-else role="status">Chargement du projet…</p>
+    <PermanentDeletePanel v-if="project" entity="project" :entity-id="project.id" :label="project.title" return-to="/dashboard/projects" />
   </div>
 </template>
 

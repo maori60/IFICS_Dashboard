@@ -10,7 +10,7 @@ export default defineNuxtConfig({
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'theme-color', content: '#123b2a' },
-        { name: 'description', content: 'IFICS — association engagée pour l’éducation, le sport, la culture, le numérique, l’insertion et l’innovation.' },
+        { name: 'description', content: 'IFICS — projets d’éducation, numérique & IT, insertion, culture, sport, innovation et R&D au service des territoires.' },
       ],
     },
   },

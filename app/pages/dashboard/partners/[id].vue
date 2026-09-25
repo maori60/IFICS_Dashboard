@@ -93,6 +93,7 @@ async function addInteraction() {
 
       <form v-if="canWrite" class="card card-pad" style="margin-top:18px" @submit.prevent="addInteraction"><h2>Ajouter une interaction</h2><div class="form-grid"><div class="field"><label for="interaction-kind">Type *</label><input id="interaction-kind" v-model="interaction.kind" class="input" maxlength="80" required placeholder="MEETING, EMAIL, CALL…"></div><div class="field"><label for="interaction-date">Date</label><input id="interaction-date" v-model="interaction.occurredAt" class="input" type="datetime-local"></div><div class="field field-full"><label for="interaction-summary">Résumé *</label><textarea id="interaction-summary" v-model="interaction.summary" class="textarea" rows="5" required maxlength="20000" /></div><div class="field"><label for="interaction-next">Prochaine action</label><input id="interaction-next" v-model="interaction.nextAction" class="input"></div><div class="field"><label for="interaction-next-date">Échéance</label><input id="interaction-next-date" v-model="interaction.nextActionAt" class="input" type="datetime-local"></div></div><button class="btn btn-primary" type="submit" style="margin-top:16px" :disabled="addingInteraction">Ajouter l’interaction</button></form>
     </template>
+    <PermanentDeletePanel v-if="partner" entity="partner" :entity-id="partner.id" :label="partner.name" return-to="/dashboard/partners" />
   </div>
 </template>
 

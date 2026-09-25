@@ -45,6 +45,7 @@ const assignmentLabels: Record<string, string> = {
 }
 
 const route = useRoute()
+const deleted = computed(() => route.query.deleted === '1')
 
 const { data: session } = await useFetch<ApiSuccess<SessionPayload>>(
   '/api/auth/me',
@@ -179,6 +180,7 @@ async function assignIntervenor(project: Project) {
 
 <template>
   <div :aria-busy="loading || Boolean(assigningProjectId)">
+    <div v-if="deleted" class="alert alert-success" style="margin-bottom:18px">Le projet a été supprimé définitivement.</div>
     <div class="page-head">
       <div>
         <h1>{{ isIntervenor ? 'Mes missions' : 'Projets' }}</h1>

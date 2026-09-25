@@ -17,8 +17,8 @@ const values = [
       <div class="container split-section reverse">
         <div class="split-copy">
           <p class="eyebrow">L'association IFICS</p>
-          <h1 class="display-title">Une association qui relie les compétences, les publics et les territoires.</h1>
-          <p class="lead">IFICS conçoit et conduit des actions éducatives, sportives, culturelles, numériques, d’insertion et d’innovation. Chaque projet part d’un besoin identifié et se construit avec les partenaires concernés.</p>
+          <h1 class="display-title">Une association qui relie compétences humaines, technologie et territoires.</h1>
+          <p class="lead">IFICS conçoit et conduit des projets en éducation, numérique & IT, insertion, culture, sport et innovation. L’association peut aussi développer des outils logiciels et des ressources techniques lorsqu’ils répondent à un besoin concret du terrain.</p>
         </div>
         <div class="split-media"><img :src="publicVisuals.association" alt="Coopération entre plusieurs acteurs autour d’un projet IFICS" loading="eager"></div>
       </div>
@@ -26,7 +26,7 @@ const values = [
 
     <section class="section-compact principles-section">
       <div class="container grid grid-3">
-        <article class="card card-pad"><span class="kicker">01 · Mission</span><h2>Donner des outils pour agir</h2><p>Apprendre, progresser, s’exprimer, coopérer et gagner en autonomie à travers des projets concrets.</p></article>
+        <article class="card card-pad"><span class="kicker">01 · Mission</span><h2>Donner des moyens concrets pour agir</h2><p>Apprendre, progresser, s’exprimer, coopérer, utiliser la technologie et gagner en autonomie à travers des projets concrets.</p></article>
         <article class="card card-pad"><span class="kicker">02 · Méthode</span><h2>Construire avec le terrain</h2><p>Partir du contexte local, associer les interlocuteurs utiles et adapter le format aux publics concernés.</p></article>
         <article class="card card-pad"><span class="kicker">03 · Responsabilité</span><h2>Suivre ce que nous faisons</h2><p>Définir des objectifs lisibles, documenter les actions et utiliser les retours pour améliorer les projets suivants.</p></article>
       </div>

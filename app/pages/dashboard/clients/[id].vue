@@ -186,6 +186,7 @@ async function archiveClient() {
         </div>
       </section>
     </template>
+    <PermanentDeletePanel v-if="client" entity="client" :entity-id="client.id" :label="client.name" return-to="/dashboard/clients" />
   </div>
 </template>
 

@@ -7,6 +7,7 @@ useHead({ title: 'Communication' })
 type Entry = { id:string; kind:string; slug:string; titleFr:string; titleEn:string|null; status:string; featured:boolean; publishedAt:string|null; scheduledAt:string|null; updatedAt:string }
 
 const route = useRoute()
+const deleted = computed(() => route.query.deleted === '1')
 const { data: session } = await useFetch<ApiSuccess<SessionPayload>>('/api/auth/me', { key:'session-me' })
 const { data, error, refresh } = await useFetch<ApiSuccess<Entry[]>>('/api/content')
 const entries = computed(() => data.value?.data ?? [])
@@ -21,6 +22,7 @@ function statusLabel(value:string){return ({DRAFT:'Brouillon',REVIEW:'En revue',
 
 <template>
   <div>
+    <div v-if="deleted" class="alert alert-success" style="margin-bottom:18px">Le contenu a été supprimé définitivement.</div>
     <div class="page-head">
       <div><h1>Communication & CMS</h1><p>Contenus publics soumis au workflow de validation.</p></div>
       <div class="actions"><NuxtLink v-if="canWrite" class="btn btn-primary" to="/dashboard/content/create">Nouveau contenu</NuxtLink><button class="btn btn-secondary" type="button" @click="refresh()">Actualiser</button></div>

@@ -32,8 +32,8 @@ const items = computed(() => data.value?.data ?? [])
       <div class="container split-section">
         <div class="split-copy">
           <p class="eyebrow">Logiciels & ressources</p>
-          <h1 class="display-title">Des ressources utiles, documentées et faciles à identifier.</h1>
-          <p class="lead">IFICS peut publier ses propres outils ou recommander des ressources pertinentes. Chaque fiche précise l’origine, la version, la licence et les informations techniques utiles avant téléchargement.</p>
+          <h1 class="display-title">Des logiciels et ressources pensés pour être utiles, lisibles et durables.</h1>
+          <p class="lead">Le pôle Numérique & IT d’IFICS conçoit, documente et publie des outils selon les besoins des projets. Le catalogue peut aussi référencer des ressources utiles, avec leurs versions, licences, plateformes et informations techniques.</p>
           <ul class="feature-list"><li><span>Des ressources gratuites ou ouvertes clairement identifiées.</span></li><li><span>Des versions et changements documentés.</span></li><li><span>Des téléchargements accompagnés des informations techniques utiles.</span></li></ul>
         </div>
         <div class="split-media"><img :src="publicVisuals.resources" alt="Catalogue de ressources et d’outils IFICS"></div>

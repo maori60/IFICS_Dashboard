@@ -157,6 +157,7 @@ async function archiveIntervenor() {
         </div>
       </section>
     </template>
+    <PermanentDeletePanel v-if="intervenor" entity="intervenor" :entity-id="intervenor.id" :label="`${intervenor.firstName} ${intervenor.lastName}`" return-to="/dashboard/intervenors" />
   </div>
 </template>
 

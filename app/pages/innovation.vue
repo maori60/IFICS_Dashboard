@@ -13,8 +13,8 @@ const items = computed(() => data.value?.data ?? [])
       <div class="container split-section">
         <div class="split-copy">
           <p class="eyebrow">Innovation & R&D</p>
-          <h1 class="display-title">Expérimenter, mesurer et documenter des solutions utiles.</h1>
-          <p class="lead">Le pôle Innovation & R&D part de problèmes concrets pour tester des méthodes pédagogiques, des outils numériques et des prototypes. Les résultats sont documentés avant toute diffusion publique.</p>
+          <h1 class="display-title">Concevoir, expérimenter et documenter les solutions de demain.</h1>
+          <p class="lead">Le pôle Innovation & R&D transforme des problèmes concrets en expérimentations : logiciels, automatisations, prototypes, méthodes pédagogiques et outils numériques. Les choix, tests et résultats sont documentés pour pouvoir être compris, transmis et améliorés.</p>
           <div class="hero-actions"><NuxtLink to="/contact" class="btn btn-primary">Échanger avec IFICS</NuxtLink><NuxtLink to="/logiciels" class="btn btn-secondary">Voir les ressources</NuxtLink></div>
         </div>
         <div class="split-media"><img :src="publicVisuals.innovation" alt="Expérimentation et prototypage dans un projet IFICS"></div>

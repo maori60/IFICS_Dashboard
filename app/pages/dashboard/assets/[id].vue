@@ -207,6 +207,7 @@ async function archiveDocument(documentId: string) {
         <button class="btn btn-primary" type="submit" style="margin-top:18px" :disabled="uploading || !documentFile || asset.documents.length >= asset.documentLimits.maxCount">{{ uploading ? 'Envoi…' : 'Ajouter le document' }}</button>
       </form>
     </template>
+    <PermanentDeletePanel v-if="asset" entity="asset" :entity-id="asset.id" :label="asset.inventoryTag" return-to="/dashboard/assets" />
   </div>
 </template>
 

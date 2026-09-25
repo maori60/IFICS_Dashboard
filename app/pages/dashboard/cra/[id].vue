@@ -3542,6 +3542,7 @@ async function uploadSignedDocument() {
     <p v-if="feedback" class="notice" role="status">
       {{ feedback }}
     </p>
+    <PermanentDeletePanel v-if="report" entity="cra" :entity-id="report.id" :label="`CRA ${report.year}-${String(report.month).padStart(2, '0')}`" return-to="/dashboard/cra" />
   </section>
 </template>
 

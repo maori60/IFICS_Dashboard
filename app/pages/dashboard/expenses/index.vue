@@ -3,6 +3,8 @@ import type { ApiSuccess, SessionPayload } from '~/types/api'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 useHead({ title: 'Dépenses — IFICS' })
+const route = useRoute()
+const deleted = computed(() => route.query.deleted === '1')
 
 type Expense = {
   id: string
@@ -47,6 +49,7 @@ const categoryLabel = (value: string) => ({ FUEL: 'Carburant', TOLL: 'Péage', P
 
 <template>
   <div>
+    <div v-if="deleted" class="alert alert-success" style="margin-bottom:18px">La dépense brouillon a été supprimée définitivement.</div>
     <div class="page-head">
       <div><p class="eyebrow">Finances</p><h1>Dépenses</h1><p>Suivi des frais, justificatifs, validations et règlements.</p></div>
       <div class="actions"><a v-if="canExport" class="btn btn-secondary" href="/api/expenses/export">Exporter CSV</a><button class="btn btn-secondary" type="button" @click="refresh()">Actualiser</button><NuxtLink v-if="canCreate" class="btn btn-primary" to="/dashboard/expenses/create">Nouvelle dépense</NuxtLink></div>

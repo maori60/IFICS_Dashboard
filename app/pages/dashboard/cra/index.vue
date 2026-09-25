@@ -7,6 +7,8 @@ definePageMeta({
 })
 
 useHead({ title: 'Comptes rendus d’activité — IFICS' })
+const route = useRoute()
+const deleted = computed(() => route.query.deleted === '1')
 
 const { data: sessionResponse } = await useFetch<ApiSuccess<SessionPayload>>(
   '/api/auth/me',
@@ -143,6 +145,7 @@ function nextPage() {
 
 <template>
   <section class="cra-page" :aria-busy="loading">
+    <div v-if="deleted" class="alert alert-success" style="margin-bottom:18px">Le CRA brouillon a été supprimé définitivement.</div>
     <PageHeader
       title="Comptes rendus d’activité"
       :subtitle="pageSubtitle"

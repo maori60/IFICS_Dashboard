@@ -477,6 +477,7 @@ async function convertQuote() {
         <div v-if="doc.kind === 'QUOTE' && doc.status === 'ACCEPTED' && !doc.convertedInvoices.length" class="actions" style="margin-top:18px"><button class="btn btn-primary" type="button" :disabled="converting" @click="convertQuote">{{ converting ? 'Conversion…' : 'Convertir en facture' }}</button></div>
       </section>
     </template>
+    <PermanentDeletePanel v-if="doc" entity="billing" :entity-id="doc.id" :label="doc.number" return-to="/dashboard/billing" />
   </div>
 </template>
 

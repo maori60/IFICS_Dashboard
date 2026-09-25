@@ -18,6 +18,7 @@ type Report = {
 }
 
 const route = useRoute()
+const deleted = computed(() => route.query.deleted === '1')
 const { data: session } = await useFetch<ApiSuccess<SessionPayload>>('/api/auth/me', { key: 'session-me' })
 const { data, error, refresh } = await useFetch<ApiSuccess<Report[]>>('/api/reports')
 
@@ -40,6 +41,7 @@ function statusLabel(status: string) {
 
 <template>
   <div>
+    <div v-if="deleted" class="alert alert-success" style="margin-bottom:18px">Le bilan brouillon a été supprimé définitivement.</div>
     <div class="page-head">
       <div>
         <h1>Bilans</h1>

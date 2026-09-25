@@ -22,6 +22,7 @@ type Billing = {
 }
 
 const route = useRoute()
+const deleted = computed(() => route.query.deleted === '1')
 const { data: session } = await useFetch<ApiSuccess<SessionPayload>>('/api/auth/me', { key: 'session-me' })
 const { data, error, refresh } = await useFetch<ApiSuccess<Billing[]>>('/api/billing')
 
@@ -36,6 +37,7 @@ const kindLabel = (value: string) => value === 'QUOTE' ? 'Devis' : value === 'IN
 
 <template>
   <div>
+    <div v-if="deleted" class="alert alert-success" style="margin-bottom:18px">Le brouillon a été supprimé définitivement.</div>
     <div class="page-head">
       <div>
         <h1>Facturation</h1>
