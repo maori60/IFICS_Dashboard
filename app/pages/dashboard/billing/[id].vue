@@ -60,6 +60,24 @@ type BillingDocument = {
   convertedInvoices: { id: string; number: string; status: string }[]
 }
 type EditableLine = { description: string; quantity: string; unitPrice: string }
+type BillingPayment = {
+  id: string
+  amount: string
+  currency: string
+  paidAt: string
+  method: string
+  reference: string | null
+  note: string | null
+  reversedAt: string | null
+  reversalReason: string | null
+  createdAt: string
+}
+type PaymentSummary = {
+  invoice: { id: string; number: string; total: string; currency: string; status: string }
+  paidAmount: string
+  remainingAmount: string
+  payments: BillingPayment[]
+}
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))
@@ -75,6 +93,18 @@ const changing = ref(false)
 const converting = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+const paymentSummary = ref<PaymentSummary | null>(null)
+const loadingPayments = ref(false)
+const recordingPayment = ref(false)
+const reversingPaymentId = ref<string | null>(null)
+const reversalReason = ref('')
+const paymentForm = reactive({
+  amount: '',
+  paidAt: '',
+  method: 'BANK_TRANSFER',
+  reference: '',
+  note: '',
+})
 
 const form = reactive({ dueDate: '', subject: '', notes: '', taxRate: '0', lines: [] as EditableLine[] })
 
@@ -88,13 +118,64 @@ watch(doc, (value) => {
 }, { immediate: true })
 
 const money = (value: string | number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: doc.value?.currency || 'EUR' }).format(Number(value))
-const date = (value: string | null) => value ? new Date(value).toLocaleDateString('fr-FR') : '—'
+const date = (value: string | null) => value ? new Intl.DateTimeFormat('fr-FR', { timeZone: 'UTC' }).format(new Date(value)) : '—'
 const kindLabel = computed(() => doc.value?.kind === 'QUOTE' ? 'Devis' : 'Facture')
+
+function currentBusinessDateIso(): string {
+  const timeZone = session.value?.data.association?.timezone || 'Europe/Paris'
+  let formatter: Intl.DateTimeFormat
+  try {
+    formatter = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })
+  }
+  catch {
+    formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' })
+  }
+  const parts = formatter.formatToParts(new Date())
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find(item => item.type === type)?.value || ''
+  return `${part('year')}-${part('month')}-${part('day')}`
+}
+
+function paymentMethodLabel(value: string) {
+  return ({
+    BANK_TRANSFER: 'Virement bancaire',
+    CARD: 'Carte bancaire',
+    DIRECT_DEBIT: 'Prélèvement',
+    CASH: 'Espèces',
+    CHEQUE: 'Chèque',
+    OTHER: 'Autre',
+  } as Record<string, string>)[value] || value
+}
+
+async function loadPayments() {
+  if (doc.value?.kind !== 'INVOICE') {
+    paymentSummary.value = null
+    return
+  }
+  loadingPayments.value = true
+  try {
+    const response = await $fetch<ApiSuccess<PaymentSummary>>(`/api/billing/${id.value}/payments`)
+    paymentSummary.value = response.data
+    if (!paymentForm.amount || Number(paymentForm.amount) <= 0) {
+      paymentForm.amount = response.data.remainingAmount
+    }
+    if (!paymentForm.paidAt) paymentForm.paidAt = currentBusinessDateIso()
+  }
+  catch (err) {
+    errorMessage.value = apiErrorMessage(err, 'Les règlements de la facture n’ont pas pu être chargés.')
+  }
+  finally {
+    loadingPayments.value = false
+  }
+}
+
+watch(() => doc.value?.kind, async () => {
+  await loadPayments()
+}, { immediate: true })
 
 const nextStatuses = computed(() => {
   if (!doc.value) return [] as string[]
   const quote: Record<string, string[]> = { DRAFT: ['ISSUED', 'CANCELLED'], ISSUED: ['SENT', 'ACCEPTED', 'REJECTED', 'CANCELLED'], SENT: ['ACCEPTED', 'REJECTED', 'CANCELLED'], ACCEPTED: ['CANCELLED'], REJECTED: ['CANCELLED'], CANCELLED: [] }
-  const invoice: Record<string, string[]> = { DRAFT: ['ISSUED', 'CANCELLED'], ISSUED: ['SENT', 'PARTIALLY_PAID', 'PAID', 'CANCELLED'], SENT: ['PARTIALLY_PAID', 'PAID', 'OVERDUE', 'CANCELLED'], PARTIALLY_PAID: ['PAID', 'OVERDUE'], OVERDUE: ['PARTIALLY_PAID', 'PAID', 'CANCELLED'], PAID: [], CANCELLED: [] }
+  const invoice: Record<string, string[]> = { DRAFT: ['ISSUED', 'CANCELLED'], ISSUED: ['SENT', 'CANCELLED'], SENT: ['OVERDUE', 'CANCELLED'], PARTIALLY_PAID: ['OVERDUE'], OVERDUE: ['CANCELLED'], PAID: [], CANCELLED: [] }
   return (doc.value.kind === 'QUOTE' ? quote : invoice)[doc.value.status] || []
 })
 
@@ -131,6 +212,77 @@ async function changeStatus(status: string) {
   }
   catch (err) { errorMessage.value = apiErrorMessage(err, 'Le statut n’a pas pu être modifié.') }
   finally { changing.value = false }
+}
+
+async function recordPayment() {
+  if (!canWrite.value || recordingPayment.value || doc.value?.kind !== 'INVOICE') return
+  recordingPayment.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+  try {
+    await $fetch(`/api/billing/${id.value}/payments`, {
+      method: 'POST',
+      body: {
+        amount: paymentForm.amount,
+        paidAt: paymentForm.paidAt,
+        method: paymentForm.method,
+        reference: paymentForm.reference || undefined,
+        note: paymentForm.note || undefined,
+      },
+    })
+    paymentForm.reference = ''
+    paymentForm.note = ''
+    await Promise.all([refresh(), loadPayments()])
+    successMessage.value = 'Règlement enregistré et solde de la facture recalculé.'
+  }
+  catch (err) {
+    errorMessage.value = apiErrorMessage(err, 'Le règlement n’a pas pu être enregistré.')
+  }
+  finally {
+    recordingPayment.value = false
+  }
+}
+
+async function reversePayment(paymentId: string) {
+  if (
+    !canWrite.value
+    || reversingPaymentId.value !== paymentId
+    || !reversalReason.value.trim()
+  ) return
+
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    await $fetch(
+      `/api/billing/${id.value}/payments/${paymentId}/reverse`,
+      {
+        method: 'POST',
+        body: { reason: reversalReason.value },
+      },
+    )
+
+    reversingPaymentId.value = null
+    reversalReason.value = ''
+    await Promise.all([refresh(), loadPayments()])
+    successMessage.value = 'Le règlement a été annulé et le solde de la facture recalculé.'
+  }
+  catch (err) {
+    errorMessage.value = apiErrorMessage(
+      err,
+      'Le règlement n’a pas pu être annulé.',
+    )
+  }
+}
+
+function preparePaymentReversal(paymentId: string) {
+  reversingPaymentId.value = paymentId
+  reversalReason.value = ''
+}
+
+function cancelPaymentReversal() {
+  reversingPaymentId.value = null
+  reversalReason.value = ''
 }
 
 async function convertQuote() {
@@ -194,7 +346,92 @@ async function convertQuote() {
       </section>
 
       <section v-if="doc.kind === 'INVOICE'" class="card card-pad payment-card">
-        <h2>Règlement</h2>
+        <h2>Règlements</h2>
+        <div v-if="loadingPayments" class="empty-state">Chargement des règlements…</div>
+        <template v-else-if="paymentSummary">
+          <div class="payment-balance">
+            <div><span>Total facture</span><strong>{{ money(doc.total) }}</strong></div>
+            <div><span>Déjà encaissé</span><strong>{{ money(paymentSummary.paidAmount) }}</strong></div>
+            <div><span>Reste à encaisser</span><strong>{{ money(paymentSummary.remainingAmount) }}</strong></div>
+          </div>
+
+          <form
+            v-if="canWrite && Number(paymentSummary.remainingAmount) > 0 && ['ISSUED', 'SENT', 'PARTIALLY_PAID', 'OVERDUE'].includes(doc.status)"
+            class="payment-entry"
+            @submit.prevent="recordPayment"
+          >
+            <h3>Enregistrer un encaissement</h3>
+            <div class="form-grid">
+              <div class="field"><label for="payment-amount">Montant *</label><input id="payment-amount" v-model="paymentForm.amount" class="input" type="number" min="0.01" step="0.01" required></div>
+              <div class="field"><label for="payment-date">Date du règlement *</label><input id="payment-date" v-model="paymentForm.paidAt" class="input" type="date" required></div>
+              <div class="field"><label for="payment-method">Moyen *</label><select id="payment-method" v-model="paymentForm.method" class="select"><option value="BANK_TRANSFER">Virement bancaire</option><option value="CARD">Carte bancaire</option><option value="DIRECT_DEBIT">Prélèvement</option><option value="CHEQUE">Chèque</option><option value="CASH">Espèces</option><option value="OTHER">Autre</option></select></div>
+              <div class="field"><label for="payment-reference">Référence</label><input id="payment-reference" v-model="paymentForm.reference" class="input" maxlength="120"></div>
+              <div class="field field-full"><label for="payment-note">Note</label><textarea id="payment-note" v-model="paymentForm.note" class="textarea" rows="2" maxlength="5000" /></div>
+            </div>
+            <button class="btn btn-primary" type="submit" :disabled="recordingPayment">{{ recordingPayment ? 'Enregistrement…' : 'Enregistrer le règlement' }}</button>
+          </form>
+
+          <div v-if="paymentSummary.payments.length" class="payment-history">
+            <h3>Historique</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Date</th><th>Montant</th><th>Moyen</th><th>Référence</th><th>État</th><th v-if="canWrite">Action</th></tr>
+                </thead>
+                <tbody>
+                  <tr v-for="payment in paymentSummary.payments" :key="payment.id" :class="{ 'payment-reversed': payment.reversedAt }">
+                    <td>{{ date(payment.paidAt) }}</td>
+                    <td>{{ money(payment.amount) }}</td>
+                    <td>{{ paymentMethodLabel(payment.method) }}</td>
+                    <td>{{ payment.reference || '—' }}</td>
+                    <td>
+                      <span v-if="payment.reversedAt" class="badge">Annulé</span>
+                      <span v-else class="badge">Comptabilisé</span>
+                    </td>
+                    <td v-if="canWrite">
+                      <button
+                        v-if="!payment.reversedAt"
+                        class="btn btn-secondary btn-small"
+                        type="button"
+                        @click="preparePaymentReversal(payment.id)"
+                      >
+                        Annuler le règlement
+                      </button>
+                      <span v-else class="muted">{{ payment.reversalReason || 'Annulation enregistrée' }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <form
+              v-if="reversingPaymentId"
+              class="payment-reversal"
+              @submit.prevent="reversePayment(reversingPaymentId)"
+            >
+              <div class="alert alert-warning">
+                L’annulation conserve le règlement dans l’historique et recalcule le solde. Cette action est journalisée.
+              </div>
+              <div class="field">
+                <label for="payment-reversal-reason">Motif d’annulation *</label>
+                <textarea
+                  id="payment-reversal-reason"
+                  v-model="reversalReason"
+                  class="textarea"
+                  rows="3"
+                  maxlength="2000"
+                  required
+                />
+              </div>
+              <div class="actions">
+                <button class="btn btn-danger" type="submit" :disabled="!reversalReason.trim()">Confirmer l’annulation</button>
+                <button class="btn btn-secondary" type="button" @click="cancelPaymentReversal">Conserver le règlement</button>
+              </div>
+            </form>
+          </div>
+        </template>
+
+        <h3>Coordonnées bancaires</h3>
         <div v-if="doc.finance?.iban" class="payment-grid">
           <div><span class="muted">Titulaire</span><strong>{{ doc.finance.bankAccountHolder || doc.association.billingName || doc.association.legalName || doc.association.name }}</strong></div>
           <div><span class="muted">Banque</span><strong>{{ doc.finance.bankName || '—' }}</strong></div>
@@ -244,5 +481,10 @@ async function convertQuote() {
 </template>
 
 <style scoped>
-h2{margin-top:0}.billing-overview{display:grid;grid-template-columns:1.3fr .7fr;gap:18px;margin-bottom:18px}.billing-overview p{margin-bottom:0}.total-line{display:flex;justify-content:space-between;gap:20px;padding:10px 0;border-bottom:1px solid var(--ifics-border)}.total-ttc{font-size:1.15rem;border-bottom:0}.tax-note{font-size:.82rem}.payment-card{margin-bottom:18px}.payment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.payment-grid>div{display:flex;flex-direction:column;gap:4px}.payment-wide{grid-column:1/-1}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.payment-terms{white-space:pre-wrap;margin-bottom:0}.totals{max-width:390px;margin-left:auto;margin-top:18px}.totals p{display:flex;justify-content:space-between;gap:22px}.grand-total{font-size:1.15rem;padding-top:10px;border-top:1px solid var(--ifics-border)}@media(max-width:800px){.billing-overview,.payment-grid{grid-template-columns:1fr}.payment-wide{grid-column:auto}}
+h2{margin-top:0}.billing-overview{display:grid;grid-template-columns:1.3fr .7fr;gap:18px;margin-bottom:18px}.billing-overview p{margin-bottom:0}.total-line{display:flex;justify-content:space-between;gap:20px;padding:10px 0;border-bottom:1px solid var(--ifics-border)}.total-ttc{font-size:1.15rem;border-bottom:0}.tax-note{font-size:.82rem}.payment-card{margin-bottom:18px}.payment-balance{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}.payment-balance>div{display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid var(--ifics-border);border-radius:10px}.payment-entry{margin:18px 0;padding:18px;border:1px solid var(--ifics-border);border-radius:12px;background:#fafcfb}.payment-history{margin:18px 0}.payment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.payment-grid>div{display:flex;flex-direction:column;gap:4px}.payment-wide{grid-column:1/-1}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}.payment-terms{white-space:pre-wrap;margin-bottom:0}.totals{max-width:390px;margin-left:auto;margin-top:18px}.totals p{display:flex;justify-content:space-between;gap:22px}.grand-total{font-size:1.15rem;padding-top:10px;border-top:1px solid var(--ifics-border)}@media(max-width:800px){.billing-overview,.payment-grid,.payment-balance{grid-template-columns:1fr}.payment-wide{grid-column:auto}}
+
+.payment-reversal { margin-top: 16px; padding: 16px; border: 1px solid var(--ifics-border); border-radius: 12px; }
+.payment-reversed { opacity: .68; }
+.payment-reversed td:nth-child(2) { text-decoration: line-through; }
+.btn-small { padding: 7px 10px; font-size: .82rem; }
 </style>

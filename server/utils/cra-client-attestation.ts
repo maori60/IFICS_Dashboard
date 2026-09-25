@@ -50,6 +50,7 @@ export type CraClientAttestationPdfInput = {
   comment?: string | null
 
   decidedAt: Date | string
+  timeZone?: string | null
 
   sourceDocumentReference: string
   sourceDocumentSha256: string
@@ -271,6 +272,7 @@ function parseDecisionDate(
 
 function formatDecisionDate(
   date: Date,
+  timeZone?: string | null,
 ): string {
   return new Intl.DateTimeFormat(
     'fr-FR',
@@ -281,7 +283,7 @@ function formatDecisionDate(
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      timeZone: 'Europe/Paris',
+      timeZone: timeZone || 'Europe/Paris',
     },
   ).format(date)
 }
@@ -691,7 +693,7 @@ export async function generateCraClientAttestationPdf(
   drawField(
     page,
     'Décision enregistrée',
-    `${formatDecisionDate(decidedAt)} - Europe/Paris`,
+    `${formatDecisionDate(decidedAt, input.timeZone)} - ${input.timeZone || 'Europe/Paris'}`,
     rightX,
     rightY,
     fieldWidth,

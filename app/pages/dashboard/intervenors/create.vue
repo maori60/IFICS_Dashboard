@@ -5,11 +5,46 @@ import { apiErrorMessage } from '~/utils/api-error'
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 useHead({ title: 'Nouvel intervenant' })
 
+type UserOption = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  status: string
+  role: {
+    code: string
+    name: string
+  }
+  intervenorProfile: {
+    id: string
+    firstName: string
+    lastName: string
+  } | null
+}
+
 const { data: session } = await useFetch<ApiSuccess<SessionPayload>>('/api/auth/me', { key: 'session-me' })
 const permissions = computed(() => session.value?.data.user.permissions ?? [])
 const canCreate = computed(() => permissions.value.includes('*') || permissions.value.includes('intervenor:write'))
+const canLinkAccount = computed(() =>
+  permissions.value.includes('*')
+  || permissions.value.includes('user:manage'),
+)
+
+const { data: usersData, status: usersStatus, error: usersError } = await useFetch<
+  ApiSuccess<UserOption[]>
+>('/api/users', {
+  immediate: canLinkAccount.value,
+})
+
+const availableUsers = computed(() =>
+  (usersData.value?.data ?? []).filter(user =>
+    !user.intervenorProfile
+    && user.role.code !== 'CLIENT',
+  ),
+)
 
 const form = reactive({
+  userId: '',
   firstName: '',
   lastName: '',
   email: '',
@@ -84,6 +119,45 @@ async function submit() {
         <div class="field">
           <label for="email">E-mail *</label>
           <input id="email" v-model="form.email" class="input" type="email" required maxlength="255">
+        </div>
+
+        <div v-if="canLinkAccount" class="field field-full">
+          <label for="linkedUser">Compte utilisateur associé</label>
+
+          <select
+            id="linkedUser"
+            v-model="form.userId"
+            class="select"
+            :disabled="usersStatus === 'pending' || Boolean(usersError)"
+          >
+            <option value="">
+              Aucun compte associé
+            </option>
+
+            <option
+              v-for="account in availableUsers"
+              :key="account.id"
+              :value="account.id"
+            >
+              {{ account.firstName }} {{ account.lastName }}
+              — {{ account.email }}
+              — {{ account.role.name }}
+            </option>
+          </select>
+
+          <span class="help">
+            Optionnel. Permet notamment à un administrateur ou un gestionnaire
+            d’être également identifié comme intervenant sans changer son rôle principal.
+          </span>
+
+          <span v-if="usersStatus === 'pending'" class="help">
+            Chargement des comptes…
+          </span>
+
+          <span v-else-if="usersError" class="help">
+            Les comptes utilisateurs n’ont pas pu être chargés.
+            La fiche peut tout de même être créée sans rattachement.
+          </span>
         </div>
         <div class="field">
           <label for="phone">Téléphone</label>

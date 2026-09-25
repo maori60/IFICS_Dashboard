@@ -173,3 +173,40 @@ model HrContract {
   @@index([templateId])
   @@index([createdByUserId])
 }
+enum BillingPaymentMethod {
+  BANK_TRANSFER
+  CARD
+  DIRECT_DEBIT
+  CASH
+  CHEQUE
+  OTHER
+}
+
+model BillingPayment {
+  id               String               @id @default(cuid())
+  associationId    String
+  billingDocumentId String
+  amount           Decimal              @db.Decimal(12, 2)
+  currency         String               @default("EUR") @db.VarChar(3)
+  paidAt           DateTime
+  method           BillingPaymentMethod
+  reference        String?              @db.VarChar(120)
+  note             String?
+  recordedByUserId String?
+  reversedAt       DateTime?
+  reversedByUserId String?
+  reversalReason   String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  association      Association          @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  billingDocument  BillingDocument      @relation(fields: [billingDocumentId], references: [id], onDelete: Cascade)
+  recordedByUser   User?                @relation("BillingPaymentRecordedBy", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+  reversedByUser   User?                @relation("BillingPaymentReversedBy", fields: [reversedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([associationId, paidAt])
+  @@index([billingDocumentId, paidAt])
+  @@index([recordedByUserId])
+  @@index([reversedByUserId])
+  @@index([reversedAt])
+}

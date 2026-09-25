@@ -105,6 +105,9 @@ ps:
 ready:
 	@curl --fail --silent --show-error http://127.0.0.1:$${APP_PORT:-3000}/api/ready && echo
 
+preflight:
+	sh scripts/preflight.sh
+
 backup:
 	sh scripts/backup.sh
 
@@ -121,4 +124,4 @@ shell-db:
 
 .PHONY: dev-build dev-db dev-init dev-up dev-down dev-restart dev-logs dev-ps \
 	dev-migrate dev-seed dev-generate dev-reset dev-shell-app dev-shell-db dev-clean \
-	build prod-db prod-migrate prod-seed prod-init up down restart logs ps ready backup restore shell-app shell-db
+	build prod-db prod-migrate prod-seed prod-init up down restart logs ps ready preflight backup restore shell-app shell-db

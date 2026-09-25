@@ -69,6 +69,9 @@ const saving = ref(false)
 const uploadingLogo = ref(false)
 const uploadingSignature = ref(false)
 const deletingSignature = ref(false)
+const resettingFactory = ref(false)
+const factoryConfirmation = ref('')
+const factoryResetOpen = ref(false)
 
 const successMessage = ref('')
 const errorMessage = ref('')
@@ -312,6 +315,43 @@ async function deleteSignature() {
   }
 }
 
+async function restoreFactorySettings() {
+  if (
+    resettingFactory.value
+    || factoryConfirmation.value !== 'RESTAURER'
+  ) return
+
+  resettingFactory.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    await $fetch('/api/settings/factory-reset', {
+      method: 'POST',
+      body: { confirmation: factoryConfirmation.value },
+    })
+
+    factoryConfirmation.value = ''
+    factoryResetOpen.value = false
+    signatureFile.value = null
+    logoFile.value = null
+    signatureInputKey.value += 1
+
+    await Promise.all([refresh(), refreshSignature()])
+
+    successMessage.value = 'Les paramètres usine ont été restaurés. Les données métier et les informations légales/bancaires ont été conservées.'
+  }
+  catch (err) {
+    errorMessage.value = apiErrorMessage(
+      err,
+      'La restauration des paramètres usine a échoué.',
+    )
+  }
+  finally {
+    resettingFactory.value = false
+  }
+}
+
 async function save() {
   if (saving.value) return
   saving.value = true
@@ -526,6 +566,27 @@ async function save() {
         <NuxtLink class="btn btn-secondary" to="/dashboard/settings/contracts">Gérer les modèles</NuxtLink>
       </section>
 
+      <section class="card card-pad settings-section danger-zone">
+        <div class="danger-head">
+          <div>
+            <h2>Restauration des paramètres usine</h2>
+            <p class="muted">Remet les réglages techniques IFICS à leurs valeurs par défaut : identité visuelle, logo, signature CRA, pied de page PDF, fuseau, locale, devise, maintenance et limites documentaires.</p>
+          </div>
+          <button class="btn btn-secondary" type="button" @click="factoryResetOpen = !factoryResetOpen">{{ factoryResetOpen ? 'Fermer' : 'Restaurer…' }}</button>
+        </div>
+
+        <div v-if="factoryResetOpen" class="factory-confirm">
+          <div class="alert alert-warning">
+            <strong>Action sensible.</strong> Les clients, projets, utilisateurs, intervenants, CRA, factures, règlements, dépenses et documents métier ne seront pas supprimés. L’identité légale et les coordonnées bancaires sont également conservées. Une session MFA validée est obligatoire.
+          </div>
+          <p>Saisissez <strong>RESTAURER</strong> pour confirmer :</p>
+          <div class="factory-actions">
+            <input v-model="factoryConfirmation" class="input" autocomplete="off" spellcheck="false" placeholder="RESTAURER">
+            <button class="btn btn-secondary danger-button" type="button" :disabled="resettingFactory || factoryConfirmation !== 'RESTAURER'" @click="restoreFactorySettings">{{ resettingFactory ? 'Restauration…' : 'Confirmer la restauration' }}</button>
+          </div>
+        </div>
+      </section>
+
       <div class="save-bar"><button class="btn btn-primary" type="button" :disabled="saving" @click="save">{{ saving ? 'Enregistrement…' : 'Enregistrer les paramètres' }}</button></div>
     </template>
   </div>
@@ -701,4 +762,11 @@ async function save() {
     height: 120px;
   }
 }
+
+.danger-zone { border-color: #e7c6c6; }
+.danger-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; }
+.factory-confirm { margin-top: 16px; padding-top: 16px; border-top: 1px solid #ead6d6; }
+.factory-actions { display: grid; grid-template-columns: minmax(180px, 1fr) auto; gap: 12px; }
+.danger-button { border-color: #b94b4b; color: #8f2f2f; }
+@media (max-width: 720px) { .danger-head { flex-direction: column; } .factory-actions { grid-template-columns: 1fr; } }
 </style>

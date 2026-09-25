@@ -8,24 +8,111 @@ const session = computed(() => sessionResponse.value?.data ?? null)
 const permissions = computed(() => new Set(session.value?.user.permissions ?? []))
 const can = (permission: string) => permissions.value.has('*') || permissions.value.has(permission)
 
-const navigation = computed(() => [
-  { label: 'Vue générale', to: '/dashboard', visible: true },
-  { label: 'Clients', to: '/dashboard/clients', visible: can('client:read') },
-  { label: 'Projets', to: '/dashboard/projects', visible: can('project:read') },
-  { label: 'Intervenants', to: '/dashboard/intervenors', visible: can('intervenor:read') },
-  { label: 'Bilans', to: '/dashboard/reports', visible: can('report:read') },
-  { label: 'CRA', to: '/dashboard/cra', visible: can('cra:read:all') || (can('cra:read:own') && Boolean(session.value?.user.intervenorId)),},
-  { label: 'Facturation', to: '/dashboard/billing', visible: can('billing:read') },
-  { label: 'Support', to: '/dashboard/tickets', visible: can('ticket:read') },
-  { label: 'Partenaires', to: '/dashboard/partners', visible: can('partner:read') },
-  { label: 'Communication', to: '/dashboard/content', visible: can('content:read') },
-  { label: 'R&D', to: '/dashboard/rnd', visible: can('rnd:read') },
-  { label: 'Parc IT', to: '/dashboard/assets', visible: can('it:read') },
-  { label: 'RH', to: '/dashboard/hr', visible: can('hr:read') },
-  { label: 'Système', to: '/dashboard/system', visible: can('audit:read') },
-  { label: 'Administration', to: '/dashboard/admin', visible: can('user:manage') || can('audit:read') },
-  { label: 'Paramètres', to: '/dashboard/settings', visible: can('settings:manage') },
-].filter(item => item.visible))
+type NavigationItem = {
+  label: string
+  to: string
+  visible: boolean
+}
+
+type NavigationSection = {
+  label: string
+  items: NavigationItem[]
+}
+
+const navigationSections = computed<NavigationSection[]>(() => [
+  {
+    label: 'ACTIVITÉ',
+    items: [
+      { label: 'Clients', to: '/dashboard/clients', visible: can('client:read') },
+      { label: 'Projets', to: '/dashboard/projects', visible: can('project:read') },
+      { label: 'Bilans', to: '/dashboard/reports', visible: can('report:read') },
+      {
+        label: 'CRA',
+        to: '/dashboard/cra',
+        visible:
+          can('cra:read:all')
+          || (
+            can('cra:read:own')
+            && Boolean(session.value?.user.intervenorId)
+          ),
+      },
+      { label: 'Support', to: '/dashboard/tickets', visible: can('ticket:read') },
+    ].filter(item => item.visible),
+  },
+  {
+    label: 'FINANCES & COMPTABILITÉ',
+    items: [
+      {
+        label: 'Facturation',
+        to: '/dashboard/billing',
+        visible: can('billing:read'),
+      },
+      {
+        label: 'Dépenses',
+        to: '/dashboard/expenses',
+        visible:
+          can('expense:read:all')
+          || can('expense:read:own')
+          || can('expense:review')
+          || can('expense:manage'),
+      },
+      {
+        label: 'Périodes & clôture',
+        to: '/dashboard/accounting/periods',
+        visible: can('accounting:read'),
+      },
+    ].filter(item => item.visible),
+  },
+  {
+    label: 'ÉQUIPE INTERNE',
+    items: [
+      { label: 'RH', to: '/dashboard/hr', visible: can('hr:read') },
+    ].filter(item => item.visible),
+  },
+  {
+    label: 'ÉQUIPE EXTERNE',
+    items: [
+      {
+        label: 'Intervenants',
+        to: '/dashboard/intervenors',
+        visible: can('intervenor:read'),
+      },
+      {
+        label: 'Partenaires',
+        to: '/dashboard/partners',
+        visible: can('partner:read'),
+      },
+    ].filter(item => item.visible),
+  },
+  {
+    label: 'RESSOURCES',
+    items: [
+      {
+        label: 'Communication',
+        to: '/dashboard/content',
+        visible: can('content:read'),
+      },
+      { label: 'R&D', to: '/dashboard/rnd', visible: can('rnd:read') },
+      { label: 'Parc IT', to: '/dashboard/assets', visible: can('it:read') },
+    ].filter(item => item.visible),
+  },
+  {
+    label: 'SYSTÈME',
+    items: [
+      { label: 'Système', to: '/dashboard/system', visible: can('audit:read') },
+      {
+        label: 'Administration',
+        to: '/dashboard/admin',
+        visible: can('user:manage') || can('audit:read'),
+      },
+      {
+        label: 'Paramètres',
+        to: '/dashboard/settings',
+        visible: can('settings:manage'),
+      },
+    ].filter(item => item.visible),
+  },
+].filter(section => section.items.length > 0))
 
 function active(to: string) {
   return to === '/dashboard' ? route.path === to : route.path.startsWith(to)
@@ -46,7 +133,33 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
       <NuxtLink to="/dashboard" class="dash-brand"><span>I</span><div><strong>IFICS</strong><small>Espace sécurisé</small></div></NuxtLink>
       <div class="workspace"><small>Organisation</small><strong>{{ session?.association?.name || 'IFICS' }}</strong><span>{{ session?.user.roleName || 'Compte' }}</span></div>
       <nav aria-label="Navigation espace IFICS">
-        <NuxtLink v-for="item in navigation" :key="item.to" :to="item.to" :class="{ active: active(item.to) }">{{ item.label }}</NuxtLink>
+        <NuxtLink
+          to="/dashboard"
+          :class="{ active: active('/dashboard') }"
+        >
+          Vue générale
+        </NuxtLink>
+
+        <section
+          v-for="section in navigationSections"
+          :key="section.label"
+          class="nav-section"
+        >
+          <p class="nav-section-label">
+            {{ section.label }}
+          </p>
+
+          <div class="nav-section-links">
+            <NuxtLink
+              v-for="item in section.items"
+              :key="item.to"
+              :to="item.to"
+              :class="{ active: active(item.to) }"
+            >
+              {{ item.label }}
+            </NuxtLink>
+          </div>
+        </section>
       </nav>
       <div class="sidebar-bottom">
         <div class="identity"><strong>{{ session?.user.firstName }} {{ session?.user.lastName }}</strong><span>{{ session?.user.email }}</span></div>
@@ -70,8 +183,38 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
 .dash-brand small { color: #9eb5a7; }
 .workspace { display: flex; flex-direction: column; gap: 3px; padding: 14px; border: 1px solid #28503b; border-radius: 14px; background: #153526; margin-bottom: 18px; }
 .workspace small, .workspace span { color: #98b0a1; font-size: .75rem; }
-.dash-sidebar nav { display: flex; flex-direction: column; gap: 4px; }
-.dash-sidebar nav a { color: #bdd0c4; text-decoration: none; padding: 10px 12px; border-radius: 10px; font-weight: 680; }
+.dash-sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-section {
+  margin-top: 16px;
+}
+
+.nav-section-label {
+  margin: 0 0 5px;
+  padding: 0 12px;
+  color: #6f9380;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.nav-section-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-sidebar nav a {
+  color: #bdd0c4;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 680;
+}
 .dash-sidebar nav a:hover, .dash-sidebar nav a.active { color: #fff; background: #1d4933; }
 .sidebar-bottom { margin-top: auto; padding-top: 18px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #28503b; }
 .identity { display: flex; flex-direction: column; padding: 0 6px; }

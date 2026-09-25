@@ -55,6 +55,9 @@ export default defineEventHandler(async (event) => {
   if (role.code === 'CLIENT' && !clientId) {
     httpError(400, 'Un compte client doit être rattaché à un client.', 'CLIENT_LINK_REQUIRED')
   }
+  if (role.code === 'CLIENT' && intervenorId) {
+    httpError(400, 'Un compte client ne peut pas être rattaché à une fiche intervenant.', 'CLIENT_INTERVENOR_CONFLICT')
+  }
   if (role.code === 'INTERVENOR' && !intervenorId) {
     httpError(400, 'Un compte intervenant doit être rattaché à un intervenant.', 'INTERVENOR_LINK_REQUIRED')
   }
@@ -91,7 +94,7 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      if (role.code === 'INTERVENOR' && intervenorId) {
+      if (intervenorId) {
         await tx.intervenor.update({
           where: { id: intervenorId },
           data: { userId },

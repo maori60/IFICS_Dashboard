@@ -3,9 +3,14 @@ import { requirePermission } from '../../utils/auth'
 import { PERMISSIONS } from '../../utils/constants'
 import { prisma } from '../../utils/prisma'
 import { calculateBillingTotals, nextBillingNumber } from '../../utils/billing'
+import {
+  businessDateAsUtc,
+  DEFAULT_BUSINESS_TIMEZONE,
+} from '../../utils/business-date'
 import { httpError, jsonSafe, success } from '../../utils/api'
 import { optionalDate, optionalString, requiredEnum, requiredString, safeObject } from '../../utils/validation'
 import { writeAuditLog } from '../../utils/audit'
+import { assertAccountingDateWritable } from '../../utils/accounting-periods'
 
 const KINDS = ['QUOTE', 'INVOICE'] as const
 
@@ -15,9 +20,39 @@ export default defineEventHandler(async (event) => {
   const kind = requiredEnum(body.kind, KINDS, 'Type de document')
   const clientId = requiredString(body.clientId, 'Client', { max: 191 })
   const projectId = optionalString(body.projectId, 'Projet', { max: 191 })
-  const issueDate = optionalDate(body.issueDate, 'Date d’émission') || new Date()
+  const requestedIssueDate
+    = optionalDate(
+      body.issueDate,
+      'Date d’émission',
+    )
+
+  const issueDate
+    = requestedIssueDate
+      ?? businessDateAsUtc(
+        new Date(),
+        (
+          await prisma.association.findUnique({
+            where: {
+              id: context.associationId,
+            },
+
+            select: {
+              timezone: true,
+            },
+          })
+        )?.timezone
+        || DEFAULT_BUSINESS_TIMEZONE,
+      )
   const dueDate = optionalDate(body.dueDate, 'Date d’échéance')
   if (dueDate && dueDate < issueDate) httpError(400, 'L’échéance ne peut pas précéder la date d’émission.', 'INVALID_DUE_DATE')
+
+  if (kind === 'INVOICE') {
+    await assertAccountingDateWritable(
+      context.associationId,
+      issueDate,
+      'facture',
+    )
+  }
 
   const client = await prisma.client.findFirst({ where: { id: clientId, associationId: context.associationId, archivedAt: null }, select: { id: true } })
   if (!client) httpError(404, 'Client introuvable.', 'CLIENT_NOT_FOUND')

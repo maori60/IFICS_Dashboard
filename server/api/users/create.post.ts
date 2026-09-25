@@ -22,6 +22,7 @@ export default defineEventHandler(async (event) => {
   const role = await prisma.role.findFirst({ where: { associationId: context.associationId, code: roleCode }, select: { id: true, code: true, name: true } })
   if (!role) httpError(400, 'Rôle inconnu.', 'INVALID_ROLE')
   if (role.code === 'CLIENT' && !clientId) httpError(400, 'Un compte client doit être rattaché à un client.', 'CLIENT_LINK_REQUIRED')
+  if (role.code === 'CLIENT' && intervenorId) httpError(400, 'Un compte client ne peut pas être rattaché à une fiche intervenant.', 'CLIENT_INTERVENOR_CONFLICT')
   if (role.code === 'INTERVENOR' && !intervenorId) httpError(400, 'Un compte intervenant doit être rattaché à un intervenant.', 'INTERVENOR_LINK_REQUIRED')
 
   if (clientId) {
@@ -47,7 +48,7 @@ export default defineEventHandler(async (event) => {
         },
         select: { id: true, firstName: true, lastName: true, email: true, status: true, accessExpiresAt: true, role: { select: { code: true, name: true } } },
       })
-      if (role.code === 'INTERVENOR' && intervenorId) await tx.intervenor.update({ where: { id: intervenorId }, data: { userId: created.id } })
+      if (intervenorId) await tx.intervenor.update({ where: { id: intervenorId }, data: { userId: created.id } })
       await tx.passwordResetToken.create({ data: { userId: created.id, tokenHash: hashToken(rawToken), expiresAt } })
       return created
     })

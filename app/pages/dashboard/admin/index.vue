@@ -191,7 +191,7 @@ function date(value: string | null): string {
   return new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'short',
     timeStyle: 'medium',
-    timeZone: 'Europe/Paris',
+    timeZone: session.value?.data.association?.timezone || 'Europe/Paris',
   }).format(new Date(value))
 }
 
@@ -563,7 +563,7 @@ async function goToPage(next: number) {
             25 traces par page.
           </p>
         </div>
-        <strong>{{ auditPage.total }} trace(s)</strong>
+        <strong>{{ auditPage.total }} {{ auditPage.total === 1 ? 'trace' : 'traces' }}</strong>
       </div>
 
       <form class="audit-filters" @submit.prevent="applyFilters">

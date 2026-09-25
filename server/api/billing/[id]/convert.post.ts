@@ -3,8 +3,13 @@ import { requirePermission } from '../../../utils/auth'
 import { PERMISSIONS } from '../../../utils/constants'
 import { prisma } from '../../../utils/prisma'
 import { nextBillingNumber } from '../../../utils/billing'
+import {
+  businessDateAsUtc,
+  DEFAULT_BUSINESS_TIMEZONE,
+} from '../../../utils/business-date'
 import { httpError, jsonSafe, requireRouterId, success } from '../../../utils/api'
 import { writeAuditLog } from '../../../utils/audit'
+import { assertAccountingDateWritable } from '../../../utils/accounting-periods'
 
 export default defineEventHandler(async (event) => {
   const context = await requirePermission(event, PERMISSIONS.BILLING_WRITE)
@@ -13,8 +18,35 @@ export default defineEventHandler(async (event) => {
   if (!quote) httpError(404, 'Devis introuvable.', 'QUOTE_NOT_FOUND')
   if (quote.status !== 'ACCEPTED') httpError(409, 'Le devis doit être accepté avant conversion.', 'QUOTE_NOT_ACCEPTED')
   if (quote.convertedInvoices.length) httpError(409, 'Ce devis a déjà été converti.', 'QUOTE_ALREADY_CONVERTED')
+
+  const association
+    = await prisma.association.findUnique({
+      where: {
+        id: context.associationId,
+      },
+
+      select: {
+        timezone: true,
+      },
+    })
+
+  const timeZone
+    = association?.timezone
+      || DEFAULT_BUSINESS_TIMEZONE
+
+  const issueDate
+    = businessDateAsUtc(
+      new Date(),
+      timeZone,
+    )
+
+  await assertAccountingDateWritable(
+    context.associationId,
+    issueDate,
+    'facture',
+  )
+
   const invoice = await prisma.$transaction(async (tx) => {
-    const issueDate = new Date()
     const number = await nextBillingNumber(tx, context.associationId, 'INVOICE', issueDate)
     return tx.billingDocument.create({
       data: {

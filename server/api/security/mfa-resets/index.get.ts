@@ -5,7 +5,7 @@ import { success } from '../../../utils/api'
 
 export default defineEventHandler(async (event) => {
   const context = await requirePermission(event, PERMISSIONS.SECURITY_MFA_RESET)
-  if (!context.mfaVerified) throw createError({ statusCode: 403, statusMessage: 'Validation MFA administrateur requise.' })
+  if (!context.mfaVerified) throw createError({ statusCode: 403, message: 'Validation MFA administrateur requise.' })
 
   const requests = await prisma.mfaResetRequest.findMany({
     where: { associationId: context.associationId }, orderBy: { requestedAt: 'desc' }, take: 100,

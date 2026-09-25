@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   const maxBytes = Math.min(maxUploadBytes(), configuredMaxBytes)
   const activeCount = await prisma.assetDocument.count({ where: { assetId, archivedAt: null } })
   if (activeCount >= maxCount) {
-    httpError(400, `Ce matériel a atteint la limite de ${maxCount} document(s).`, 'ASSET_DOCUMENT_LIMIT_REACHED')
+    httpError(400, `Ce matériel a atteint la limite de ${maxCount} ${maxCount === 1 ? 'document' : 'documents'}.`, 'ASSET_DOCUMENT_LIMIT_REACHED')
   }
 
   const parts = await readMultipartFormData(event)

@@ -180,14 +180,18 @@ model Association {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  roles            Role[]
-  users            User[]
-  clients          Client[]
-  projects         Project[]
-  intervenors      Intervenor[]
-  auditLogs        AuditLog[]
-  billingDocuments BillingDocument[]
-  billingSequences BillingSequence[]
+  roles                 Role[]
+  users                 User[]
+  clients               Client[]
+  projects              Project[]
+  intervenors           Intervenor[]
+  auditLogs             AuditLog[]
+  billingDocuments      BillingDocument[]
+  billingPayments       BillingPayment[]
+  billingSequences      BillingSequence[]
+  expenses              Expense[]
+  accountingFiscalYears AccountingFiscalYear[]
+  accountingPeriods     AccountingPeriod[]
 }
 
 model Role {
@@ -248,6 +252,13 @@ model User {
   reviewedProjectReports      ProjectReport[]                @relation("ProjectReportReviewedBy")
   reportVersions              ProjectReportVersion[]         @relation("ProjectReportVersionCreatedBy")
   createdBillingDocuments     BillingDocument[]              @relation("BillingDocumentCreatedBy")
+  recordedBillingPayments    BillingPayment[]               @relation("BillingPaymentRecordedBy")
+  reversedBillingPayments     BillingPayment[]               @relation("BillingPaymentReversedBy")
+  createdExpenses             Expense[]                      @relation("ExpenseCreatedBy")
+  reviewedExpenses            Expense[]                      @relation("ExpenseReviewedBy")
+  paidExpenses                Expense[]                      @relation("ExpensePaidBy")
+  cancelledExpenses           Expense[]                      @relation("ExpenseCancelledBy")
+  uploadedExpenseAttachments  ExpenseAttachment[]            @relation("ExpenseAttachmentUploadedBy")
 
   @@index([associationId])
   @@index([roleId])
@@ -428,6 +439,7 @@ model Project {
   reports             ProjectReport[]
   accountingDocuments IntervenorAccountingDocument[]
   billingDocuments    BillingDocument[]
+  expenses            Expense[]
 
   @@unique([associationId, reference])
   @@index([associationId])
@@ -481,6 +493,7 @@ model Intervenor {
   documents           IntervenorDocument[]
   accountingDocuments IntervenorAccountingDocument[]
   reports             ProjectReport[]
+  expenses            Expense[]
 
   @@unique([associationId, email])
   @@index([associationId])
@@ -499,8 +512,8 @@ model ProjectIntervenor {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  intervenor Intervenor @relation(fields: [intervenorId], references: [id], onDelete: Cascade)
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  intervenor Intervenor  @relation(fields: [intervenorId], references: [id], onDelete: Cascade)
   craReports CraReport[]
 
   @@unique([projectId, intervenorId])
@@ -655,6 +668,212 @@ model ProjectReportVersion {
   @@index([createdByUserId])
 }
 
+enum AccountingFiscalYearStatus {
+  OPEN
+  CLOSING
+  CLOSED
+}
+
+enum AccountingPeriodStatus {
+  OPEN
+  REVIEW
+  PRE_CLOSED
+  CLOSED
+}
+
+model AccountingFiscalYear {
+  id            String                     @id @default(cuid())
+  associationId String
+  label         String                     @db.VarChar(80)
+  startDate     DateTime
+  endDate       DateTime
+  status        AccountingFiscalYearStatus @default(OPEN)
+
+  closingStartedAt DateTime?
+  closedAt         DateTime?
+  closedByUserId   String?
+
+  reopenedAt       DateTime?
+  reopenedByUserId String?
+  reopenReason     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  association Association        @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  periods     AccountingPeriod[]
+
+  @@unique([associationId, startDate, endDate])
+  @@index([associationId])
+  @@index([associationId, status])
+  @@index([startDate, endDate])
+}
+
+model AccountingPeriod {
+  id            String                 @id @default(cuid())
+  associationId String
+  fiscalYearId  String
+  number        Int
+  label         String                 @db.VarChar(80)
+  startDate     DateTime
+  endDate       DateTime
+  status        AccountingPeriodStatus @default(OPEN)
+
+  reviewStartedAt       DateTime?
+  reviewStartedByUserId String?
+
+  preClosedAt       DateTime?
+  preClosedByUserId String?
+
+  closedAt       DateTime?
+  closedByUserId String?
+
+  reopenedAt       DateTime?
+  reopenedByUserId String?
+  reopenReason     String?
+
+  closureChecklist Json?
+
+  lockVersion Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  association Association          @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  fiscalYear  AccountingFiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
+
+  @@unique([fiscalYearId, number])
+  @@unique([fiscalYearId, startDate, endDate])
+  @@index([associationId])
+  @@index([associationId, status])
+  @@index([fiscalYearId])
+  @@index([startDate, endDate])
+}
+
+enum ExpenseCategory {
+  FUEL
+  TOLL
+  PARKING
+  TRANSPORT
+  MEAL
+  ACCOMMODATION
+  INTERNET
+  PHONE
+  HARDWARE
+  SOFTWARE
+  PRINTING
+  SUPPLIES
+  TRAINING
+  INSURANCE
+  MILEAGE
+  BANK_FEES
+  PROFESSIONAL_SERVICE
+  OTHER
+}
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PAID
+  CANCELLED
+}
+
+enum ExpensePaymentMethod {
+  CARD
+  BANK_TRANSFER
+  DIRECT_DEBIT
+  CASH
+  CHEQUE
+  PERSONAL_ADVANCE
+  OTHER
+}
+
+model Expense {
+  id                String  @id @default(cuid())
+  associationId     String
+  projectId         String?
+  intervenorId      String?
+  createdByUserId   String?
+  reviewedByUserId  String?
+  paidByUserId      String?
+  cancelledByUserId String?
+
+  category    ExpenseCategory
+  status      ExpenseStatus   @default(DRAFT)
+  expenseDate DateTime
+
+  supplierName String? @db.VarChar(255)
+  description  String
+  reference    String? @db.VarChar(120)
+
+  currency      String  @default("EUR") @db.VarChar(3)
+  amountExclTax Decimal @default(0) @db.Decimal(12, 2)
+  taxRate       Decimal @default(0) @db.Decimal(5, 2)
+  taxAmount     Decimal @default(0) @db.Decimal(12, 2)
+  amountInclTax Decimal @default(0) @db.Decimal(12, 2)
+
+  paymentMethod ExpensePaymentMethod?
+  reimbursable  Boolean               @default(false)
+
+  submittedAt        DateTime?
+  reviewedAt         DateTime?
+  paidAt             DateTime?
+  cancelledAt        DateTime?
+  rejectionReason    String?
+  cancellationReason String?
+  archivedAt         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  association Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  project     Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  intervenor  Intervenor? @relation(fields: [intervenorId], references: [id], onDelete: SetNull)
+
+  createdByUser   User? @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  reviewedByUser  User? @relation("ExpenseReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  paidByUser      User? @relation("ExpensePaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull)
+  cancelledByUser User? @relation("ExpenseCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: SetNull)
+
+  attachments ExpenseAttachment[]
+
+  @@index([associationId])
+  @@index([associationId, expenseDate])
+  @@index([associationId, status])
+  @@index([associationId, category])
+  @@index([projectId])
+  @@index([intervenorId])
+  @@index([createdByUserId])
+  @@index([reviewedByUserId])
+  @@index([paidByUserId])
+  @@index([cancelledByUserId])
+  @@index([archivedAt])
+}
+
+model ExpenseAttachment {
+  id               String  @id @default(cuid())
+  expenseId        String
+  uploadedByUserId String?
+
+  originalName String  @db.VarChar(255)
+  storedName   String  @db.VarChar(255)
+  filePath     String  @db.VarChar(500)
+  mimeType     String  @db.VarChar(100)
+  fileSize     BigInt
+  sha256       String? @db.VarChar(64)
+
+  createdAt DateTime @default(now())
+
+  expense        Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  uploadedByUser User?   @relation("ExpenseAttachmentUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([expenseId])
+  @@index([uploadedByUserId])
+  @@index([sha256])
+}
+
 model BillingDocument {
   id              String                @id @default(cuid())
   associationId   String
@@ -687,6 +906,7 @@ model BillingDocument {
   sourceQuote       BillingDocument?  @relation("QuoteConversion", fields: [sourceQuoteId], references: [id], onDelete: SetNull)
   convertedInvoices BillingDocument[] @relation("QuoteConversion")
   lines             BillingLine[]
+  payments          BillingPayment[]
 
   @@unique([associationId, number])
   @@index([associationId, kind, status])

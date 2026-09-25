@@ -18,7 +18,62 @@ const canWrite = computed(() => permissions.value.includes('*') || permissions.v
 const clients = computed(() => (clientsData.value?.data ?? []).filter(client => client.status === 'ACTIVE'))
 const projects = computed(() => projectsData.value?.data ?? [])
 
-const today = new Date().toISOString().slice(0, 10)
+function currentBusinessDateIso(): string {
+  const preferredTimeZone
+    = session.value?.data.association?.timezone
+      || 'Europe/Paris'
+
+  let formatter: Intl.DateTimeFormat
+
+  try {
+    formatter
+      = new Intl.DateTimeFormat(
+        'en-CA',
+        {
+          timeZone:
+            preferredTimeZone,
+
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        },
+      )
+  }
+  catch {
+    formatter
+      = new Intl.DateTimeFormat(
+        'en-CA',
+        {
+          timeZone: 'Europe/Paris',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        },
+      )
+  }
+
+  const parts
+    = formatter.formatToParts(
+      new Date(),
+    )
+
+  const value = (
+    type: Intl.DateTimeFormatPartTypes,
+  ): string =>
+    parts.find(
+      part =>
+        part.type === type,
+    )?.value ?? ''
+
+  return [
+    value('year'),
+    value('month'),
+    value('day'),
+  ].join('-')
+}
+
+const today
+  = currentBusinessDateIso()
 const form = reactive({
   kind: 'QUOTE',
   clientId: '',

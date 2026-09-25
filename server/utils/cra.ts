@@ -7,13 +7,13 @@ export function requireCraWriter(context: AuthContext): string {
   const intervenorId = context.intervenorId
 
   if (
-    context.roleCode !== ROLE_CODES.INTERVENOR
+    context.roleCode === ROLE_CODES.CLIENT
     || !intervenorId
     || !hasPermission(context, PERMISSIONS.CRA_WRITE_OWN)
   ) {
     httpError(
       403,
-      'La saisie des CRA est réservée aux intervenants autorisés.',
+      'La saisie des CRA nécessite une fiche intervenant liée et la permission de saisie personnelle.',
       'CRA_FORBIDDEN',
     )
   }

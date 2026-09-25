@@ -35,6 +35,20 @@ export const PERMISSIONS = {
   CRA_REOPEN: 'cra:reopen',
   CRA_EXPORT: 'cra:export',
   CRA_MANAGE: 'cra:manage',
+
+  EXPENSE_READ_OWN: 'expense:read:own',
+  EXPENSE_WRITE_OWN: 'expense:write:own',
+  EXPENSE_READ_ALL: 'expense:read:all',
+  EXPENSE_REVIEW: 'expense:review',
+  EXPENSE_MANAGE: 'expense:manage',
+  EXPENSE_EXPORT: 'expense:export',
+
+  ACCOUNTING_READ: 'accounting:read',
+  ACCOUNTING_WRITE: 'accounting:write',
+  ACCOUNTING_PERIOD_MANAGE: 'accounting:period:manage',
+  ACCOUNTING_PERIOD_CLOSE: 'accounting:period:close',
+  ACCOUNTING_PERIOD_REOPEN: 'accounting:period:reopen',
+  ACCOUNTING_EXPORT: 'accounting:export',
 } as const
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
@@ -53,6 +67,10 @@ export const SYSTEM_ROLES: Record<RoleCode, { name: string; description: string;
       PERMISSIONS.CONTENT_READ, PERMISSIONS.CONTENT_WRITE, PERMISSIONS.CONTENT_PUBLISH,
       PERMISSIONS.PARTNER_READ, PERMISSIONS.PARTNER_WRITE, PERMISSIONS.RND_READ, PERMISSIONS.RND_WRITE,
       PERMISSIONS.IT_READ, PERMISSIONS.IT_WRITE, PERMISSIONS.HR_READ, PERMISSIONS.HR_WRITE,
+      PERMISSIONS.EXPENSE_READ_ALL,
+      PERMISSIONS.EXPENSE_REVIEW,
+      PERMISSIONS.EXPENSE_MANAGE,
+      PERMISSIONS.EXPENSE_EXPORT,
     ],
   },
   CLIENT: {
@@ -77,6 +95,8 @@ export const SYSTEM_ROLES: Record<RoleCode, { name: string; description: string;
       PERMISSIONS.TICKET_WRITE,
       PERMISSIONS.CRA_READ_OWN,
       PERMISSIONS.CRA_WRITE_OWN,
+      PERMISSIONS.EXPENSE_READ_OWN,
+      PERMISSIONS.EXPENSE_WRITE_OWN,
     ],
   },
 }

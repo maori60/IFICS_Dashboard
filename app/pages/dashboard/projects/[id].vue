@@ -986,7 +986,7 @@ async function respondToAssignment(
         <div class="page-head compact">
           <div>
             <h2>Intervenants affectés</h2>
-            <p>{{ project.projectIntervenors.length }} affectation(s).</p>
+            <p>{{ project.projectIntervenors.length }} {{ project.projectIntervenors.length === 1 ? 'affectation' : 'affectations' }}.</p>
           </div>
         </div>
 

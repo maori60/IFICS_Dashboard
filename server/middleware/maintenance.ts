@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
   if (active) {
     throw createError({
       statusCode: 503,
-      statusMessage: cache.message || 'Maintenance IFICS en cours.',
+      message: cache.message || 'Maintenance IFICS en cours.',
       data: { code: 'MAINTENANCE_MODE' },
     })
   }

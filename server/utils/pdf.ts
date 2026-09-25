@@ -485,7 +485,7 @@ export async function generateReportPdf(input: ReportPdfInput): Promise<Uint8Arr
   y -= 32
   page.drawText(safeText(input.projectTitle), { x: MARGIN, y, size: 12, font: bold })
   y -= 18
-  page.drawText(`Séance : ${formatDate(input.sessionDate)}${input.studentsCount !== null && input.studentsCount !== undefined ? ` — ${input.studentsCount} participant(s)` : ''}`, { x: MARGIN, y, size: 9, font: regular })
+  page.drawText(`Séance : ${formatDate(input.sessionDate)}${input.studentsCount !== null && input.studentsCount !== undefined ? ` — ${input.studentsCount} ${input.studentsCount === 1 ? 'participant' : 'participants'}` : ''}`, { x: MARGIN, y, size: 9, font: regular })
   y -= 15
   if (input.intervenorName) {
     page.drawText(`Intervenant : ${safeText(input.intervenorName)}`, { x: MARGIN, y, size: 9, font: regular })

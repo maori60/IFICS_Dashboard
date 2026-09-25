@@ -377,7 +377,6 @@ const isOwner = computed(() => {
   return Boolean(
     currentUser
     && currentReport
-    && currentUser.roleCode === 'INTERVENOR'
     && currentUser.intervenorId
     && currentUser.intervenorId === currentReport.intervenorId,
   )
@@ -784,18 +783,18 @@ const period = computed(() => {
   )))
 })
 
-const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
+const dateFormatter = computed(() => new Intl.DateTimeFormat('fr-FR', {
   dateStyle: 'short',
   timeStyle: 'short',
-  timeZone: 'Europe/Paris',
-})
+  timeZone: sessionResponse.value?.data.association?.timezone || 'Europe/Paris',
+}))
 
 function dateLabel(value: string | null): string {
   if (!value) return '—'
 
   const date = new Date(value)
 
-  return Number.isNaN(date.getTime()) ? '—' : dateFormatter.format(date)
+  return Number.isNaN(date.getTime()) ? '—' : dateFormatter.value.format(date)
 }
 
 function formatMinutes(value: number): string {
@@ -1122,19 +1121,19 @@ async function submitReport() {
   const corrected = current.status === 'REFUSED'
 
   const summary = [
-    `${current.declaredDays} journée(s) renseignée(s)`,
-    `${current.totalDays} journée(s) travaillée(s)`,
+    `${current.declaredDays} ${current.declaredDays === 1 ? 'journée renseignée' : 'journées renseignées'}`,
+    `${current.totalDays} ${current.totalDays === 1 ? 'journée travaillée' : 'journées travaillées'}`,
     `${formatMinutes(current.workedMinutes)} de travail`,
   ]
 
   if (current.trainingDays > 0) {
     summary.push(
-      `${current.trainingDays} journée(s) de formation (${formatMinutes(current.trainingMinutes)})`,
+      `${current.trainingDays} ${current.trainingDays === 1 ? 'journée' : 'journées'} de formation (${formatMinutes(current.trainingMinutes)})`,
     )
   }
 
   if (current.absenceDays > 0) {
-    summary.push(`${current.absenceDays} absence(s) / congé(s)`)
+    summary.push(`${current.absenceDays} ${current.absenceDays === 1 ? 'absence / congé' : 'absences / congés'}`)
   }
 
   const confirmed = window.confirm(
@@ -1458,13 +1457,13 @@ function defaultSendToIntervenorMessage(): string {
 
   if (current.trainingDays > 0) {
     lines.push(
-      `- Formation : ${current.trainingDays} journée(s) — ${formatMinutes(current.trainingMinutes)}`,
+      `- Formation : ${current.trainingDays} ${current.trainingDays === 1 ? 'journée' : 'journées'} — ${formatMinutes(current.trainingMinutes)}`,
     )
   }
 
   if (current.absenceDays > 0) {
     lines.push(
-      `- Congés / absences : ${current.absenceDays} journée(s)`,
+      `- Congés / absences : ${current.absenceDays} ${current.absenceDays === 1 ? 'journée' : 'journées'}`,
     )
 
     for (const item of absenceItems.value) {
@@ -1686,13 +1685,13 @@ function defaultSendToClientMessage(): string {
 
   if (current.trainingDays > 0) {
     lines.push(
-      `- Formation : ${current.trainingDays} journée(s) — ${formatMinutes(current.trainingMinutes)}`,
+      `- Formation : ${current.trainingDays} ${current.trainingDays === 1 ? 'journée' : 'journées'} — ${formatMinutes(current.trainingMinutes)}`,
     )
   }
 
   if (current.absenceDays > 0) {
     lines.push(
-      `- Congés / absences : ${current.absenceDays} journée(s)`,
+      `- Congés / absences : ${current.absenceDays} ${current.absenceDays === 1 ? 'journée' : 'journées'}`,
     )
   }
 

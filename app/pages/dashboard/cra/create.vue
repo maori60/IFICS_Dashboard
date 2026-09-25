@@ -49,7 +49,6 @@ const canAccessCreation = computed(() => {
   if (
     sessionError.value
     || !currentUser
-    || currentUser.roleCode !== 'INTERVENOR'
     || !currentUser.intervenorId
   ) {
     return false
@@ -60,11 +59,7 @@ const canAccessCreation = computed(() => {
 })
 
 const accessMessage = computed(() => {
-  if (user.value?.roleCode !== 'INTERVENOR') {
-    return 'La création et la saisie des CRA sont réservées aux intervenants. Vous pouvez consulter les comptes rendus accessibles depuis la liste des CRA.'
-  }
-
-  if (!user.value.intervenorId) {
+  if (!user.value?.intervenorId) {
     return 'Votre compte doit être associé à une fiche intervenant pour créer un CRA. Contactez IFICS.'
   }
 
@@ -153,7 +148,12 @@ onMounted(() => {
   const parts = new Intl.DateTimeFormat('fr-FR', {
     year: 'numeric',
     month: '2-digit',
-    timeZone: 'Europe/Paris',
+    timeZone:
+      sessionResponse.value
+        ?.data
+        .association
+        ?.timezone
+      || 'Europe/Paris',
   }).formatToParts(new Date())
 
   const year = parts.find(part => part.type === 'year')?.value
@@ -282,7 +282,7 @@ async function createReport() {
       :subtitle="
         canAccessCreation
           ? 'Choisissez l’une de vos missions acceptées et le mois à déclarer.'
-          : 'Chaque intervenant crée et transmet ses propres comptes rendus.'
+          : 'La création d’un CRA nécessite une fiche intervenant rattachée au compte.'
       "
     />
 

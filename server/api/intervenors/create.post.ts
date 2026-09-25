@@ -1,5 +1,5 @@
 import { readBody } from 'h3'
-import { requirePermission } from '../../utils/auth'
+import { hasPermission, requirePermission } from '../../utils/auth'
 import { PERMISSIONS } from '../../utils/constants'
 import { prisma } from '../../utils/prisma'
 import { httpError, prismaErrorCode, success } from '../../utils/api'
@@ -9,11 +9,67 @@ import { writeAuditLog } from '../../utils/audit'
 export default defineEventHandler(async (event) => {
   const context = await requirePermission(event, PERMISSIONS.INTERVENOR_WRITE)
   const body = safeObject(await readBody(event))
+  const userId = optionalString(body.userId, 'Compte utilisateur', { max: 191 })
+
+  if (userId) {
+    if (!hasPermission(context, PERMISSIONS.USER_MANAGE)) {
+      httpError(
+        403,
+        'Vous ne pouvez pas rattacher une fiche intervenant à un compte utilisateur.',
+        'INTERVENOR_USER_LINK_FORBIDDEN',
+      )
+    }
+
+    const linkedUser = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        associationId: context.associationId,
+      },
+      select: {
+        id: true,
+        role: {
+          select: {
+            code: true,
+          },
+        },
+        intervenorProfile: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    })
+
+    if (!linkedUser) {
+      httpError(
+        404,
+        'Compte utilisateur introuvable.',
+        'USER_NOT_FOUND',
+      )
+    }
+
+    if (linkedUser.role.code === 'CLIENT') {
+      httpError(
+        400,
+        'Un compte client ne peut pas être rattaché à une fiche intervenant.',
+        'CLIENT_INTERVENOR_CONFLICT',
+      )
+    }
+
+    if (linkedUser.intervenorProfile) {
+      httpError(
+        409,
+        'Ce compte utilisateur possède déjà une fiche intervenant.',
+        'USER_ALREADY_INTERVENOR',
+      )
+    }
+  }
 
   try {
     const intervenor = await prisma.intervenor.create({
       data: {
         associationId: context.associationId,
+        userId,
         firstName: requiredString(body.firstName, 'Prénom', { max: 100 }),
         lastName: requiredString(body.lastName, 'Nom', { max: 100 }),
         email: requiredEmail(body.email),
@@ -33,14 +89,21 @@ export default defineEventHandler(async (event) => {
     })
 
     await writeAuditLog(event, context, {
-      action: 'INTERVENOR_CREATED', entityType: 'Intervenor', entityId: intervenor.id,
+      action: 'INTERVENOR_CREATED',
+      entityType: 'Intervenor',
+      entityId: intervenor.id,
+      metadata: { userId },
     })
 
     return success(intervenor)
   }
   catch (error) {
     if (prismaErrorCode(error) === 'P2002') {
-      httpError(409, 'Un intervenant avec cet email existe déjà.', 'INTERVENOR_DUPLICATE')
+      httpError(
+        409,
+        'Cet email ou ce compte utilisateur est déjà associé à un intervenant.',
+        'INTERVENOR_DUPLICATE',
+      )
     }
     throw error
   }

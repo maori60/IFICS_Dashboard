@@ -267,6 +267,7 @@ export default defineEventHandler(async (event) => {
         legalName: true,
         billingName: true,
         pdfFooter: true,
+        timezone: true,
       },
     }),
 
@@ -402,6 +403,7 @@ export default defineEventHandler(async (event) => {
       legalName: association.legalName,
       billingName: association.billingName,
       pdfFooter: association.pdfFooter,
+      timezone: association.timezone,
     },
 
     logo,

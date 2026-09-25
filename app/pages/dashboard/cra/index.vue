@@ -21,7 +21,6 @@ const canCreate = computed(() => {
 
   if (
     !user
-    || user.roleCode !== 'INTERVENOR'
     || !user.intervenorId
   ) {
     return false

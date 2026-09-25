@@ -89,13 +89,13 @@ describe('Droit de saisie des CRA', () => {
     ).toThrow(expect.objectContaining({ statusCode: 403 }))
   })
 
-  it('refuse un administrateur même lié à une fiche intervenant', () => {
-    expect(() =>
+  it('autorise un administrateur lié à sa propre fiche intervenant', () => {
+    expect(
       requireCraWriter(context({
         roleCode: 'ADMIN',
         permissions: [PERMISSIONS.ALL],
       })),
-    ).toThrow(expect.objectContaining({ statusCode: 403 }))
+    ).toBe('intervenor-test')
   })
 
   it('refuse un gestionnaire disposant du droit CRA_MANAGE', () => {
@@ -177,6 +177,22 @@ describe('Accès aux missions pour la saisie des CRA', () => {
     ).rejects.toMatchObject({ statusCode: 403 })
 
     expect(findFirst).not.toHaveBeenCalled()
+  })
+
+  it('autorise un administrateur lié à sa propre fiche sur sa propre mission', async () => {
+    const mission = assignment()
+    findFirst.mockResolvedValue(mission)
+
+    await expect(
+      requireCraAssignmentForCreation(
+        context({
+          roleCode: 'ADMIN',
+          permissions: [PERMISSIONS.ALL],
+        }),
+        'project-test',
+        'intervenor-test',
+      ),
+    ).resolves.toEqual(mission)
   })
 
   it('autorise sa propre mission admissible', async () => {

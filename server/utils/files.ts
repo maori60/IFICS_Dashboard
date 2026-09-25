@@ -527,3 +527,327 @@ export async function removeStoredFile(
 export function contentDispositionFilename(filename: string): string {
   return encodeURIComponent(safeOriginalFilename(filename))
 }
+
+/**
+ * Pièce justificative associée à une dépense.
+ *
+ * Le type MIME n'est jamais déduit du nom du fichier ni du navigateur :
+ * il est déterminé à partir du contenu réel.
+ */
+export type StoredExpenseAttachment =
+  | StoredPdf
+  | StoredImage
+
+export type QuarantinedExpenseAttachment = {
+  originalName: string
+  storedName: string
+  quarantinePath: string
+  finalPath: string
+  mimeType:
+    | 'application/pdf'
+    | 'image/png'
+    | 'image/jpeg'
+  fileSize: bigint
+  sha256: string
+}
+
+/**
+ * Valide une pièce justificative avant stockage.
+ *
+ * Formats autorisés :
+ * - PDF
+ * - PNG
+ * - JPEG
+ *
+ * Taille :
+ * - MAX_UPLOAD_MB
+ */
+export async function validateExpenseAttachmentBuffer(
+  buffer: Buffer,
+): Promise<{
+  mimeType:
+    | 'application/pdf'
+    | 'image/png'
+    | 'image/jpeg'
+  extension:
+    | 'pdf'
+    | 'png'
+    | 'jpg'
+}> {
+  const maxBytes = maxUploadBytes()
+
+  if (
+    !buffer.length
+    || buffer.length > maxBytes
+  ) {
+    httpError(
+      400,
+      `Le justificatif doit faire entre 1 octet et ${Math.floor(maxBytes / 1024 / 1024)} Mo.`,
+      'INVALID_EXPENSE_ATTACHMENT_SIZE',
+    )
+  }
+
+  /*
+   * PDF :
+   * - signature réelle %PDF-
+   * - taille
+   * - contenu actif dangereux
+   * - parsing pdf-lib
+   */
+  if (
+    buffer.length >= PDF_SIGNATURE.length
+    && buffer
+      .subarray(
+        0,
+        PDF_SIGNATURE.length,
+      )
+      .compare(PDF_SIGNATURE) === 0
+  ) {
+    await validatePdf(
+      buffer,
+      maxBytes,
+    )
+
+    return {
+      mimeType:
+        'application/pdf',
+
+      extension:
+        'pdf',
+    }
+  }
+
+  /*
+   * Image :
+   * détection par signature binaire,
+   * jamais par extension ou Content-Type.
+   */
+  const detected
+    = detectBrandImage(buffer)
+
+  if (!detected) {
+    httpError(
+      400,
+      'Le justificatif doit être un fichier PDF, PNG ou JPEG valide.',
+      'INVALID_EXPENSE_ATTACHMENT_FILE',
+    )
+  }
+
+  /*
+   * pdf-lib décode réellement l'image.
+   * Une simple signature PNG/JPEG ne suffit donc pas.
+   */
+  try {
+    const validationPdf
+      = await PDFDocument.create()
+
+    if (
+      detected.mimeType
+      === 'image/png'
+    ) {
+      await validationPdf.embedPng(
+        buffer,
+      )
+    }
+    else {
+      await validationPdf.embedJpg(
+        buffer,
+      )
+    }
+  }
+  catch {
+    httpError(
+      400,
+      'L’image du justificatif est corrompue ou invalide.',
+      'INVALID_EXPENSE_ATTACHMENT_IMAGE',
+    )
+  }
+
+  return detected
+}
+
+/**
+ * Stocke temporairement le justificatif dans une zone
+ * de quarantaine.
+ *
+ * Aucun ExpenseAttachment ne doit être créé en base
+ * tant que le contrôle antivirus n'a pas confirmé CLEAN.
+ */
+export async function quarantineExpenseAttachment(
+  expenseId: string,
+  originalFilename: string,
+  buffer: Buffer,
+): Promise<QuarantinedExpenseAttachment> {
+  const detected
+    = await validateExpenseAttachmentBuffer(
+      buffer,
+    )
+
+  const cleanExpenseId
+    = safeSegment(expenseId)
+
+  const cleanOriginalName
+    = safeOriginalFilename(
+      originalFilename,
+    )
+
+  const storedName
+    = `${randomUUID()}.${detected.extension}`
+
+  const quarantineDirectory
+    = join(
+      uploadRoot(),
+      'quarantine',
+      'expenses',
+      cleanExpenseId,
+    )
+
+  await mkdir(
+    quarantineDirectory,
+    {
+      recursive: true,
+      mode: 0o750,
+    },
+  )
+
+  const quarantinePath
+    = join(
+      'quarantine',
+      'expenses',
+      cleanExpenseId,
+      storedName,
+    )
+
+  const finalPath
+    = join(
+      'expenses',
+      cleanExpenseId,
+      'attachments',
+      storedName,
+    )
+
+  await writeFile(
+    resolveStoredPath(
+      quarantinePath,
+    ),
+    buffer,
+    {
+      flag: 'wx',
+      mode: 0o640,
+    },
+  )
+
+  return {
+    originalName:
+      cleanOriginalName,
+
+    storedName,
+
+    quarantinePath,
+
+    finalPath,
+
+    mimeType:
+      detected.mimeType,
+
+    fileSize:
+      BigInt(buffer.length),
+
+    sha256:
+      createHash('sha256')
+        .update(buffer)
+        .digest('hex'),
+  }
+}
+
+/**
+ * Déplace un justificatif CLEAN depuis la quarantaine
+ * vers son stockage définitif.
+ */
+export async function promoteExpenseAttachment(
+  document:
+    QuarantinedExpenseAttachment,
+): Promise<StoredExpenseAttachment> {
+  if (
+    !document.quarantinePath
+      .startsWith(
+        'quarantine/expenses/',
+      )
+    || !document.finalPath
+      .startsWith(
+        'expenses/',
+      )
+  ) {
+    httpError(
+      400,
+      'Chemin de quarantaine de justificatif invalide.',
+      'INVALID_EXPENSE_ATTACHMENT_QUARANTINE_PATH',
+    )
+  }
+
+  const source
+    = resolveStoredPath(
+      document.quarantinePath,
+    )
+
+  const destination
+    = resolveStoredPath(
+      document.finalPath,
+    )
+
+  const finalDirectory
+    = resolve(
+      destination,
+      '..',
+    )
+
+  await mkdir(
+    finalDirectory,
+    {
+      recursive: true,
+      mode: 0o750,
+    },
+  )
+
+  await rename(
+    source,
+    destination,
+  )
+
+  return {
+    originalName:
+      document.originalName,
+
+    storedName:
+      document.storedName,
+
+    filePath:
+      document.finalPath,
+
+    mimeType:
+      document.mimeType,
+
+    fileSize:
+      document.fileSize,
+
+    sha256:
+      document.sha256,
+  }
+}
+
+/**
+ * Supprime une pièce présente dans la quarantaine.
+ *
+ * Utilisé notamment si :
+ * - ClamAV est indisponible ;
+ * - le fichier est infecté ;
+ * - une erreur survient avant promotion.
+ */
+export async function discardQuarantinedExpenseAttachment(
+  document:
+    QuarantinedExpenseAttachment,
+): Promise<void> {
+  await removeStoredFile(
+    document.quarantinePath,
+  )
+}

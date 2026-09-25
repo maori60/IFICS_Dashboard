@@ -11,13 +11,13 @@ export function success<T>(data: T): ApiSuccess<T> {
 
 export function httpError(
   statusCode: number,
-  statusMessage: string,
+  message: string,
   code: string,
   details?: unknown,
 ): never {
   throw createError({
     statusCode,
-    statusMessage,
+    message,
     data: {
       code,
       ...(details === undefined ? {} : { details }),
@@ -62,11 +62,28 @@ export function jsonSafe<T>(value: T): T {
   })) as T
 }
 
-export function publicErrorMessage(error: unknown, fallback: string): string {
-  if (error && typeof error === 'object' && 'statusMessage' in error) {
-    const statusMessage = (error as { statusMessage?: unknown }).statusMessage
-    if (typeof statusMessage === 'string' && statusMessage) {
-      return statusMessage
+export function publicErrorMessage(
+  error: unknown,
+  fallback: string,
+): string {
+  if (error && typeof error === 'object') {
+    const candidate = error as {
+      message?: unknown
+      statusMessage?: unknown
+    }
+
+    const values = [
+      candidate.message,
+      candidate.statusMessage,
+    ]
+
+    for (const value of values) {
+      if (
+        typeof value === 'string'
+        && value.trim()
+      ) {
+        return value
+      }
     }
   }
 

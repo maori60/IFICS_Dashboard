@@ -32,7 +32,7 @@ export default defineEventHandler((event) => {
   if (origin !== configuredOrigin && origin !== requestOrigin) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Origine de requête refusée.',
+      message: 'Origine de requête refusée.',
       data: { code: 'ORIGIN_FORBIDDEN' },
     })
   }

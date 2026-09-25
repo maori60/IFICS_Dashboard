@@ -59,6 +59,7 @@ export type CraPdfInput = {
     legalName?: string | null
     billingName?: string | null
     pdfFooter?: string | null
+    timezone?: string | null
   }
 
   logo?: CraPdfLogo | null
@@ -321,7 +322,7 @@ function formatCraDate(value: Date | string): string {
   }).format(date)
 }
 
-function formatGeneratedDate(value: Date | string): string {
+function formatGeneratedDate(value: Date | string, timeZone?: string | null): string {
   const date = value instanceof Date
     ? value
     : new Date(value)
@@ -332,7 +333,7 @@ function formatGeneratedDate(value: Date | string): string {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-    timeZone: 'Europe/Paris',
+    timeZone: timeZone || 'Europe/Paris',
   }).format(date)
 }
 
@@ -436,10 +437,12 @@ export async function generateCraPdf(
 
   const ificsVisaDate = formatGeneratedDate(
     input.ificsVisaDate,
+    input.association.timezone,
   )
 
   const intervenorSignatureDate = formatGeneratedDate(
     input.intervenorSignatureDate,
+    input.association.timezone,
   )
 
   let page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT])

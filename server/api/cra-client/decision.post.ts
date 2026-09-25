@@ -271,6 +271,11 @@ export default defineEventHandler(async (event) => {
 
   const decidedAt = new Date()
 
+  const association = await prisma.association.findUnique({
+    where: { id: report.associationId },
+    select: { timezone: true },
+  })
+
   const pdfBytes
     = await generateCraClientAttestationPdf({
       sourceBytes:
@@ -300,6 +305,7 @@ export default defineEventHandler(async (event) => {
       comment,
 
       decidedAt,
+      timeZone: association?.timezone || 'Europe/Paris',
 
       sourceDocumentReference:
         document.reference,

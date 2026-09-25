@@ -60,7 +60,7 @@ function stageLabel(value: string) {
           {{ partner.contacts.find(contact => contact.isPrimary)?.firstName || '—' }}
           {{ partner.contacts.find(contact => contact.isPrimary)?.lastName || '' }}
         </p>
-        <p>{{ partner.interactions.length }} interaction(s) récente(s) · {{ partner._count.messages }} message(s)</p>
+        <p>{{ partner.interactions.length }} {{ partner.interactions.length === 1 ? 'interaction récente' : 'interactions récentes' }} · {{ partner._count.messages }} {{ partner._count.messages === 1 ? 'message' : 'messages' }}</p>
         <NuxtLink class="btn btn-secondary" :to="`/dashboard/partners/${partner.id}`">Ouvrir</NuxtLink>
       </article>
     </div>

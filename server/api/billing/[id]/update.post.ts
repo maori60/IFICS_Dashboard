@@ -6,14 +6,24 @@ import { calculateBillingTotals } from '../../../utils/billing'
 import { httpError, jsonSafe, requireRouterId, success } from '../../../utils/api'
 import { optionalDate, optionalString, safeObject } from '../../../utils/validation'
 import { writeAuditLog } from '../../../utils/audit'
+import { assertAccountingDateWritable } from '../../../utils/accounting-periods'
 
 export default defineEventHandler(async (event) => {
   const context = await requirePermission(event, PERMISSIONS.BILLING_WRITE)
   const id = requireRouterId(getRouterParam(event, 'id'), 'Document')
   const body = safeObject(await readBody(event))
-  const existing = await prisma.billingDocument.findFirst({ where: { id, associationId: context.associationId }, select: { id: true, status: true, issueDate: true } })
+  const existing = await prisma.billingDocument.findFirst({ where: { id, associationId: context.associationId }, select: { id: true, kind: true, status: true, issueDate: true } })
   if (!existing) httpError(404, 'Document introuvable.', 'BILLING_NOT_FOUND')
   if (existing.status !== 'DRAFT') httpError(409, 'Seul un brouillon peut être modifié.', 'BILLING_LOCKED')
+
+  if (existing.kind === 'INVOICE') {
+    await assertAccountingDateWritable(
+      context.associationId,
+      existing.issueDate,
+      'facture',
+    )
+  }
+
   const dueDate = body.dueDate === undefined ? undefined : optionalDate(body.dueDate, 'Échéance')
   if (dueDate && dueDate < existing.issueDate) httpError(400, 'Échéance invalide.', 'INVALID_DUE_DATE')
   const totals = calculateBillingTotals(body.lines, body.taxRate ?? 0)
