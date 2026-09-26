@@ -1117,3 +1117,51 @@ const services = [
   }
 }
 </style>
+
+<style scoped>
+/* KREATORTECH — MOBILE FINAL COMPACT */
+@media (max-width: 640px) {
+  .kt-world {
+    gap: 7px;
+    padding-bottom: 10px;
+  }
+
+  .kt-world__globe {
+    margin-bottom: -18px;
+  }
+
+  .kt-world__service,
+  .kt-world__service.is-workplace,
+  .kt-world__service.is-itsm,
+  .kt-world__service.is-infrastructure,
+  .kt-world__service.is-automation,
+  .kt-world__service.is-development,
+  .kt-world__service.is-training {
+    min-height: 78px;
+    padding: 8px 9px;
+  }
+
+  .kt-world__service-icon {
+    width: 31px;
+    height: 31px;
+  }
+
+  .kt-world__service-copy strong {
+    font-size: .59rem;
+  }
+
+  .kt-world__service-copy p {
+    margin-top: 3px;
+    font-size: .43rem;
+  }
+
+  .kt-world__signal {
+    margin-top: 3px;
+  }
+
+  .kt-world__base {
+    height: 55px;
+    margin-top: -1px;
+  }
+}
+</style>
