@@ -1018,3 +1018,102 @@ const services = [
   }
 }
 </style>
+
+<style scoped>
+/* KREATORTECH — MOBILE COMPACT + NETWORK ANIMATION */
+@media (max-width: 640px) {
+  .kt-world {
+    padding: 18px 12px 16px;
+    gap: 8px;
+  }
+
+  .kt-world__globe {
+    width: min(66vw, 270px);
+    height: min(66vw, 270px);
+    margin: 42px 0 24px;
+  }
+
+  /*
+   * Réseau animé visible uniquement autour du globe.
+   * Les cartes restent dans leur grille mobile.
+   */
+  .kt-world__network {
+    display: block;
+    z-index: 5;
+    top: 36px;
+    left: 50%;
+    width: min(96vw, 390px);
+    height: 300px;
+    transform: translateX(-50%);
+    overflow: hidden;
+  }
+
+  .kt-world__orbits {
+    opacity: .8;
+  }
+
+  .kt-world__flows {
+    opacity: .9;
+  }
+
+  .kt-world__service,
+  .kt-world__service.is-workplace,
+  .kt-world__service.is-itsm,
+  .kt-world__service.is-infrastructure,
+  .kt-world__service.is-automation,
+  .kt-world__service.is-development,
+  .kt-world__service.is-training {
+    min-height: 86px;
+    padding: 9px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .kt-world__service-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .kt-world__service-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .kt-world__service-copy strong {
+    font-size: .61rem;
+  }
+
+  .kt-world__service-copy p {
+    margin-top: 4px;
+    font-size: .46rem;
+  }
+
+  .kt-world__signal {
+    height: 10px;
+    margin-top: 4px;
+  }
+
+  .kt-world__signal i {
+    width: 3px;
+  }
+
+  .kt-world__status {
+    top: 12px;
+    min-width: 92px;
+    padding: 7px 8px;
+  }
+
+  .status-health {
+    left: 10px;
+  }
+
+  .status-auto {
+    right: 10px;
+  }
+
+  .kt-world__base {
+    height: 62px;
+    margin-top: 2px;
+  }
+}
+</style>
