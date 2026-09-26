@@ -9,8 +9,8 @@ export default defineNuxtConfig({
       titleTemplate: '%s · IFICS',
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'theme-color', content: '#123b2a' },
-        { name: 'description', content: 'IFICS — projets d’éducation, numérique & IT, insertion, culture, sport, innovation et R&D au service des territoires.' },
+        { name: 'theme-color', content: '#073f35' },
+        { name: 'description', content: 'IFICS — projets de terrain, éducation, inclusion, culture et sport. KREATORTECH porte les prestations IT, le numérique et l’ingénierie.' },
       ],
     },
   },

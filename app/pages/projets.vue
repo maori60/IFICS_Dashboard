@@ -1,54 +1,15 @@
 <script setup lang="ts">
 import type { ApiSuccess, PublicProject } from '~/types/api'
-import { publicVisuals, visualForDomain } from '~/utils/publicVisuals'
 
-useHead({ title: 'Projets' })
+useHead({ title: 'Nos projets' })
 const { data } = await useFetch<ApiSuccess<PublicProject[]>>('/api/public/projects')
 const projects = computed(() => data.value?.data ?? [])
 </script>
 
 <template>
   <div>
-    <section class="section projects-hero">
-      <div class="container split-section">
-        <div class="split-copy">
-          <p class="eyebrow">Projets IFICS</p>
-          <h1 class="display-title">Des projets suivis, documentés et construits avec les territoires.</h1>
-          <p class="lead">Cette page présente uniquement les projets autorisés à la publication. Les informations internes, administratives et financières restent protégées dans l’espace IFICS.</p>
-          <div class="hero-actions"><NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet</NuxtLink><NuxtLink to="/contact" class="btn btn-secondary">Échanger avec IFICS</NuxtLink></div>
-        </div>
-        <div class="split-media"><img :src="publicVisuals.projects" alt="Pilotage structuré d’un projet IFICS"></div>
-      </div>
-    </section>
-
-    <section class="section project-list-section">
-      <div class="container">
-        <div class="project-intro"><div><p class="eyebrow">Réalisations publiques</p><h2 class="section-title">Voir ce que nous construisons concrètement.</h2></div><p class="lead">Les projets sont publiés après validation et peuvent être enrichis au fur et à mesure de leur déroulement.</p></div>
-        <div v-if="projects.length" class="grid grid-3 project-grid">
-          <article v-for="project in projects" :key="project.id" class="card media-card project-card">
-            <img class="media-card-image" :src="project.imageUrl || visualForDomain(`${project.title} ${project.summary}`)" :alt="project.title" loading="lazy">
-            <div class="media-card-body">
-              <div class="actions"><span class="badge">{{ project.status || 'Projet' }}</span><span v-if="project.territory" class="badge badge-muted">{{ project.territory }}</span></div>
-              <h2>{{ project.title }}</h2>
-              <p>{{ project.summary }}</p>
-            </div>
-          </article>
-        </div>
-        <div v-else class="empty-state projects-empty"><strong>Les premiers projets publics seront bientôt présentés ici.</strong><span>Seules les publications validées sont visibles.</span></div>
-      </div>
-    </section>
-
-    <section class="section-compact"><div class="container cta-panel"><div><h2>Vous avez une problématique à traiter ?</h2><p>Décrivez le besoin et le public concerné. IFICS pourra ensuite qualifier la demande et étudier un projet avec vous.</p></div><NuxtLink to="/proposer-un-projet" class="btn btn-secondary">Présenter le besoin</NuxtLink></div></section>
+    <section class="editorial-hero projects-v2-hero"><div class="container editorial-hero-grid"><div><p class="eyebrow">Nos projets</p><h1>Le terrain comme preuve.</h1></div><div><p class="lead">Nous préférons montrer des réalisations concrètes plutôt qu’empiler les promesses. Seuls les projets autorisés à la publication apparaissent ici.</p><div class="hero-actions"><NuxtLink to="/proposer-un-projet" class="btn btn-primary">Proposer un projet</NuxtLink></div></div></div></section>
+    <section class="section projects-v2-list"><div class="container"><template v-if="projects.length"><PublicProjectSlider :projects="projects" /><div class="project-index-grid"><article v-for="(project,index) in projects" :key="project.id"><span>{{ String(index + 1).padStart(2,'0') }}</span><div><p>{{ project.territory || 'Projet IFICS' }}</p><h2>{{ project.title }}</h2><p v-if="project.summary">{{ project.summary }}</p><NuxtLink :to="`/projects/${project.projectId}`">Voir le projet →</NuxtLink></div></article></div></template><div v-else class="quiet-empty"><strong>Les projets publics arrivent bientôt.</strong><p>Les projets restent protégés tant que leur publication n’a pas été explicitement autorisée.</p></div></div></section>
+    <section class="section-compact final-cta-section"><div class="container final-cta"><div><p class="eyebrow light">Votre projet</p><h2>Un contexte à comprendre avant une solution à proposer.</h2></div><div><p>Expliquez-nous le besoin, le public et le résultat attendu.</p><div class="hero-actions"><NuxtLink to="/proposer-un-projet" class="btn btn-ivory">Présenter le besoin</NuxtLink></div></div></div></section>
   </div>
 </template>
-
-<style scoped>
-.projects-hero { background: #fff; }
-.project-list-section { background: #f3f6f4; border-block: 1px solid #e5ece7; }
-.project-intro { display: grid; grid-template-columns: 1fr .8fr; gap: 50px; align-items: end; margin-bottom: 32px; }
-.project-intro .lead { font-size: 1rem; }
-.project-card h2 { font-size: 1.12rem; }
-.projects-empty { display: flex; flex-direction: column; gap: 7px; }
-.projects-empty strong { color: var(--ifics-ink); }
-@media (max-width: 800px) { .project-intro { grid-template-columns: 1fr; gap: 8px; align-items: start; } }
-</style>

@@ -1,76 +1,365 @@
 <script setup lang="ts">
-import { publicVisuals } from '~/utils/publicVisuals'
+useHead({ title: 'À propos d’IFICS' })
 
-useHead({ title: 'Association' })
+const universes = [
+  { code: 'education', label: 'Éducation', icon: '⌁' },
+  { code: 'inclusion', label: 'Inclusion', icon: '◎' },
+  { code: 'numerique', label: 'Numérique', icon: '⌘' },
+  { code: 'sport', label: 'Sport', icon: '↗' },
+  { code: 'culture', label: 'Culture', icon: '◇' },
+]
 
 const values = [
-  ['Transmission', 'Partager des méthodes et des repères qui peuvent être réutilisés au-delà d’une action.'],
-  ['Inclusion', 'Construire des formats accessibles à des publics et des parcours différents.'],
-  ['Coopération', 'Travailler avec les acteurs du territoire plutôt que concevoir les projets à leur place.'],
-  ['Exigence', 'Préparer, suivre et documenter les actions pour progresser dans la durée.'],
+  {
+    number: '01',
+    icon: '↗',
+    title: 'Transmission',
+    text: 'Rendre les méthodes, les outils et les connaissances réutilisables au-delà d’une seule action.',
+  },
+  {
+    number: '02',
+    icon: '◎',
+    title: 'Exigence',
+    text: 'Cadrer, suivre, documenter et améliorer ce que nous faisons.',
+  },
+  {
+    number: '03',
+    icon: '◌',
+    title: 'Inclusion',
+    text: 'Construire des formats accessibles à des publics et des parcours différents.',
+  },
+  {
+    number: '04',
+    icon: '∞',
+    title: 'Coopération',
+    text: 'Travailler avec les personnes et les acteurs concernés plutôt que concevoir à leur place.',
+  },
+]
+
+const vanSkills = [
+  'Éducation',
+  'Sport',
+  'Culture',
+  'École 42',
+  'Ingénierie IT',
+  'Transmission',
+]
+
+const alexSkills = [
+  'Développement',
+  'Algorithmique',
+  'Mathématiques',
+  'Pédagogie',
+  'Documentation',
+  'Transmission',
 ]
 </script>
 
 <template>
-  <div>
-    <section class="section association-hero">
-      <div class="container split-section reverse">
-        <div class="split-copy">
-          <p class="eyebrow">L'association IFICS</p>
-          <h1 class="display-title">Une association qui relie compétences humaines, technologie et territoires.</h1>
-          <p class="lead">IFICS conçoit et conduit des projets en éducation, numérique & IT, insertion, culture, sport et innovation. L’association peut aussi développer des outils logiciels et des ressources techniques lorsqu’ils répondent à un besoin concret du terrain.</p>
-        </div>
-        <div class="split-media"><img :src="publicVisuals.association" alt="Coopération entre plusieurs acteurs autour d’un projet IFICS" loading="eager"></div>
-      </div>
-    </section>
+  <div class="about-v8">
 
-    <section class="section-compact principles-section">
-      <div class="container grid grid-3">
-        <article class="card card-pad"><span class="kicker">01 · Mission</span><h2>Donner des moyens concrets pour agir</h2><p>Apprendre, progresser, s’exprimer, coopérer, utiliser la technologie et gagner en autonomie à travers des projets concrets.</p></article>
-        <article class="card card-pad"><span class="kicker">02 · Méthode</span><h2>Construire avec le terrain</h2><p>Partir du contexte local, associer les interlocuteurs utiles et adapter le format aux publics concernés.</p></article>
-        <article class="card card-pad"><span class="kicker">03 · Responsabilité</span><h2>Suivre ce que nous faisons</h2><p>Définir des objectifs lisibles, documenter les actions et utiliser les retours pour améliorer les projets suivants.</p></article>
-      </div>
-    </section>
+    <!-- HERO -->
+    <section class="about-v8-hero">
+      <div class="about-v8-shell about-v8-hero-grid">
 
-    <section class="section">
-      <div class="container split-section">
-        <div class="split-copy">
-          <p class="eyebrow">Nos valeurs</p>
-          <h2 class="section-title">Être utile, exigeant et attentif aux personnes.</h2>
-          <div class="values-grid">
-            <div v-for="value in values" :key="value[0]" class="value-item"><strong>{{ value[0] }}</strong><p>{{ value[1] }}</p></div>
+        <div class="about-v8-hero-copy">
+          <p class="about-v8-kicker">
+            À propos d’IFICS
+          </p>
+
+          <h1>
+            Une association<br>
+            née du terrain.
+          </h1>
+
+          <p class="about-v8-domains">
+            Éducation
+            <i />
+            Inclusion
+            <i />
+            Culture
+            <i />
+            Sport
+            <i />
+            Numérique
+          </p>
+
+          <p class="about-v8-intro">
+            IFICS accompagne les personnes, les territoires et les
+            organisations dans la réalisation de projets utiles, en croisant
+            les domaines de l’éducation, de la culture, du sport et du numérique.
+          </p>
+
+          <div class="about-v8-actions">
+            <NuxtLink
+              to="/actions"
+              class="about-v8-button about-v8-button-primary"
+            >
+              Découvrir nos actions
+              <span>→</span>
+            </NuxtLink>
+
+            <a
+              href="#mission"
+              class="about-v8-button about-v8-button-secondary"
+            >
+              Notre mission
+            </a>
           </div>
         </div>
-        <div class="split-media"><img :src="publicVisuals.education" alt="Transmission de méthodes et accompagnement éducatif" loading="lazy"></div>
+
+
+        <!-- UNIVERS IFICS -->
+        <div
+          class="about-v8-universe"
+          aria-label="Les cinq univers d’IFICS"
+        >
+          <div class="about-v8-orbit about-v8-orbit-a" />
+          <div class="about-v8-orbit about-v8-orbit-b" />
+          <div class="about-v8-orbit about-v8-orbit-c" />
+
+          <i class="about-v8-star about-v8-star-a" />
+          <i class="about-v8-star about-v8-star-b" />
+          <i class="about-v8-star about-v8-star-c" />
+          <i class="about-v8-star about-v8-star-d" />
+
+          <div class="about-v8-core">
+            <div class="about-v8-core-glow" />
+
+            <img
+              src="/brand/v2/ifics-wordmark-light.png"
+              alt="IFICS"
+            >
+          </div>
+
+          <div
+            v-for="universe in universes"
+            :key="universe.code"
+            class="about-v8-universe-node"
+            :class="`about-v8-node-${universe.code}`"
+          >
+            <span>{{ universe.icon }}</span>
+            <strong>{{ universe.label }}</strong>
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <section class="section governance-section">
-      <div class="container">
-        <p class="eyebrow">Notre manière d’agir</p>
-        <h2 class="section-title">Un cadre lisible pour les partenaires et les bénéficiaires.</h2>
-        <div class="grid grid-2">
-          <article class="card card-pad"><h3>Co-construction</h3><p>Objectifs, public, calendrier, ressources et critères de réussite sont définis avec la structure partenaire.</p></article>
-          <article class="card card-pad"><h3>Évaluation</h3><p>Les actions sont suivies et améliorées dans le temps. Les informations internes restent séparées des contenus destinés au public.</p></article>
-          <article class="card card-pad"><h3>Traçabilité</h3><p>Les décisions importantes, documents, bilans et validations sont organisés dans une plateforme de gestion unique.</p></article>
-          <article class="card card-pad"><h3>Protection des données</h3><p>Les informations professionnelles et administratives ne sont accessibles qu'aux personnes autorisées selon leur rôle.</p></article>
+
+    <!-- MISSION -->
+    <section
+      id="mission"
+      class="about-v8-mission"
+    >
+      <div class="about-v8-shell about-v8-mission-grid">
+
+        <div>
+          <p class="about-v8-kicker">
+            Notre mission
+          </p>
+
+          <h2>
+            Des projets concrets,<br>
+            un impact durable.
+          </h2>
         </div>
-        <div class="association-cta"><NuxtLink to="/actions" class="btn btn-primary">Découvrir nos actions</NuxtLink><NuxtLink to="/contact" class="btn btn-secondary">Contacter IFICS</NuxtLink></div>
+
+        <div class="about-v8-mission-copy">
+          <i />
+
+          <p>
+            Nous mettons la technologie, la pédagogie et la coopération
+            au service des personnes et des territoires, pour créer des
+            opportunités et renforcer l’autonomie.
+          </p>
+        </div>
+
       </div>
     </section>
+
+
+    <!-- PILOTAGE -->
+    <section class="about-v8-people">
+      <div class="about-v8-shell">
+
+        <div class="about-v8-people-heading">
+          <div>
+            <p class="about-v8-kicker">
+              Celles et ceux qui pilotent
+            </p>
+
+            <h2>
+              Deux parcours,<br>
+              une même conviction.
+            </h2>
+          </div>
+
+          <p>
+            Des compétences complémentaires pour comprendre les besoins,
+            concevoir des solutions adaptées et accompagner leur mise en œuvre.
+          </p>
+        </div>
+
+
+        <div class="about-v8-people-grid">
+
+          <!-- VAN -->
+          <article class="about-v8-person-card">
+            <header>
+              <span class="about-v8-person-icon">●</span>
+
+              <div>
+                <h3>Van BUI</h3>
+                <p>Président · IFICS</p>
+              </div>
+            </header>
+
+            <div class="about-v8-tags">
+              <span
+                v-for="skill in vanSkills"
+                :key="skill"
+              >
+                {{ skill }}
+              </span>
+            </div>
+
+            <p class="about-v8-person-description">
+              Une approche construite autour du besoin humain et opérationnel,
+              du terrain à l’ingénierie informatique.
+            </p>
+          </article>
+
+
+          <!-- CONNEXION -->
+          <div
+            class="about-v8-connection"
+            aria-hidden="true"
+          >
+            <div class="about-v8-infinity">
+              ∞
+            </div>
+
+            <span>Terrain</span>
+            <span>Expertise</span>
+            <span>Transmission</span>
+            <span>Impact</span>
+          </div>
+
+
+          <!-- ALEXANDRE -->
+          <article class="about-v8-person-card">
+            <header>
+              <span class="about-v8-person-icon">●</span>
+
+              <div>
+                <h3>Alexandre PAYET</h3>
+                <p>Pilotage technique · KREATORTECH</p>
+              </div>
+            </header>
+
+            <div class="about-v8-tags">
+              <span
+                v-for="skill in alexSkills"
+                :key="skill"
+              >
+                {{ skill }}
+              </span>
+            </div>
+
+            <p class="about-v8-person-description">
+              Une expertise technique et pédagogique pour concevoir des
+              solutions utiles, documentées et transmissibles.
+            </p>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- VALEURS -->
+    <section class="about-v8-values">
+      <div class="about-v8-shell">
+
+        <div class="about-v8-values-heading">
+          <p class="about-v8-kicker">
+            Nos valeurs
+          </p>
+
+          <h2>
+            Être utile, exigeant<br>
+            et attentif aux personnes.
+          </h2>
+        </div>
+
+        <div class="about-v8-values-grid">
+          <article
+            v-for="value in values"
+            :key="value.title"
+            class="about-v8-value"
+          >
+            <div class="about-v8-value-top">
+              <span>{{ value.number }}</span>
+              <i>{{ value.icon }}</i>
+            </div>
+
+            <h3>{{ value.title }}</h3>
+
+            <p>{{ value.text }}</p>
+          </article>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- CTA -->
+    <section class="about-v8-cta">
+      <div class="about-v8-shell">
+        <div class="about-v8-cta-panel">
+
+          <div>
+            <p class="about-v8-kicker">
+              Travailler avec IFICS
+            </p>
+
+            <h2>
+              Un projet doit être compréhensible<br>
+              avant d’être ambitieux.
+            </h2>
+          </div>
+
+          <div class="about-v8-cta-divider" />
+
+          <div class="about-v8-cta-copy">
+            <p>
+              Nous partons du contexte, du public, des contraintes et des
+              résultats attendus. Nous construisons ensuite le format le plus
+              adapté.
+            </p>
+
+            <div class="about-v8-actions">
+              <NuxtLink
+                to="/proposer-un-projet"
+                class="about-v8-button about-v8-button-primary"
+              >
+                Proposer un projet
+                <span>→</span>
+              </NuxtLink>
+
+              <NuxtLink
+                to="/contact"
+                class="about-v8-button about-v8-button-secondary"
+              >
+                Nous contacter
+              </NuxtLink>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
   </div>
 </template>
-
-<style scoped>
-.association-hero { background: #fff; }
-.principles-section { background: #f3f6f4; border-top: 1px solid #e5ece7; border-bottom: 1px solid #e5ece7; }
-.principles-section h2 { margin: 9px 0; font-size: 1.12rem; }
-.principles-section p, .governance-section p { color: var(--ifics-muted); margin-bottom: 0; }
-.values-grid { display: grid; gap: 20px; margin-top: 28px; }
-.value-item { padding-bottom: 18px; border-bottom: 1px solid var(--ifics-border); }
-.value-item:last-child { border-bottom: 0; }
-.value-item strong { font-size: 1rem; }
-.value-item p { margin: 5px 0 0; color: var(--ifics-muted); }
-.governance-section { background: #fafcfa; }
-.association-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
-</style>

@@ -1,64 +1,157 @@
 <script setup lang="ts">
-import type { ApiSuccess, PublicContent } from '~/types/api'
-import { publicVisuals } from '~/utils/publicVisuals'
+useHead({ title: 'KREATORTECH — Innovation & R&D' })
 
-useHead({ title: 'Innovation & R&D' })
-const { data } = await useFetch<ApiSuccess<PublicContent[]>>('/api/public/content', { query: { kind: 'RND' } })
-const items = computed(() => data.value?.data ?? [])
+const axes = [
+  {
+    number: '01',
+    icon: '⌘',
+    title: 'Explorer',
+    text: 'Observer les usages, écouter les personnes concernées et formuler des hypothèses testables.',
+  },
+  {
+    number: '02',
+    icon: '◇',
+    title: 'Prototyper',
+    text: 'Construire rapidement, confronter au réel et ajuster.',
+  },
+  {
+    number: '03',
+    icon: '□',
+    title: 'Tester',
+    text: 'Mesurer, documenter les limites et vérifier la valeur apportée.',
+  },
+  {
+    number: '04',
+    icon: '▣',
+    title: 'Transmettre',
+    text: 'Capitaliser les résultats et publier lorsque la diffusion est pertinente.',
+  },
+]
 </script>
 
 <template>
-  <div>
-    <section class="section innovation-hero">
-      <div class="container split-section">
-        <div class="split-copy">
-          <p class="eyebrow">Innovation & R&D</p>
-          <h1 class="display-title">Concevoir, expérimenter et documenter les solutions de demain.</h1>
-          <p class="lead">Le pôle Innovation & R&D transforme des problèmes concrets en expérimentations : logiciels, automatisations, prototypes, méthodes pédagogiques et outils numériques. Les choix, tests et résultats sont documentés pour pouvoir être compris, transmis et améliorés.</p>
-          <div class="hero-actions"><NuxtLink to="/contact" class="btn btn-primary">Échanger avec IFICS</NuxtLink><NuxtLink to="/logiciels" class="btn btn-secondary">Voir les ressources</NuxtLink></div>
+  <div class="v9-page v9-innovation">
+    <section class="v9-hero">
+      <div class="container v9-hero-grid">
+        <div class="v9-hero-copy">
+          <p class="v9-eyebrow">KREATORTECH · Innovation &amp; R&amp;D</p>
+
+          <h1>
+            Expérimenter pour<br>
+            résoudre.<br>
+            Documenter pour<br>
+            transmettre.
+          </h1>
+
+          <p class="v9-lead">
+            L’innovation n’a de valeur que si elle améliore un usage réel
+            et peut être comprise, testée et améliorée.
+          </p>
+
+          <div class="v9-actions">
+            <NuxtLink to="/contact" class="v9-btn v9-btn-primary">
+              Échanger avec nous
+              <span>→</span>
+            </NuxtLink>
+
+            <NuxtLink to="/logiciels" class="v9-btn v9-btn-secondary">
+              Voir les ressources
+            </NuxtLink>
+          </div>
         </div>
-        <div class="split-media"><img :src="publicVisuals.innovation" alt="Expérimentation et prototypage dans un projet IFICS"></div>
-      </div>
-    </section>
 
-    <section class="section-compact process-section">
-      <div class="container grid grid-3">
-        <article class="card card-pad"><span class="kicker">01 · Explorer</span><h2>Comprendre le problème</h2><p>Observer les usages, écouter les personnes concernées et formuler des hypothèses testables.</p></article>
-        <article class="card card-pad"><span class="kicker">02 · Prototyper</span><h2>Tester rapidement</h2><p>Construire un outil ou un format simple, le confronter au terrain puis corriger ce qui doit l’être.</p></article>
-        <article class="card card-pad"><span class="kicker">03 · Transmettre</span><h2>Capitaliser</h2><p>Documenter les enseignements et publier les ressources lorsque leur diffusion est pertinente et validée.</p></article>
-      </div>
-    </section>
+        <div class="v9-rnd-visual" aria-hidden="true">
+          <svg
+            class="v9-rnd-path"
+            viewBox="0 0 600 440"
+            fill="none"
+          >
+            <path
+              d="M110 180C110 92 233 58 303 130C366 195 286 232 355 286C416 334 506 291 507 208"
+            />
+            <path
+              d="M94 295C149 366 244 356 284 293C327 225 388 206 485 248"
+            />
+          </svg>
 
-    <section class="section">
-      <div class="container split-section reverse">
-        <div class="split-copy">
-          <p class="eyebrow">Recherche appliquée</p>
-          <h2 class="section-title">L’innovation doit améliorer un usage réel.</h2>
-          <p class="lead">IFICS privilégie les expérimentations mesurables, compréhensibles et transférables. L’objectif est d’identifier les méthodes et outils qui répondent réellement au besoin.</p>
-          <ul class="feature-list"><li><span>Des hypothèses explicites avant l’expérimentation.</span></li><li><span>Des retours du terrain pendant le test.</span></li><li><span>Une documentation suffisante pour comprendre les résultats.</span></li></ul>
+          <div class="v9-rnd-card v9-rnd-card-1">
+            <span>♢</span>
+            <div>
+              <strong>Recherche</strong>
+              <small>Exploration d’idées et veille technologique.</small>
+            </div>
+          </div>
+
+          <div class="v9-rnd-card v9-rnd-card-2">
+            <span>△</span>
+            <div>
+              <strong>Prototypage</strong>
+              <small>Tests rapides et itérations sur le terrain.</small>
+            </div>
+          </div>
+
+          <div class="v9-rnd-card v9-rnd-card-3">
+            <span>↗</span>
+            <div>
+              <strong>Usages réels</strong>
+              <small>Confrontation aux besoins et aux contraintes.</small>
+            </div>
+          </div>
+
+          <div class="v9-rnd-card v9-rnd-card-4">
+            <span>▤</span>
+            <div>
+              <strong>Transmission</strong>
+              <small>Documentation et partage des résultats.</small>
+            </div>
+          </div>
         </div>
-        <div class="split-media"><img :src="publicVisuals.numerique" alt="Prototype numérique et transmission de compétences" loading="lazy"></div>
       </div>
     </section>
 
-    <section class="section publications-section">
+    <section class="v9-section">
       <div class="container">
-        <p class="eyebrow">Publications R&D</p>
-        <h2 class="section-title">Partager ce qui peut être utile à d'autres.</h2>
-        <div v-if="items.length" class="grid grid-3">
-          <article v-for="item in items" :key="item.id" class="card card-pad publication-card"><span class="badge">R&D</span><h3>{{ item.title }}</h3><p>{{ item.excerpt }}</p><NuxtLink class="media-card-link" :to="`/actualites/${item.slug}`">Lire la publication</NuxtLink></article>
+        <p class="v9-eyebrow">Quatre axes d’innovation</p>
+
+        <div class="v9-feature-grid v9-feature-grid-4">
+          <article
+            v-for="axis in axes"
+            :key="axis.number"
+            class="v9-feature-card"
+          >
+            <div class="v9-card-top">
+              <span class="v9-feature-icon">{{ axis.icon }}</span>
+              <span class="v9-card-number">{{ axis.number }}</span>
+            </div>
+
+            <h2>{{ axis.title }}</h2>
+            <p>{{ axis.text }}</p>
+          </article>
         </div>
-        <div v-else class="empty-state">Aucune publication R&D n’est ouverte au public pour le moment.</div>
+      </div>
+    </section>
+
+    <section class="v9-bottom-shell">
+      <div class="container">
+        <div class="v9-bottom-card">
+          <div>
+            <p class="v9-eyebrow">Du prototype au terrain</p>
+            <h2>Une innovation utile doit pouvoir vivre après le test.</h2>
+          </div>
+
+          <div class="v9-bottom-copy">
+            <p>
+              Chaque expérimentation vise un résultat compréhensible,
+              documenté et transmissible.
+            </p>
+
+            <NuxtLink to="/logiciels" class="v9-btn v9-btn-primary">
+              Explorer les ressources
+              <span>→</span>
+            </NuxtLink>
+          </div>
+        </div>
       </div>
     </section>
   </div>
 </template>
-
-<style scoped>
-.innovation-hero { background: #fff; }
-.process-section { background: #f3f6f4; border-block: 1px solid #e5ece7; }
-.process-section h2 { margin: 9px 0; font-size: 1.1rem; }
-.process-section p, .publication-card p { color: var(--ifics-muted); margin-bottom: 0; }
-.publications-section { background: #fafcfa; }
-.publication-card h3 { margin: 14px 0 8px; }
-</style>

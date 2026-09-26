@@ -1,32 +1,299 @@
 <script setup lang="ts">
-import { publicIllustrations, publicVisuals } from '~/utils/publicVisuals'
-
 useHead({ title: 'Nos actions' })
 
-const actions = [
-  { title: 'Numérique & IT', text: 'Développement logiciel, outils métiers, automatisation, gestion de parc, accompagnement aux usages et formation numérique.', illustration: publicIllustrations.numerique },
-  { title: 'Innovation & R&D', text: 'Expérimentation technique et pédagogique, prototypes, recherche appliquée, tests et documentation réutilisable.', illustration: publicIllustrations.innovation },
-  { title: 'Éducation & formation', text: 'Ateliers pédagogiques, accompagnement, transmission de méthodes et développement de l’autonomie.', illustration: publicIllustrations.education },
-  { title: 'Insertion & compétences', text: 'Compétences, orientation, professionnalisation et projets favorisant l’accès à l’activité et à l’emploi.', illustration: publicIllustrations.insertion },
-  { title: 'Culture', text: 'Création, expression, découverte artistique et mise en valeur des parcours et des territoires.', illustration: publicIllustrations.culture },
-  { title: 'Sport', text: 'Pratiques sportives comme leviers de santé, de discipline, de confiance et de cohésion.', illustration: publicIllustrations.sport },
-  { title: 'Citoyenneté & lien social', text: 'Actions collectives favorisant le partage, la coopération, l’autonomie et la participation.', illustration: publicIllustrations.association },
-]
+let actionsObserver: IntersectionObserver | undefined
+
+onMounted(() => {
+  const cards = Array.from(
+    document.querySelectorAll<HTMLElement>('.actions-v8-reveal'),
+  )
+
+  if (
+    !('IntersectionObserver' in window)
+    || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
+    cards.forEach(card => card.classList.add('is-visible'))
+    return
+  }
+
+  actionsObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting)
+          return
+
+        entry.target.classList.add('is-visible')
+        actionsObserver?.unobserve(entry.target)
+      })
+    },
+    {
+      threshold: 0.14,
+      rootMargin: '0px 0px -6% 0px',
+    },
+  )
+
+  cards.forEach(card => actionsObserver?.observe(card))
+})
+
+onUnmounted(() => {
+  actionsObserver?.disconnect()
+})
 </script>
 
 <template>
-  <div>
-    <section class="section actions-hero">
-      <div class="container split-section">
-        <div class="split-copy"><p class="eyebrow">Nos actions</p><h1 class="display-title">Des compétences complémentaires pour agir concrètement.</h1><p class="lead">IFICS associe pratiques de terrain, compétences numériques et ingénierie de projet. Le format dépend du besoin : accompagnement, développement, formation, atelier, stage, expérimentation ou projet long.</p><div class="hero-actions"><NuxtLink to="/proposer-un-projet" class="btn btn-primary">Présenter un besoin</NuxtLink><NuxtLink to="/logiciels" class="btn btn-secondary">Découvrir le pôle numérique</NuxtLink></div></div>
-        <div class="split-media"><img :src="publicVisuals.actions" alt="Équipe IFICS travaillant sur un projet pluridisciplinaire"></div>
+  <main class="actions-v8">
+
+    <section class="actions-v8-hero">
+      <div class="actions-v8-shell actions-v8-hero-grid">
+
+        <div class="actions-v8-hero-copy">
+          <p class="actions-v8-kicker">
+            NOS ACTIONS
+          </p>
+
+          <h1>
+            Trois univers.<br>
+            <span>Une même ambition.</span>
+          </h1>
+
+          <p class="actions-v8-intro">
+            IFICS réunit ingénierie, transmission et pratiques collectives
+            autour d'une même idée : transformer un besoin concret en action utile.
+          </p>
+
+          <div class="actions-v8-actions">
+            <NuxtLink
+              to="/proposer-un-projet"
+              class="actions-v8-button actions-v8-button-primary"
+            >
+              Présenter un besoin
+              <span aria-hidden="true">→</span>
+            </NuxtLink>
+
+            <NuxtLink
+              to="/association"
+              class="actions-v8-button"
+            >
+              Découvrir IFICS
+            </NuxtLink>
+          </div>
+        </div>
+
+        <div class="actions-v8-map" aria-hidden="true">
+          <div class="actions-v8-map-glow" />
+
+          <div class="actions-v8-map-center">
+            <span>IFICS</span>
+            <strong>Agir</strong>
+          </div>
+
+          <div class="actions-v8-map-line actions-v8-map-line-a" />
+          <div class="actions-v8-map-line actions-v8-map-line-b" />
+          <div class="actions-v8-map-line actions-v8-map-line-c" />
+
+          <div class="actions-v8-map-node actions-v8-map-node-a">
+            <small>01</small>
+            <strong>Numérique</strong>
+          </div>
+
+          <div class="actions-v8-map-node actions-v8-map-node-b">
+            <small>02</small>
+            <strong>Éducation</strong>
+          </div>
+
+          <div class="actions-v8-map-node actions-v8-map-node-c">
+            <small>03</small>
+            <strong>Culture & sport</strong>
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <section class="section action-list-section">
-      <div class="container"><div class="section-intro-grid"><div><p class="eyebrow">Domaines d’intervention</p><h2 class="section-title">Des expertises qui se combinent selon le projet.</h2></div><p class="lead">Le numérique et l’IT ne sont pas un service annexe : ils font partie des leviers mobilisés par IFICS au même titre que l’éducation, l’insertion, la culture ou le sport.</p></div><div class="domain-visual-grid action-domain-grid"><article v-for="(action, index) in actions" :key="action.title" class="domain-visual-card"><div class="domain-visual-icon"><img :src="action.illustration" alt="" loading="lazy"></div><div class="domain-visual-copy"><span class="theme-card-index">0{{ index + 1 }}</span><h2>{{ action.title }}</h2><p>{{ action.text }}</p></div></article></div></div>
+    <section class="actions-v8-universes">
+      <div class="actions-v8-shell">
+
+        <header class="actions-v8-section-heading actions-v8-reveal">
+          <div>
+            <p class="actions-v8-kicker">
+              NOS UNIVERS
+            </p>
+
+            <h2>
+              Des expertises différentes.<br>
+              Une logique commune.
+            </h2>
+          </div>
+
+          <p>
+            Chaque pôle répond à son propre terrain d'action.
+            Tous partagent la même exigence : construire, transmettre
+            et rendre autonome.
+          </p>
+        </header>
+
+        <div class="actions-v8-grid">
+
+          <article class="actions-v8-card actions-v8-card-tech actions-v8-reveal">
+            <header>
+              <span>01</span>
+              <p>KREATORTECH</p>
+            </header>
+
+            <div class="actions-v8-card-icon" aria-hidden="true">
+              &lt;/&gt;
+            </div>
+
+            <h3>Numérique<br>& ingénierie</h3>
+
+            <p>
+              Conseil, support & workplace, développement,
+              automatisation, systèmes, réseaux et formation technique.
+            </p>
+
+            <div class="actions-v8-tags">
+              <span>ITSM</span>
+              <span>Full-stack</span>
+              <span>Automatisation</span>
+            </div>
+
+            <NuxtLink to="/kreatortech">
+              Découvrir le pôle <span aria-hidden="true">→</span>
+            </NuxtLink>
+          </article>
+
+          <article class="actions-v8-card actions-v8-reveal">
+            <header>
+              <span>02</span>
+              <p>ÉDUCATION & INCLUSION</p>
+            </header>
+
+            <div class="actions-v8-card-icon" aria-hidden="true">
+              +
+            </div>
+
+            <h3>Transmettre<br>& accompagner</h3>
+
+            <p>
+              Scolarité, développement informatique,
+              mathématiques appliquées, méthodologie,
+              orientation et montée en compétences.
+            </p>
+
+            <div class="actions-v8-tags">
+              <span>Scolarité</span>
+              <span>Formation</span>
+              <span>Insertion</span>
+            </div>
+
+            <NuxtLink to="/association">
+              Notre approche <span aria-hidden="true">→</span>
+            </NuxtLink>
+          </article>
+
+          <article class="actions-v8-card actions-v8-reveal">
+            <header>
+              <span>03</span>
+              <p>CULTURE & SPORT</p>
+            </header>
+
+            <div class="actions-v8-card-icon" aria-hidden="true">
+              ◇
+            </div>
+
+            <h3>Créer du lien<br>par la pratique</h3>
+
+            <p>
+              Capoeira, culture, sport et projets collectifs
+              comme outils de confiance, d'expression,
+              de discipline et de cohésion.
+            </p>
+
+            <div class="actions-v8-tags">
+              <span>Capoeira</span>
+              <span>Culture</span>
+              <span>Lien social</span>
+            </div>
+
+            <NuxtLink to="/contact">
+              Échanger avec nous <span aria-hidden="true">→</span>
+            </NuxtLink>
+          </article>
+
+        </div>
+      </div>
     </section>
 
-    <section class="section-compact"><div class="container cta-panel"><div><span class="cta-kicker">Votre contexte d’abord</span><h2>Vous avez un besoin sur votre territoire ?</h2><p>Décrivez le public, le contexte et l’objectif. IFICS construira ensuite le format adapté.</p></div><NuxtLink to="/proposer-un-projet" class="btn btn-secondary">Proposer un projet</NuxtLink></div></section>
-  </div>
+    <section class="actions-v8-principle">
+      <div class="actions-v8-shell actions-v8-principle-grid actions-v8-reveal">
+
+        <div>
+          <p class="actions-v8-kicker">
+            NOTRE FIL CONDUCTEUR
+          </p>
+
+          <h2>
+            Comprendre.<br>
+            Construire.<br>
+            Transmettre.
+          </h2>
+        </div>
+
+        <div class="actions-v8-principle-flow">
+          <div>
+            <span>01</span>
+            <strong>Comprendre</strong>
+            <p>Partir du terrain et du besoin réel.</p>
+          </div>
+
+          <i />
+
+          <div>
+            <span>02</span>
+            <strong>Construire</strong>
+            <p>Créer un format adapté au contexte.</p>
+          </div>
+
+          <i />
+
+          <div>
+            <span>03</span>
+            <strong>Transmettre</strong>
+            <p>Documenter, accompagner et rendre autonome.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="actions-v8-cta">
+      <div class="actions-v8-shell">
+        <div class="actions-v8-cta-panel actions-v8-reveal">
+
+          <div>
+            <p class="actions-v8-kicker">
+              VOTRE CONTEXTE D'ABORD
+            </p>
+
+            <h2>Vous avez un besoin à transformer en projet ?</h2>
+          </div>
+
+          <p>
+            Donnez-nous le contexte, le public et l'objectif.
+            Nous construirons ensuite le format adapté.
+          </p>
+
+          <NuxtLink
+            to="/proposer-un-projet"
+            class="actions-v8-button actions-v8-button-primary"
+          >
+            Proposer un projet
+            <span aria-hidden="true">→</span>
+          </NuxtLink>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
 </template>
