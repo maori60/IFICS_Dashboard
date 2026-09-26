@@ -5,14 +5,6 @@ usePublicSeo({
   path: '/association',
 })
 
-const universes = [
-  { code: 'education', label: 'Éducation', icon: '⌁' },
-  { code: 'inclusion', label: 'Inclusion', icon: '◎' },
-  { code: 'numerique', label: 'Numérique', icon: '⌘' },
-  { code: 'sport', label: 'Sport', icon: '↗' },
-  { code: 'culture', label: 'Culture', icon: '◇' },
-]
-
 const values = [
   {
     number: '01',
@@ -113,39 +105,8 @@ const alexSkills = [
         </div>
 
 
-        <!-- UNIVERS IFICS -->
-        <div
-          class="about-v8-universe"
-          aria-label="Les cinq univers d’IFICS"
-        >
-          <div class="about-v8-orbit about-v8-orbit-a" />
-          <div class="about-v8-orbit about-v8-orbit-b" />
-          <div class="about-v8-orbit about-v8-orbit-c" />
-
-          <i class="about-v8-star about-v8-star-a" />
-          <i class="about-v8-star about-v8-star-b" />
-          <i class="about-v8-star about-v8-star-c" />
-          <i class="about-v8-star about-v8-star-d" />
-
-          <div class="about-v8-core">
-            <div class="about-v8-core-glow" />
-
-            <img
-              src="/brand/v2/ifics-wordmark-light.png"
-              alt="IFICS"
-            >
-          </div>
-
-          <div
-            v-for="universe in universes"
-            :key="universe.code"
-            class="about-v8-universe-node"
-            :class="`about-v8-node-${universe.code}`"
-          >
-            <span>{{ universe.icon }}</span>
-            <strong>{{ universe.label }}</strong>
-          </div>
-        </div>
+        <!-- FLUX & POLES IFICS -->
+        <AssociationFluxField />
 
       </div>
     </section>
