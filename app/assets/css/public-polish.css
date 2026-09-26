@@ -7903,3 +7903,64 @@ body {
 }
 
 /* END IFICS V9.1 — HEADER HOME CTA FOOTER */
+
+/* ============================================================
+   ASSOCIATION V8 — MOBILE RESPONSIVE FIX
+   ============================================================ */
+
+@media (max-width: 620px) {
+  .about-v8 {
+    overflow-x: clip;
+  }
+
+  .about-v8-hero {
+    padding: 38px 0 54px;
+  }
+
+  .about-v8-hero-grid {
+    gap: 30px;
+    min-width: 0;
+  }
+
+  .about-v8-hero-copy {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .about-v8-hero h1 {
+    max-width: 100%;
+    margin-bottom: 20px;
+    font-size: clamp(2.65rem, 12.2vw, 3.35rem);
+    line-height: .98;
+    letter-spacing: -.05em;
+    overflow-wrap: normal;
+  }
+
+  .about-v8-domains {
+    gap: 8px 9px;
+    margin-bottom: 20px;
+    font-size: .9rem;
+    line-height: 1.45;
+  }
+
+  .about-v8-intro {
+    max-width: 100%;
+    margin-bottom: 25px;
+    font-size: .94rem;
+    line-height: 1.65;
+    overflow-wrap: break-word;
+  }
+
+  .about-v8-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .about-v8-button {
+    width: 100%;
+    min-height: 50px;
+    padding-inline: 18px;
+  }
+}

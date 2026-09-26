@@ -840,3 +840,113 @@ function iconPaths(icon: string) {
   }
 }
 </style>
+
+<style scoped>
+/* ============================================================
+   ASSOCIATION — MOBILE NATIVE LAYOUT
+   Desktop validé inchangé.
+   ============================================================ */
+
+@media (max-width: 620px) {
+  .association-flux {
+    left: auto;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+    margin: 8px 0 0;
+    transform: none;
+  }
+
+  .association-flux__ambient {
+    inset: -30px -20px;
+    background:
+      radial-gradient(circle at 50% 16%, rgba(23, 233, 173, .15), transparent 25%),
+      radial-gradient(circle at 50% 55%, rgba(28, 207, 194, .05), transparent 38%);
+  }
+
+  /* Le réseau SVG desktop est remplacé par une composition mobile. */
+  .association-flux__network {
+    display: none;
+  }
+
+  .association-flux__core {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 142px;
+    height: 142px;
+    margin: 32px auto 46px;
+    transform: none;
+  }
+
+  .association-flux__core-aura {
+    inset: -30px;
+  }
+
+  .association-flux__core-body {
+    inset: 10px;
+    padding: 22px;
+  }
+
+  .association-flux__core-body img {
+    width: 94px;
+  }
+
+  .association-flux__poles {
+    position: relative;
+    inset: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+    pointer-events: auto;
+  }
+
+  .association-flux__pole,
+  .association-flux__pole--education,
+  .association-flux__pole--inclusion,
+  .association-flux__pole--culture,
+  .association-flux__pole--sport,
+  .association-flux__pole--numerique {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    height: 82px;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 12px;
+    padding: 0 14px;
+    border-radius: 10px 20px 20px 10px;
+  }
+
+  .association-flux__icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .association-flux__copy strong {
+    font-size: .92rem;
+  }
+
+  .association-flux__copy span {
+    max-width: 155px;
+    font-size: .67rem;
+    line-height: 1.3;
+  }
+
+  .association-flux__photo {
+    width: 53%;
+  }
+
+  .association-flux__arrow {
+    right: 11px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .association-flux__spark {
+    display: none;
+  }
+}
+</style>
