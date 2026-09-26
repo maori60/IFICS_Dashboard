@@ -7964,3 +7964,54 @@ body {
     padding-inline: 18px;
   }
 }
+
+/* ============================================================
+   KREATORTECH V6 — MOBILE HERO FIX
+   ============================================================ */
+
+@media (max-width: 640px) {
+  .kt6 {
+    overflow-x: clip;
+  }
+
+  .kt6-hero {
+    padding-top: 42px;
+  }
+
+  .kt6-hero-grid {
+    min-width: 0;
+    gap: 32px;
+  }
+
+  .kt6-hero-copy {
+    min-width: 0;
+    width: 100%;
+    padding-top: 0;
+  }
+
+  .kt6-hero h1 {
+    max-width: 100%;
+    font-size: clamp(2.7rem, 12vw, 3.35rem);
+    line-height: .98;
+    letter-spacing: -.05em;
+    overflow-wrap: normal;
+  }
+
+  .kt6-intro {
+    max-width: 100%;
+    font-size: .96rem;
+    line-height: 1.65;
+  }
+
+  .kt6-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .kt6-button {
+    width: 100%;
+    min-height: 52px;
+  }
+}

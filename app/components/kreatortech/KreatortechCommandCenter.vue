@@ -820,3 +820,201 @@ const services = [
   }
 }
 </style>
+
+<style scoped>
+/* ============================================================
+   KREATORTECH COMMAND CENTER — MOBILE NATIVE
+   Desktop validé inchangé.
+   ============================================================ */
+
+@media (max-width: 640px) {
+  .kt-world {
+    left: auto;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 24px 14px 18px;
+    overflow: hidden;
+    transform: none;
+    border-radius: 14px;
+  }
+
+  .kt-world__grid {
+    opacity: .18;
+  }
+
+  .kt-world__halo {
+    left: 50%;
+    top: 185px;
+    width: 340px;
+    height: 300px;
+  }
+
+  /*
+   * Sur mobile on conserve le globe comme élément central,
+   * mais le réseau SVG desktop n'a plus à relier des cartes
+   * positionnées hors écran.
+   */
+  .kt-world__network {
+    display: none;
+  }
+
+  .kt-world__globe {
+    position: relative;
+    left: 50%;
+    top: auto;
+    width: min(82vw, 330px);
+    height: min(82vw, 330px);
+    margin: 24px 0 34px;
+    transform: translateX(-50%);
+    animation: ktWorldFloatMobile 8s ease-in-out infinite;
+  }
+
+  .kt-world__status {
+    z-index: 11;
+    top: 18px;
+    width: auto;
+    min-width: 104px;
+    padding: 8px 9px;
+  }
+
+  .status-health {
+    left: 14px;
+  }
+
+  .status-auto {
+    right: 14px;
+  }
+
+  .kt-world__status > span {
+    font-size: .38rem;
+  }
+
+  .kt-world__status > strong {
+    font-size: .72rem;
+  }
+
+  .status-auto small {
+    font-size: .4rem;
+  }
+
+  .kt-world__service,
+  .kt-world__service.is-workplace,
+  .kt-world__service.is-itsm,
+  .kt-world__service.is-infrastructure,
+  .kt-world__service.is-automation,
+  .kt-world__service.is-development,
+  .kt-world__service.is-training {
+    position: relative;
+    left: auto !important;
+    top: auto !important;
+    width: 100%;
+    min-height: 104px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 9px;
+    padding: 11px 10px;
+  }
+
+  /*
+   * Les six cartes deviennent une grille mobile réelle.
+   * display: contents permet de réutiliser le DOM existant.
+   */
+  .kt-world {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .kt-world__grid,
+  .kt-world__halo,
+  .kt-world__network,
+  .kt-world__globe,
+  .kt-world__base,
+  .kt-world__status {
+    grid-column: 1 / -1;
+  }
+
+  .kt-world__globe {
+    grid-row: 1;
+  }
+
+  .kt-world__service {
+    grid-row: auto;
+  }
+
+  .kt-world__service-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .kt-world__service-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .kt-world__service-copy strong {
+    font-size: .66rem;
+    line-height: 1.15;
+  }
+
+  .kt-world__service-copy span {
+    font-size: .42rem;
+  }
+
+  .kt-world__service-copy p {
+    margin-top: 5px;
+    font-size: .51rem;
+    line-height: 1.35;
+  }
+
+  .kt-world__signal {
+    margin-top: 7px;
+  }
+
+  .kt-world__base {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    height: 72px;
+    margin-top: 6px;
+    transform: none;
+  }
+
+  .kt-world__base-core {
+    top: 10px;
+  }
+
+  .kt-world__base-ring {
+    opacity: .55;
+  }
+}
+
+@keyframes ktWorldFloatMobile {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(-5px);
+  }
+}
+
+@media (max-width: 380px) {
+  .kt-world {
+    grid-template-columns: 1fr;
+  }
+
+  .kt-world__globe,
+  .kt-world__base,
+  .kt-world__status {
+    grid-column: 1;
+  }
+
+  .kt-world__service {
+    min-height: 88px;
+  }
+}
+</style>
