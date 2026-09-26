@@ -1,5 +1,10 @@
 <script setup lang="ts">
-useHead({ title: 'Nos actions' })
+import ActionsEnergyField from '~/components/actions/ActionsEnergyField.vue'
+usePublicSeo({
+  title: 'Nos actions',
+  description: 'Découvrez les actions d’IFICS en éducation, inclusion, numérique, sport et culture, conçues pour accompagner les publics et développer des projets utiles aux territoires.',
+  path: '/actions',
+})
 
 let actionsObserver: IntersectionObserver | undefined
 
@@ -79,33 +84,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="actions-v8-map" aria-hidden="true">
-          <div class="actions-v8-map-glow" />
-
-          <div class="actions-v8-map-center">
-            <span>IFICS</span>
-            <strong>Agir</strong>
-          </div>
-
-          <div class="actions-v8-map-line actions-v8-map-line-a" />
-          <div class="actions-v8-map-line actions-v8-map-line-b" />
-          <div class="actions-v8-map-line actions-v8-map-line-c" />
-
-          <div class="actions-v8-map-node actions-v8-map-node-a">
-            <small>01</small>
-            <strong>Numérique</strong>
-          </div>
-
-          <div class="actions-v8-map-node actions-v8-map-node-b">
-            <small>02</small>
-            <strong>Éducation</strong>
-          </div>
-
-          <div class="actions-v8-map-node actions-v8-map-node-c">
-            <small>03</small>
-            <strong>Culture & sport</strong>
-          </div>
-        </div>
+        <ActionsEnergyField />
 
       </div>
     </section>

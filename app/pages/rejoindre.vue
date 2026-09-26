@@ -1,5 +1,9 @@
 <script setup lang="ts">
-useHead({ title: 'Nous rejoindre' })
+usePublicSeo({
+  title: 'Nous rejoindre',
+  description: 'Rejoignez IFICS et contribuez à des projets en ingénierie, développement, formation, pédagogie, sport, culture et accompagnement de terrain.',
+  path: '/rejoindre',
+})
 
 const profiles = [
   {

@@ -1,5 +1,9 @@
 <script setup lang="ts">
-useHead({ title: 'KREATORTECH — Innovation & R&D' })
+usePublicSeo({
+  title: 'KREATORTECH — Innovation & R&D',
+  description: 'KREATORTECH explore, prototype, teste et documente des solutions numériques afin de transformer des besoins métiers en expérimentations concrètes et réutilisables.',
+  path: '/innovation',
+})
 
 const axes = [
   {

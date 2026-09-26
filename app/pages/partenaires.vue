@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { ApiSuccess, PublicPartner } from '~/types/api'
 
-useHead({ title: 'Partenaires' })
+usePublicSeo({
+  title: 'Partenaires',
+  description: 'IFICS développe des partenariats fondés sur les compétences, les ressources, le financement et la coopération pour construire des projets concrets et durables.',
+  path: '/partenaires',
+})
 
 const { data } = await useFetch<ApiSuccess<PublicPartner[]>>('/api/public/partners')
 const partners = computed(() => data.value?.data ?? [])

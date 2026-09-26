@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import type { ApiSuccess, PublicPartner } from '~/types/api'
 
-useHead({
+usePublicSeo({
   title: 'IFICS — Compétences, innovation et impact local',
-  meta: [
-    { name: 'description', content: 'IFICS développe des projets, des formations et des solutions concrètes à travers le sport, la culture, l’éducation et le numérique. KREATORTECH porte le pôle IT et ingénierie.' },
-  ],
+  description: 'IFICS développe des projets, des formations et des solutions concrètes à travers le sport, la culture, l’éducation et le numérique. KREATORTECH porte le pôle IT et ingénierie.',
+  path: '/',
 })
 
 const { data: partnersResponse } = await useFetch<ApiSuccess<PublicPartner[]>>('/api/public/partners')
@@ -174,7 +173,7 @@ const pillars = [
     <section class="section v3-kreator-feature">
       <div class="container v3-kreator-grid">
         <div class="v3-brand-block">
-          <img src="/brand/v2/kreatortech-wordmark-light.png" alt="KREATORTECH — Pôle IT, numérique et innovation">
+          <img src="/brand/v2/kreatortech-wordmark-light.png?v=20260926-complet" alt="KREATORTECH — Pôle IT, numérique et innovation">
           <p>Le pôle informatique & ingénierie d’IFICS, pensé pour les besoins opérationnels des organisations.</p>
           <NuxtLink to="/kreatortech" class="btn btn-glow">Découvrir KREATORTECH →</NuxtLink>
         </div>

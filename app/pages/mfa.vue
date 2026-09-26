@@ -3,7 +3,15 @@ import type { ApiSuccess, SessionPayload } from '~/types/api'
 import { apiErrorMessage } from '~/utils/api-error'
 
 definePageMeta({ layout: 'default' })
-useHead({ title: 'Double authentification' })
+useHead({
+  title: 'Double authentification',
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, nofollow, noarchive',
+    },
+  ],
+})
 
 type SetupData = { secret: string; uri: string; qrDataUrl: string }
 type ConfirmData = { enabled: true; recoveryCodes: string[] }

@@ -42,7 +42,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
           </NuxtLink>
           <span class="brand-divider" aria-hidden="true" />
           <NuxtLink to="/kreatortech" class="public-brand kreator-brand" aria-label="KREATORTECH — pôle IT">
-            <img src="/brand/v2/kreatortech-wordmark-light.png" alt="KREATORTECH — Pôle IT, numérique et innovation" class="public-brand-wordmark">
+            <img src="/brand/v2/kreatortech-wordmark-light.png?v=20260926-complet" alt="KREATORTECH — Pôle IT, numérique et innovation" class="public-brand-wordmark">
           </NuxtLink>
         </div>
 
@@ -69,7 +69,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
       <div class="container footer-brand-lockup footer-dual-brand">
         <img src="/brand/v2/ifics-wordmark-light.png" alt="IFICS">
         <span />
-        <img src="/brand/v2/kreatortech-wordmark-light.png" alt="KREATORTECH">
+        <img src="/brand/v2/kreatortech-wordmark-light.png?v=20260926-complet" alt="KREATORTECH">
       </div>
       <div class="container footer-top">
         <div class="footer-brand">

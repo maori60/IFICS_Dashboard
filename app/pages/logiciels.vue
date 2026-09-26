@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { ApiSuccess } from '~/types/api'
 
-useHead({ title: 'KREATORTECH — Logiciels & ressources' })
+usePublicSeo({
+  title: 'KREATORTECH — Logiciels & ressources',
+  description: 'Découvrez les logiciels, outils métiers, ressources techniques et documentations développés ou sélectionnés par KREATORTECH pour répondre à des usages concrets.',
+  path: '/logiciels',
+})
 
 type Software = {
   id: string

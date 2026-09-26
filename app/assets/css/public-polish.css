@@ -5507,116 +5507,6 @@ body {
   box-shadow:0 16px 42px rgba(9,190,137,.22);
 }
 
-.actions-v8-map {
-  position:relative;
-  width:min(100%,530px);
-  aspect-ratio:1.35;
-  margin-inline:auto;
-}
-
-.actions-v8-map-glow {
-  position:absolute;
-  inset:15%;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(26,226,158,.13),transparent 65%);
-  filter:blur(15px);
-}
-
-.actions-v8-map-center {
-  position:absolute;
-  z-index:5;
-  left:50%;
-  top:50%;
-  width:125px;
-  height:125px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  transform:translate(-50%,-50%);
-  border:1px solid rgba(69,235,180,.42);
-  border-radius:50%;
-  background:#061b14;
-  box-shadow:
-    0 0 0 15px rgba(31,218,157,.025),
-    0 0 60px rgba(31,218,157,.10);
-}
-
-.actions-v8-map-center span {
-  color:var(--v8-green);
-  font-size:.66rem;
-  letter-spacing:.16em;
-  font-weight:850;
-}
-
-.actions-v8-map-center strong {
-  margin-top:4px;
-  color:#eef8f4;
-  font-size:1.15rem;
-}
-
-.actions-v8-map-line {
-  position:absolute;
-  z-index:2;
-  left:50%;
-  top:50%;
-  width:42%;
-  height:1px;
-  transform-origin:left center;
-  background:linear-gradient(90deg,rgba(59,228,171,.62),rgba(59,228,171,.06));
-}
-
-.actions-v8-map-line-a {
-  transform:rotate(-46deg);
-}
-
-.actions-v8-map-line-b {
-  transform:rotate(4deg);
-}
-
-.actions-v8-map-line-c {
-  transform:rotate(47deg);
-}
-
-.actions-v8-map-node {
-  position:absolute;
-  z-index:4;
-  min-width:130px;
-  padding:14px 17px;
-  border:1px solid var(--v8-line-strong);
-  border-radius:11px;
-  background:rgba(5,28,21,.92);
-  box-shadow:0 16px 40px rgba(0,0,0,.20);
-}
-
-.actions-v8-map-node small {
-  display:block;
-  margin-bottom:4px;
-  color:var(--v8-green);
-  font-size:.62rem;
-  font-weight:850;
-}
-
-.actions-v8-map-node strong {
-  color:#dfeee8;
-  font-size:.78rem;
-}
-
-.actions-v8-map-node-a {
-  right:4%;
-  top:7%;
-}
-
-.actions-v8-map-node-b {
-  right:-1%;
-  top:48%;
-}
-
-.actions-v8-map-node-c {
-  right:9%;
-  bottom:3%;
-}
-
 .actions-v8-universes {
   padding:82px 0 90px;
   background:
@@ -6235,10 +6125,6 @@ body {
     gap:48px;
   }
 
-  .actions-v8-map {
-    max-width:560px;
-  }
-
   .actions-v8-grid {
     grid-template-columns:1fr;
   }
@@ -6301,16 +6187,6 @@ body {
   .contact-v8 h1,
   .proposal-v8 h1 {
     font-size:clamp(2.7rem,13vw,4rem);
-  }
-
-  .actions-v8-map {
-    transform:scale(.92);
-    margin-block:-18px;
-  }
-
-  .actions-v8-map-node {
-    min-width:105px;
-    padding:11px 12px;
   }
 
   .actions-v8-universes,

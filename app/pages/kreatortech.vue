@@ -1,13 +1,8 @@
 <script setup lang="ts">
-useHead({
+usePublicSeo({
   title: 'KREATORTECH — Prestations IT & ingénierie',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'KREATORTECH accompagne les entreprises sur leurs besoins IT : support & workplace, ITSM, systèmes & réseaux, développement, automatisation, data et transfert de compétences.',
-    },
-  ],
+  description: 'KREATORTECH accompagne les entreprises sur leurs besoins IT : support & workplace, ITSM, systèmes & réseaux, développement, automatisation, data et transfert de compétences.',
+  path: '/kreatortech',
 })
 
 const serviceHealth = ref('99.8')
@@ -212,7 +207,7 @@ const delivery = [
 
             <div class="kt6-core-mark">
               <img
-                src="/brand/v2/kreatortech-wordmark-light.png"
+                src="/brand/v2/kreatortech-wordmark-light.png?v=20260926-complet"
                 alt="KREATORTECH"
               >
             </div>

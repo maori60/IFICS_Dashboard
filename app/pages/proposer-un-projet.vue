@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { apiErrorMessage } from '~/utils/api-error'
 
-useHead({ title: 'Proposer un projet' })
+usePublicSeo({
+  title: 'Proposer un projet',
+  description: 'Présentez votre projet à IFICS : besoin, territoire, public, calendrier et objectifs. Votre proposition sera étudiée avant toute création de projet interne.',
+  path: '/proposer-un-projet',
+})
 
 const form = reactive({
   organizationName: '',

@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { apiErrorMessage } from '~/utils/api-error'
 
-useHead({ title: 'Contact' })
+usePublicSeo({
+  title: 'Contact',
+  description: 'Contactez IFICS pour proposer un partenariat, présenter un besoin, échanger sur une mission KREATORTECH ou obtenir des informations sur nos actions.',
+  path: '/contact',
+})
 
 const form = reactive({
   reason: 'PROJECT',

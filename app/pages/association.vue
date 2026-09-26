@@ -1,5 +1,9 @@
 <script setup lang="ts">
-useHead({ title: 'À propos d’IFICS' })
+usePublicSeo({
+  title: 'À propos d’IFICS',
+  description: 'Découvrez IFICS, une association engagée dans l’éducation, l’inclusion, le numérique, le sport et la culture, avec des projets concrets construits sur le terrain.',
+  path: '/association',
+})
 
 const universes = [
   { code: 'education', label: 'Éducation', icon: '⌁' },

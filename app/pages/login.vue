@@ -3,7 +3,15 @@ import type { ApiSuccess, SessionPayload } from '~/types/api'
 import { apiErrorMessage } from '~/utils/api-error'
 
 definePageMeta({ layout: 'default' })
-useHead({ title: 'Connexion' })
+useHead({
+  title: 'Connexion',
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, nofollow, noarchive',
+    },
+  ],
+})
 
 const form = reactive({ email: '', password: '' })
 const pending = ref(false)

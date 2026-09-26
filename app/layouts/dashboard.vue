@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import type { ApiSuccess, SessionPayload } from '~/types/api'
 
+useHead({
+  meta: [
+    {
+      name: 'robots',
+      content: 'noindex, nofollow, noarchive',
+    },
+  ],
+})
+
 const route = useRoute()
 const menuOpen = ref(false)
 const brandingLogoUrl = '/api/public/branding/logo'
