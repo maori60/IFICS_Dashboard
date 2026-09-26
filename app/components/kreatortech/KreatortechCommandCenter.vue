@@ -196,6 +196,109 @@ const services = [
       </g>
     </svg>
 
+    <!--
+      Réseau mobile dédié.
+      Coordonnées adaptées au viewport smartphone :
+      les flux restent visibles autour du globe au lieu
+      d'utiliser les coordonnées 1000x520 du desktop.
+    -->
+    <svg
+      class="kt-world__network-mobile"
+      viewBox="0 0 360 300"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+    >
+      <defs>
+        <filter id="ktMobileGlow">
+          <feGaussianBlur stdDeviation="2.4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <path id="ktMobilePath1" d="M180 142 C142 112 101 88 42 72" />
+        <path id="ktMobilePath2" d="M180 142 C130 135 82 137 22 142" />
+        <path id="ktMobilePath3" d="M180 142 C140 177 98 205 42 229" />
+
+        <path id="ktMobilePath4" d="M180 142 C218 112 259 88 318 72" />
+        <path id="ktMobilePath5" d="M180 142 C230 135 278 137 338 142" />
+        <path id="ktMobilePath6" d="M180 142 C220 177 262 205 318 229" />
+      </defs>
+
+      <g class="kt-world__mobile-orbits">
+        <ellipse cx="180" cy="148" rx="116" ry="91" />
+        <ellipse
+          cx="180"
+          cy="148"
+          rx="139"
+          ry="67"
+          transform="rotate(-17 180 148)"
+        />
+        <ellipse
+          cx="180"
+          cy="148"
+          rx="139"
+          ry="67"
+          transform="rotate(17 180 148)"
+        />
+      </g>
+
+      <g class="kt-world__mobile-flows" filter="url(#ktMobileGlow)">
+        <use href="#ktMobilePath1" class="kt-world__flow flow-green" />
+        <use href="#ktMobilePath2" class="kt-world__flow flow-amber" />
+        <use href="#ktMobilePath3" class="kt-world__flow flow-green" />
+
+        <use href="#ktMobilePath4" class="kt-world__flow flow-green" />
+        <use href="#ktMobilePath5" class="kt-world__flow flow-blue" />
+        <use href="#ktMobilePath6" class="kt-world__flow flow-amber" />
+      </g>
+
+      <g class="kt-world__particles">
+        <circle r="3.4" class="particle-green">
+          <animateMotion dur="2.8s" repeatCount="indefinite">
+            <mpath href="#ktMobilePath1" />
+          </animateMotion>
+        </circle>
+
+        <circle r="3.4" class="particle-amber">
+          <animateMotion dur="3.4s" begin="-1.2s" repeatCount="indefinite">
+            <mpath href="#ktMobilePath2" />
+          </animateMotion>
+        </circle>
+
+        <circle r="3.4" class="particle-green">
+          <animateMotion dur="3.8s" begin="-2s" repeatCount="indefinite">
+            <mpath href="#ktMobilePath3" />
+          </animateMotion>
+        </circle>
+
+        <circle r="3.4" class="particle-green">
+          <animateMotion dur="3s" begin="-.8s" repeatCount="indefinite">
+            <mpath href="#ktMobilePath4" />
+          </animateMotion>
+        </circle>
+
+        <circle r="3.4" class="particle-blue">
+          <animateMotion dur="3.5s" begin="-1.8s" repeatCount="indefinite">
+            <mpath href="#ktMobilePath5" />
+          </animateMotion>
+        </circle>
+
+        <circle r="3.4" class="particle-amber">
+          <animateMotion dur="4s" begin="-2.4s" repeatCount="indefinite">
+            <mpath href="#ktMobilePath6" />
+          </animateMotion>
+        </circle>
+      </g>
+
+      <g class="kt-world__mobile-core">
+        <circle cx="180" cy="142" r="15" class="france-pulse" />
+        <circle cx="180" cy="142" r="6" class="france-core" />
+        <circle cx="180" cy="142" r="2.5" class="france-dot" />
+      </g>
+    </svg>
+
     <div
       v-for="service in services"
       :key="service.code"
@@ -802,13 +905,10 @@ const services = [
 
 @media (max-width: 640px) {
   .kt-world {
-    left: 50%;
-    width: 1000px;
-    max-width: none;
-    height: 570px;
-    transform: translateX(-50%) scale(.52);
-    transform-origin: top center;
-    margin-bottom: -265px;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
   }
 }
 
@@ -821,71 +921,140 @@ const services = [
 }
 </style>
 
+
 <style scoped>
 /* ============================================================
-   KREATORTECH COMMAND CENTER — MOBILE NATIVE
-   Desktop validé inchangé.
+   KREATORTECH — MOBILE COMMAND CENTER
+   Une seule source de vérité pour le responsive.
    ============================================================ */
+
+.kt-world__network-mobile {
+  display: none;
+}
 
 @media (max-width: 640px) {
   .kt-world {
+    position: relative;
     left: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+
     width: 100%;
     max-width: 100%;
     height: auto;
     min-height: 0;
+
     margin: 0;
-    padding: 24px 14px 18px;
+    padding: 16px 12px 12px;
+
     overflow: hidden;
     transform: none;
     border-radius: 14px;
   }
 
   .kt-world__grid {
-    opacity: .18;
+    opacity: .17;
   }
 
   .kt-world__halo {
     left: 50%;
-    top: 185px;
-    width: 340px;
+    top: 180px;
+    width: 330px;
     height: 300px;
   }
 
-  /*
-   * Sur mobile on conserve le globe comme élément central,
-   * mais le réseau SVG desktop n'a plus à relier des cartes
-   * positionnées hors écran.
-   */
+  /* Le réseau desktop n'existe qu'au-dessus de 640px. */
   .kt-world__network {
     display: none;
   }
 
+  /*
+   * Globe compact.
+   * Il reste l'élément central sans écraser toute la hauteur.
+   */
   .kt-world__globe {
     position: relative;
+    z-index: 2;
+
+    grid-column: 1 / -1;
+    grid-row: 1;
+
     left: 50%;
     top: auto;
-    width: min(82vw, 330px);
-    height: min(82vw, 330px);
-    margin: 24px 0 34px;
+
+    width: min(65vw, 270px);
+    height: min(65vw, 270px);
+
+    margin: 45px 0 12px;
+
     transform: translateX(-50%);
     animation: ktWorldFloatMobile 8s ease-in-out infinite;
   }
 
+  /*
+   * Réseau réellement conçu pour le téléphone.
+   * Il recouvre exactement la zone du globe.
+   */
+  .kt-world__network-mobile {
+    position: absolute;
+    z-index: 6;
+
+    display: block;
+
+    top: 38px;
+    left: 50%;
+
+    width: min(94vw, 390px);
+    height: 300px;
+
+    transform: translateX(-50%);
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .kt-world__mobile-orbits {
+    fill: none;
+    stroke: rgba(77, 178, 143, .25);
+    stroke-width: .8;
+    stroke-dasharray: 3 7;
+  }
+
+  .kt-world__mobile-orbits ellipse:nth-child(1) {
+    animation: ktMobileOrbit 14s linear infinite;
+    transform-origin: 180px 148px;
+  }
+
+  .kt-world__mobile-orbits ellipse:nth-child(2) {
+    animation: ktMobileOrbitReverse 18s linear infinite;
+    transform-origin: 180px 148px;
+  }
+
+  .kt-world__mobile-orbits ellipse:nth-child(3) {
+    animation: ktMobileOrbit 22s linear infinite;
+    transform-origin: 180px 148px;
+  }
+
+  .kt-world__mobile-flows .kt-world__flow {
+    stroke-width: 1.8;
+    stroke-dasharray: 8 9;
+    opacity: .9;
+  }
+
   .kt-world__status {
-    z-index: 11;
-    top: 18px;
+    z-index: 12;
+    top: 12px;
     width: auto;
-    min-width: 104px;
-    padding: 8px 9px;
+    min-width: 92px;
+    padding: 7px 8px;
   }
 
   .status-health {
-    left: 14px;
+    left: 10px;
   }
 
   .status-auto {
-    right: 14px;
+    right: 10px;
   }
 
   .kt-world__status > span {
@@ -900,6 +1069,10 @@ const services = [
     font-size: .4rem;
   }
 
+  /*
+   * Les cartes ne sont plus positionnées autour du globe.
+   * Elles forment une grille tactile compacte sous la scène.
+   */
   .kt-world__service,
   .kt-world__service.is-workplace,
   .kt-world__service.is-itsm,
@@ -908,87 +1081,92 @@ const services = [
   .kt-world__service.is-development,
   .kt-world__service.is-training {
     position: relative;
+    z-index: 8;
+
     left: auto !important;
     top: auto !important;
+
     width: 100%;
-    min-height: 104px;
-    grid-template-columns: 38px minmax(0, 1fr);
-    gap: 9px;
-    padding: 11px 10px;
-  }
+    min-height: 78px;
 
-  /*
-   * Les six cartes deviennent une grille mobile réelle.
-   * display: contents permet de réutiliser le DOM existant.
-   */
-  .kt-world {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
+    grid-template-columns: 31px minmax(0, 1fr);
+    gap: 8px;
 
-  .kt-world__grid,
-  .kt-world__halo,
-  .kt-world__network,
-  .kt-world__globe,
-  .kt-world__base,
-  .kt-world__status {
-    grid-column: 1 / -1;
-  }
-
-  .kt-world__globe {
-    grid-row: 1;
-  }
-
-  .kt-world__service {
-    grid-row: auto;
+    padding: 8px 9px;
   }
 
   .kt-world__service-icon {
-    width: 36px;
-    height: 36px;
+    width: 31px;
+    height: 31px;
   }
 
   .kt-world__service-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
 
   .kt-world__service-copy strong {
-    font-size: .66rem;
+    font-size: .59rem;
     line-height: 1.15;
   }
 
   .kt-world__service-copy span {
-    font-size: .42rem;
+    font-size: .4rem;
   }
 
   .kt-world__service-copy p {
-    margin-top: 5px;
-    font-size: .51rem;
-    line-height: 1.35;
+    margin-top: 3px;
+    font-size: .43rem;
+    line-height: 1.3;
   }
 
   .kt-world__signal {
-    margin-top: 7px;
+    height: 10px;
+    margin-top: 3px;
+  }
+
+  .kt-world__signal i {
+    width: 3px;
   }
 
   .kt-world__base {
     position: relative;
+    z-index: 8;
+
+    grid-column: 1 / -1;
+
     left: auto;
     bottom: auto;
+
     width: 100%;
-    height: 72px;
-    margin-top: 6px;
+    height: 55px;
+
+    margin-top: 0;
+
     transform: none;
   }
 
   .kt-world__base-core {
-    top: 10px;
+    top: 7px;
   }
 
   .kt-world__base-ring {
     opacity: .55;
+  }
+}
+
+@media (max-width: 380px) {
+  .kt-world {
+    grid-template-columns: 1fr;
+  }
+
+  .kt-world__globe,
+  .kt-world__base {
+    grid-column: 1;
+  }
+
+  .kt-world__service {
+    min-height: 72px;
   }
 }
 
@@ -1002,166 +1180,15 @@ const services = [
   }
 }
 
-@media (max-width: 380px) {
-  .kt-world {
-    grid-template-columns: 1fr;
-  }
-
-  .kt-world__globe,
-  .kt-world__base,
-  .kt-world__status {
-    grid-column: 1;
-  }
-
-  .kt-world__service {
-    min-height: 88px;
+@keyframes ktMobileOrbit {
+  to {
+    transform: rotate(360deg);
   }
 }
-</style>
 
-<style scoped>
-/* KREATORTECH — MOBILE COMPACT + NETWORK ANIMATION */
-@media (max-width: 640px) {
-  .kt-world {
-    padding: 18px 12px 16px;
-    gap: 8px;
-  }
-
-  .kt-world__globe {
-    width: min(66vw, 270px);
-    height: min(66vw, 270px);
-    margin: 42px 0 24px;
-  }
-
-  /*
-   * Réseau animé visible uniquement autour du globe.
-   * Les cartes restent dans leur grille mobile.
-   */
-  .kt-world__network {
-    display: block;
-    z-index: 5;
-    top: 36px;
-    left: 50%;
-    width: min(96vw, 390px);
-    height: 300px;
-    transform: translateX(-50%);
-    overflow: hidden;
-  }
-
-  .kt-world__orbits {
-    opacity: .8;
-  }
-
-  .kt-world__flows {
-    opacity: .9;
-  }
-
-  .kt-world__service,
-  .kt-world__service.is-workplace,
-  .kt-world__service.is-itsm,
-  .kt-world__service.is-infrastructure,
-  .kt-world__service.is-automation,
-  .kt-world__service.is-development,
-  .kt-world__service.is-training {
-    min-height: 86px;
-    padding: 9px;
-    grid-template-columns: 34px minmax(0, 1fr);
-    gap: 8px;
-  }
-
-  .kt-world__service-icon {
-    width: 32px;
-    height: 32px;
-  }
-
-  .kt-world__service-icon svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .kt-world__service-copy strong {
-    font-size: .61rem;
-  }
-
-  .kt-world__service-copy p {
-    margin-top: 4px;
-    font-size: .46rem;
-  }
-
-  .kt-world__signal {
-    height: 10px;
-    margin-top: 4px;
-  }
-
-  .kt-world__signal i {
-    width: 3px;
-  }
-
-  .kt-world__status {
-    top: 12px;
-    min-width: 92px;
-    padding: 7px 8px;
-  }
-
-  .status-health {
-    left: 10px;
-  }
-
-  .status-auto {
-    right: 10px;
-  }
-
-  .kt-world__base {
-    height: 62px;
-    margin-top: 2px;
-  }
-}
-</style>
-
-<style scoped>
-/* KREATORTECH — MOBILE FINAL COMPACT */
-@media (max-width: 640px) {
-  .kt-world {
-    gap: 7px;
-    padding-bottom: 10px;
-  }
-
-  .kt-world__globe {
-    margin-bottom: -18px;
-  }
-
-  .kt-world__service,
-  .kt-world__service.is-workplace,
-  .kt-world__service.is-itsm,
-  .kt-world__service.is-infrastructure,
-  .kt-world__service.is-automation,
-  .kt-world__service.is-development,
-  .kt-world__service.is-training {
-    min-height: 78px;
-    padding: 8px 9px;
-  }
-
-  .kt-world__service-icon {
-    width: 31px;
-    height: 31px;
-  }
-
-  .kt-world__service-copy strong {
-    font-size: .59rem;
-  }
-
-  .kt-world__service-copy p {
-    margin-top: 3px;
-    font-size: .43rem;
-  }
-
-  .kt-world__signal {
-    margin-top: 3px;
-  }
-
-  .kt-world__base {
-    height: 55px;
-    margin-top: -1px;
+@keyframes ktMobileOrbitReverse {
+  to {
+    transform: rotate(-360deg);
   }
 }
 </style>
