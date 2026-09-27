@@ -77,6 +77,10 @@ const resettingFactory = ref(false)
 const factoryConfirmation = ref('')
 const factoryResetOpen = ref(false)
 
+const resettingFullInstance = ref(false)
+const fullResetConfirmation = ref('')
+const fullResetOpen = ref(false)
+
 const successMessage = ref('')
 const errorMessage = ref('')
 
@@ -367,6 +371,61 @@ async function restoreFactorySettings() {
   }
   finally {
     resettingFactory.value = false
+  }
+}
+
+async function resetFullInstance() {
+  if (
+    resettingFullInstance.value
+    || fullResetConfirmation.value !== 'EFFACER TOUTES LES DONNEES'
+  ) return
+
+  resettingFullInstance.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    const response = await $fetch<{
+      data: {
+        reset: boolean
+        filesDeleted: number
+        fileCleanupFailed: number
+      }
+    }>('/api/settings/full-reset', {
+      method: 'POST',
+      body: {
+        confirmation: fullResetConfirmation.value,
+      },
+    })
+
+    fullResetConfirmation.value = ''
+    fullResetOpen.value = false
+
+    const cleanupFailed
+      = response.data.fileCleanupFailed
+
+    if (cleanupFailed > 0) {
+      successMessage.value
+        = `Les données métier ont été effacées. ${cleanupFailed} fichier(s) n’ont pas pu être nettoyés du stockage.`
+    }
+    else {
+      successMessage.value
+        = 'Les données métier ont été effacées. Le compte administrateur actuel, son MFA, l’identité légale et bancaire ainsi que le journal d’audit ont été conservés.'
+    }
+
+    await Promise.all([
+      refresh(),
+      refreshSignature(),
+    ])
+  }
+  catch (err) {
+    errorMessage.value = apiErrorMessage(
+      err,
+      'L’effacement complet des données a échoué. Aucune suppression partielle ne doit être considérée comme validée.',
+    )
+  }
+  finally {
+    resettingFullInstance.value = false
   }
 }
 
@@ -676,6 +735,74 @@ async function save() {
           <div class="factory-actions">
             <input v-model="factoryConfirmation" class="input" autocomplete="off" spellcheck="false" placeholder="RESTAURER">
             <button class="btn btn-secondary danger-button" type="button" :disabled="resettingFactory || factoryConfirmation !== 'RESTAURER'" @click="restoreFactorySettings">{{ resettingFactory ? 'Restauration…' : 'Confirmer la restauration' }}</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card card-pad settings-section danger-zone full-reset-zone">
+        <div class="danger-head">
+          <div>
+            <h2>Effacer les données de l’instance</h2>
+            <p class="muted">
+              Supprime les données métier afin de repartir avec une instance IFICS propre.
+              Cette opération est irréversible après validation.
+            </p>
+          </div>
+
+          <button
+            class="btn btn-secondary danger-button"
+            type="button"
+            @click="fullResetOpen = !fullResetOpen"
+          >
+            {{ fullResetOpen ? 'Fermer' : 'Effacer les données…' }}
+          </button>
+        </div>
+
+        <div
+          v-if="fullResetOpen"
+          class="factory-confirm"
+        >
+          <div class="alert alert-warning">
+            <strong>Suppression irréversible.</strong>
+            Les clients, projets, intervenant·es, CRA, factures, règlements,
+            dépenses, données RH, support et autres données métier seront
+            supprimés, ainsi que leurs fichiers stockés.
+            Les autres comptes utilisateurs seront supprimés.
+            Le compte administrateur actuel et son MFA sont conservés.
+            L’identité légale et bancaire ainsi que le journal d’audit sont
+            également conservés.
+          </div>
+
+          <p>
+            Saisissez
+            <strong>EFFACER TOUTES LES DONNEES</strong>
+            pour confirmer :
+          </p>
+
+          <div class="factory-actions">
+            <input
+              v-model="fullResetConfirmation"
+              class="input"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="EFFACER TOUTES LES DONNEES"
+            >
+
+            <button
+              class="btn btn-secondary danger-button"
+              type="button"
+              :disabled="
+                resettingFullInstance
+                || fullResetConfirmation !== 'EFFACER TOUTES LES DONNEES'
+              "
+              @click="resetFullInstance"
+            >
+              {{
+                resettingFullInstance
+                  ? 'Effacement…'
+                  : 'Confirmer l’effacement'
+              }}
+            </button>
           </div>
         </div>
       </section>
