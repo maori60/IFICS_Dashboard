@@ -252,7 +252,7 @@ model User {
   reviewedProjectReports      ProjectReport[]                @relation("ProjectReportReviewedBy")
   reportVersions              ProjectReportVersion[]         @relation("ProjectReportVersionCreatedBy")
   createdBillingDocuments     BillingDocument[]              @relation("BillingDocumentCreatedBy")
-  recordedBillingPayments    BillingPayment[]               @relation("BillingPaymentRecordedBy")
+  recordedBillingPayments     BillingPayment[]               @relation("BillingPaymentRecordedBy")
   reversedBillingPayments     BillingPayment[]               @relation("BillingPaymentReversedBy")
   createdExpenses             Expense[]                      @relation("ExpenseCreatedBy")
   reviewedExpenses            Expense[]                      @relation("ExpenseReviewedBy")
@@ -826,6 +826,7 @@ model Expense {
 
   taxDeductibility    ExpenseTaxDeductibility @default(PENDING)
   deductibleTaxAmount Decimal                 @default(0) @db.Decimal(12, 2)
+  taxDeductibleDate   DateTime?
   taxReviewNote       String?
   taxReviewedAt       DateTime?
   taxReviewedByUserId String?
@@ -845,10 +846,10 @@ model Expense {
   project     Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
   intervenor  Intervenor? @relation(fields: [intervenorId], references: [id], onDelete: SetNull)
 
-  createdByUser   User? @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  reviewedByUser  User? @relation("ExpenseReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  paidByUser      User? @relation("ExpensePaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull)
-  cancelledByUser User? @relation("ExpenseCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: SetNull)
+  createdByUser     User? @relation("ExpenseCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  reviewedByUser    User? @relation("ExpenseReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  paidByUser        User? @relation("ExpensePaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull)
+  cancelledByUser   User? @relation("ExpenseCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: SetNull)
   taxReviewedByUser User? @relation("ExpenseTaxReviewedBy", fields: [taxReviewedByUserId], references: [id], onDelete: SetNull)
 
   attachments ExpenseAttachment[]
@@ -865,6 +866,7 @@ model Expense {
   @@index([cancelledByUserId])
   @@index([taxReviewedByUserId])
   @@index([associationId, taxDeductibility])
+  @@index([associationId, taxDeductibleDate])
   @@index([archivedAt])
 }
 

@@ -44,6 +44,7 @@ export default defineEventHandler(async (event) => {
 
       taxDeductibility: true,
       deductibleTaxAmount: true,
+      taxDeductibleDate: true,
       taxReviewNote: true,
       taxReviewedAt: true,
 

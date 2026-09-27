@@ -23,6 +23,7 @@ type Expense = {
 
   taxDeductibility: 'PENDING' | 'DEDUCTIBLE' | 'NON_DEDUCTIBLE'
   deductibleTaxAmount: string
+  taxDeductibleDate: string | null
   taxReviewNote: string | null
   taxReviewedAt: string | null
   taxReviewedByUser: {
@@ -72,6 +73,7 @@ const taxDeductibility = ref<
 >('PENDING')
 
 const deductibleTaxAmount = ref('0.00')
+const taxDeductibleDate = ref('')
 const taxReviewNote = ref('')
 
 const taxEditable = computed(
@@ -94,6 +96,11 @@ watch(
     deductibleTaxAmount.value =
       current.deductibleTaxAmount
 
+    taxDeductibleDate.value =
+      current.taxDeductibleDate
+        ? current.taxDeductibleDate.slice(0, 10)
+        : ''
+
     taxReviewNote.value =
       current.taxReviewNote || ''
   },
@@ -105,6 +112,7 @@ watch(
   (value) => {
     if (value !== 'DEDUCTIBLE') {
       deductibleTaxAmount.value = '0.00'
+      taxDeductibleDate.value = ''
     }
   },
 )
@@ -176,6 +184,11 @@ const saveTaxReview = () =>
 
             deductibleTaxAmount:
               selectedAmount,
+
+            taxDeductibleDate:
+              selectedDeductibility === 'DEDUCTIBLE'
+                ? taxDeductibleDate.value
+                : null,
 
             taxReviewNote:
               selectedNote,
@@ -298,6 +311,28 @@ async function deleteAttachment(attachmentId: string) {
       </span>
     </div>
 
+    <div
+      v-if="taxDeductibility === 'DEDUCTIBLE'"
+      class="field"
+    >
+      <label for="tax-deductible-date">
+        Date de déduction TVA
+      </label>
+
+      <input
+        id="tax-deductible-date"
+        v-model="taxDeductibleDate"
+        class="input"
+        type="date"
+        required
+      >
+
+      <span class="help">
+        Date fiscale utilisée pour rattacher la TVA déductible
+        à la période correspondante.
+      </span>
+    </div>
+
     <div class="field field-full">
       <label for="tax-review-note">
         Note fiscale
@@ -321,7 +356,10 @@ async function deleteAttachment(attachmentId: string) {
           working
           || (
             taxDeductibility === 'DEDUCTIBLE'
-            && Number(deductibleTaxAmount) <= 0
+            && (
+              Number(deductibleTaxAmount) <= 0
+              || !taxDeductibleDate
+            )
           )
         "
         @click="saveTaxReview"

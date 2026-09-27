@@ -351,6 +351,144 @@ describe(
       request.body = {}
     })
 
+
+    it(
+      'exige une date fiscale pour une TVA déductible',
+      async () => {
+        const expense =
+          await createExpense()
+
+        request.expenseId =
+          expense.id
+
+        request.body = {
+          taxDeductibility:
+            'DEDUCTIBLE',
+
+          deductibleTaxAmount:
+            20,
+        }
+
+        await expect(
+          taxReviewHandler(event),
+        ).rejects.toMatchObject({
+          statusCode: 400,
+
+          data:
+            expect.objectContaining({
+              code:
+                'EXPENSE_TAX_DEDUCTIBLE_DATE_REQUIRED',
+            }),
+        })
+      },
+    )
+
+    it(
+      'refuse une date fiscale invalide',
+      async () => {
+        const expense =
+          await createExpense()
+
+        request.expenseId =
+          expense.id
+
+        request.body = {
+          taxDeductibility:
+            'DEDUCTIBLE',
+
+          deductibleTaxAmount:
+            20,
+
+          taxDeductibleDate:
+            '2026-02-31',
+        }
+
+        await expect(
+          taxReviewHandler(event),
+        ).rejects.toMatchObject({
+          statusCode: 400,
+
+          data:
+            expect.objectContaining({
+              code:
+                'EXPENSE_TAX_DEDUCTIBLE_DATE_INVALID',
+            }),
+        })
+      },
+    )
+
+    it(
+      'refuse une date fiscale sur une TVA non déductible',
+      async () => {
+        const expense =
+          await createExpense()
+
+        request.expenseId =
+          expense.id
+
+        request.body = {
+          taxDeductibility:
+            'NON_DEDUCTIBLE',
+
+          deductibleTaxAmount:
+            0,
+
+          taxDeductibleDate:
+            '2026-09-15',
+        }
+
+        await expect(
+          taxReviewHandler(event),
+        ).rejects.toMatchObject({
+          statusCode: 400,
+
+          data:
+            expect.objectContaining({
+              code:
+                'EXPENSE_TAX_DEDUCTIBLE_DATE_FORBIDDEN',
+            }),
+        })
+      },
+    )
+
+    it(
+      'enregistre la date fiscale de déduction',
+      async () => {
+        const expense =
+          await createExpense()
+
+        request.expenseId =
+          expense.id
+
+        request.body = {
+          taxDeductibility:
+            'DEDUCTIBLE',
+
+          deductibleTaxAmount:
+            20,
+
+          taxDeductibleDate:
+            '2026-10-03',
+        }
+
+        await taxReviewHandler(event)
+
+        const stored =
+          await prisma.expense
+            .findUniqueOrThrow({
+              where: {
+                id: expense.id,
+              },
+            })
+
+        expect(
+          stored.taxDeductibleDate
+            ?.toISOString()
+            .slice(0, 10),
+        ).toBe('2026-10-03')
+      },
+    )
+
     afterAll(async () => {
       await prisma.association
         .delete({
@@ -389,6 +527,9 @@ describe(
 
           deductibleTaxAmount:
             20,
+
+          taxDeductibleDate:
+            '2026-09-15',
         }
 
         await expect(
@@ -434,6 +575,9 @@ describe(
 
           deductibleTaxAmount:
             20,
+
+          taxDeductibleDate:
+            '2026-09-15',
         }
 
         await expect(
@@ -464,6 +608,9 @@ describe(
 
           deductibleTaxAmount:
             20,
+
+          taxDeductibleDate:
+            '2026-09-15',
         }
 
         await expect(
@@ -489,6 +636,9 @@ describe(
 
           deductibleTaxAmount:
             20,
+
+          taxDeductibleDate:
+            '2026-09-15',
         }
 
         const result
@@ -555,6 +705,9 @@ describe(
 
           deductibleTaxAmount:
             8,
+
+          taxDeductibleDate:
+            '2026-09-15',
 
           taxReviewNote:
             'Déductibilité partielle justifiée pour le contrôle comptable.',

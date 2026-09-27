@@ -15,6 +15,10 @@ type FinanceSettings = {
   bic: string | null
   paymentTerms: string | null
   taxExemptionText: string | null
+  vatLiabilityStatus: 'NOT_CONFIGURED' | 'SUBJECT' | 'NOT_SUBJECT'
+  vatCollectionBasis: 'NOT_CONFIGURED' | 'DEBITS' | 'COLLECTIONS'
+  vatFilingFrequency: 'NOT_CONFIGURED' | 'MONTHLY' | 'QUARTERLY' | 'ANNUAL'
+  vatEffectiveFrom: string | null
   logoFilePath: string | null
   maxAssetDocuments: number
   maxAssetDocumentMb: number
@@ -100,6 +104,10 @@ const form = reactive({
   bic: '',
   paymentTerms: '',
   taxExemptionText: '',
+  vatLiabilityStatus: 'NOT_CONFIGURED',
+  vatCollectionBasis: 'NOT_CONFIGURED',
+  vatFilingFrequency: 'NOT_CONFIGURED',
+  vatEffectiveFrom: '',
   pdfFooter: '',
   primaryColor: '',
   secondaryColor: '',
@@ -132,6 +140,16 @@ watch(settings, (value) => {
     bic: value.finance.bic || '',
     paymentTerms: value.finance.paymentTerms || '',
     taxExemptionText: value.finance.taxExemptionText || '',
+    vatLiabilityStatus:
+      value.finance.vatLiabilityStatus || 'NOT_CONFIGURED',
+    vatCollectionBasis:
+      value.finance.vatCollectionBasis || 'NOT_CONFIGURED',
+    vatFilingFrequency:
+      value.finance.vatFilingFrequency || 'NOT_CONFIGURED',
+    vatEffectiveFrom:
+      value.finance.vatEffectiveFrom
+        ? value.finance.vatEffectiveFrom.slice(0, 10)
+        : '',
     pdfFooter: value.pdfFooter || '',
     primaryColor: value.primaryColor || '',
     secondaryColor: value.secondaryColor || '',
@@ -521,6 +539,81 @@ async function save() {
         <p class="signature-security-note">
           La signature ne sera apposée que lorsqu’un administrateur déclenchera
           explicitement la génération du CRA officiel à signer.
+        </p>
+      </section>
+
+      <section class="card card-pad settings-section">
+        <h2>Configuration TVA</h2>
+        <p class="muted">
+          Ces paramètres pilotent les calculs fiscaux du tableau financier.
+          Ils doivent correspondre à la situation fiscale réellement applicable
+          à IFICS.
+        </p>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="settings-vat-liability">Statut TVA</label>
+            <select
+              id="settings-vat-liability"
+              v-model="form.vatLiabilityStatus"
+              class="select"
+            >
+              <option value="NOT_CONFIGURED">À configurer</option>
+              <option value="SUBJECT">Assujetti à la TVA</option>
+              <option value="NOT_SUBJECT">Non assujetti</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="settings-vat-basis">Exigibilité</label>
+            <select
+              id="settings-vat-basis"
+              v-model="form.vatCollectionBasis"
+              class="select"
+              :disabled="form.vatLiabilityStatus !== 'SUBJECT'"
+            >
+              <option value="NOT_CONFIGURED">À configurer</option>
+              <option value="COLLECTIONS">Sur les encaissements</option>
+              <option value="DEBITS">Sur les débits</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="settings-vat-frequency">
+              Périodicité de déclaration
+            </label>
+            <select
+              id="settings-vat-frequency"
+              v-model="form.vatFilingFrequency"
+              class="select"
+              :disabled="form.vatLiabilityStatus !== 'SUBJECT'"
+            >
+              <option value="NOT_CONFIGURED">À configurer</option>
+              <option value="MONTHLY">Mensuelle</option>
+              <option value="QUARTERLY">Trimestrielle</option>
+              <option value="ANNUAL">Annuelle</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="settings-vat-effective">
+              Date d’effet
+            </label>
+            <input
+              id="settings-vat-effective"
+              v-model="form.vatEffectiveFrom"
+              class="input"
+              type="date"
+              :disabled="form.vatLiabilityStatus !== 'SUBJECT'"
+            >
+          </div>
+        </div>
+
+        <p class="help">
+          IFICS ne détermine pas automatiquement le régime fiscal applicable.
+          La date d’effet indique à partir de quand cette configuration peut être
+          utilisée dans les calculs. Une période antérieure ou chevauchant cette
+          date n’utilise pas automatiquement la configuration actuelle.
         </p>
       </section>
 

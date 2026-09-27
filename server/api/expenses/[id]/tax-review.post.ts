@@ -73,6 +73,29 @@ function moneyCents(
   )
 }
 
+function parseBusinessDate(
+  value: unknown,
+): Date | null {
+  if (
+    typeof value !== 'string'
+    || !/^\d{4}-\d{2}-\d{2}$/.test(value)
+  ) {
+    return null
+  }
+
+  const date =
+    new Date(`${value}T00:00:00.000Z`)
+
+  if (
+    Number.isNaN(date.getTime())
+    || date.toISOString().slice(0, 10) !== value
+  ) {
+    return null
+  }
+
+  return date
+}
+
 function centsAsDecimal(
   value: bigint,
 ): string {
@@ -114,6 +137,31 @@ export default defineEventHandler(async (event) => {
       'Déductibilité de la TVA',
     )
 
+  const rawTaxDeductibleDate =
+    body.taxDeductibleDate
+
+  const taxDeductibleDate =
+    rawTaxDeductibleDate === undefined
+    || rawTaxDeductibleDate === null
+    || rawTaxDeductibleDate === ''
+      ? null
+      : parseBusinessDate(
+          rawTaxDeductibleDate,
+        )
+
+  if (
+    rawTaxDeductibleDate !== undefined
+    && rawTaxDeductibleDate !== null
+    && rawTaxDeductibleDate !== ''
+    && !taxDeductibleDate
+  ) {
+    httpError(
+      400,
+      'La date de déduction de TVA est invalide.',
+      'EXPENSE_TAX_DEDUCTIBLE_DATE_INVALID',
+    )
+  }
+
   const taxReviewNote =
     optionalString(
       body.taxReviewNote,
@@ -141,6 +189,7 @@ export default defineEventHandler(async (event) => {
 
         taxDeductibility: true,
         deductibleTaxAmount: true,
+        taxDeductibleDate: true,
         taxReviewNote: true,
       },
     })
@@ -259,6 +308,36 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  if (
+    taxDeductibility === 'DEDUCTIBLE'
+    && !taxDeductibleDate
+  ) {
+    httpError(
+      400,
+      'La date de déduction de TVA est obligatoire.',
+      'EXPENSE_TAX_DEDUCTIBLE_DATE_REQUIRED',
+    )
+  }
+
+  if (
+    taxDeductibility !== 'DEDUCTIBLE'
+    && taxDeductibleDate
+  ) {
+    httpError(
+      400,
+      'La date de déduction est réservée à une TVA qualifiée déductible.',
+      'EXPENSE_TAX_DEDUCTIBLE_DATE_FORBIDDEN',
+    )
+  }
+
+  if (taxDeductibleDate) {
+    await assertAccountingDateWritable(
+      context.associationId,
+      taxDeductibleDate,
+      'déduction fiscale de la TVA',
+    )
+  }
+
   const reviewedAt =
     new Date()
 
@@ -296,6 +375,11 @@ export default defineEventHandler(async (event) => {
               taxDeductibility,
 
               deductibleTaxAmount,
+
+              taxDeductibleDate:
+                taxDeductibility === 'DEDUCTIBLE'
+                  ? taxDeductibleDate
+                  : null,
 
               taxReviewNote,
 
@@ -344,6 +428,12 @@ export default defineEventHandler(async (event) => {
                     .deductibleTaxAmount
                     .toString(),
 
+                taxDeductibleDate:
+                  expense.taxDeductibleDate
+                    ?.toISOString()
+                    .slice(0, 10)
+                  ?? null,
+
                 taxReviewNote:
                   expense.taxReviewNote,
               },
@@ -352,6 +442,12 @@ export default defineEventHandler(async (event) => {
                 taxDeductibility,
 
                 deductibleTaxAmount,
+
+                taxDeductibleDate:
+                  taxDeductibleDate
+                    ?.toISOString()
+                    .slice(0, 10)
+                  ?? null,
 
                 taxReviewNote,
               },

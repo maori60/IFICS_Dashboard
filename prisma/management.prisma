@@ -27,32 +27,56 @@ enum HrContractStatus {
   ARCHIVED
 }
 
+enum VatLiabilityStatus {
+  NOT_CONFIGURED
+  SUBJECT
+  NOT_SUBJECT
+}
+
+enum VatCollectionBasis {
+  NOT_CONFIGURED
+  DEBITS
+  COLLECTIONS
+}
+
+enum VatFilingFrequency {
+  NOT_CONFIGURED
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
 model AssociationFinanceSettings {
-  id                   String   @id @default(cuid())
-  associationId        String   @unique
-  legalForm            String?  @db.VarChar(100)
-  rnaNumber             String?  @db.VarChar(40)
-  vatNumber             String?  @db.VarChar(40)
-  bankName              String?  @db.VarChar(150)
-  bankAccountHolder     String?  @db.VarChar(200)
-  iban                   String?  @db.VarChar(34)
-  bic                    String?  @db.VarChar(11)
-  paymentTerms          String?
-  taxExemptionText      String?
-  logoFilePath                  String?   @db.VarChar(500)
+  id                String  @id @default(cuid())
+  associationId     String  @unique
+  legalForm         String? @db.VarChar(100)
+  rnaNumber         String? @db.VarChar(40)
+  vatNumber         String? @db.VarChar(40)
+  bankName          String? @db.VarChar(150)
+  bankAccountHolder String? @db.VarChar(200)
+  iban              String? @db.VarChar(34)
+  bic               String? @db.VarChar(11)
+  paymentTerms      String?
+  taxExemptionText  String?
 
-  craSignatureFilePath          String?   @db.VarChar(500)
-  craSignatureOriginalName      String?   @db.VarChar(255)
-  craSignatureMimeType          String?   @db.VarChar(100)
-  craSignatureFileSize          BigInt?
-  craSignatureSha256            String?   @db.VarChar(64)
-  craSignatureUpdatedByUserId   String?
-  craSignatureUpdatedAt         DateTime?
+  vatLiabilityStatus VatLiabilityStatus @default(NOT_CONFIGURED)
+  vatCollectionBasis VatCollectionBasis @default(NOT_CONFIGURED)
+  vatFilingFrequency VatFilingFrequency @default(NOT_CONFIGURED)
+  vatEffectiveFrom   DateTime?
+  logoFilePath       String?            @db.VarChar(500)
 
-  maxAssetDocuments             Int       @default(20)
-  maxAssetDocumentMb    Int      @default(10)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  craSignatureFilePath        String?   @db.VarChar(500)
+  craSignatureOriginalName    String?   @db.VarChar(255)
+  craSignatureMimeType        String?   @db.VarChar(100)
+  craSignatureFileSize        BigInt?
+  craSignatureSha256          String?   @db.VarChar(64)
+  craSignatureUpdatedByUserId String?
+  craSignatureUpdatedAt       DateTime?
+
+  maxAssetDocuments  Int      @default(20)
+  maxAssetDocumentMb Int      @default(10)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([associationId])
 }
@@ -173,6 +197,7 @@ model HrContract {
   @@index([templateId])
   @@index([createdByUserId])
 }
+
 enum BillingPaymentMethod {
   BANK_TRANSFER
   CARD
@@ -183,26 +208,26 @@ enum BillingPaymentMethod {
 }
 
 model BillingPayment {
-  id               String               @id @default(cuid())
-  associationId    String
+  id                String               @id @default(cuid())
+  associationId     String
   billingDocumentId String
-  amount           Decimal              @db.Decimal(12, 2)
-  currency         String               @default("EUR") @db.VarChar(3)
-  paidAt           DateTime
-  method           BillingPaymentMethod
-  reference        String?              @db.VarChar(120)
-  note             String?
-  recordedByUserId String?
-  reversedAt       DateTime?
-  reversedByUserId String?
-  reversalReason   String?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  amount            Decimal              @db.Decimal(12, 2)
+  currency          String               @default("EUR") @db.VarChar(3)
+  paidAt            DateTime
+  method            BillingPaymentMethod
+  reference         String?              @db.VarChar(120)
+  note              String?
+  recordedByUserId  String?
+  reversedAt        DateTime?
+  reversedByUserId  String?
+  reversalReason    String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
 
-  association      Association          @relation(fields: [associationId], references: [id], onDelete: Cascade)
-  billingDocument  BillingDocument      @relation(fields: [billingDocumentId], references: [id], onDelete: Cascade)
-  recordedByUser   User?                @relation("BillingPaymentRecordedBy", fields: [recordedByUserId], references: [id], onDelete: SetNull)
-  reversedByUser   User?                @relation("BillingPaymentReversedBy", fields: [reversedByUserId], references: [id], onDelete: SetNull)
+  association     Association     @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  billingDocument BillingDocument @relation(fields: [billingDocumentId], references: [id], onDelete: Cascade)
+  recordedByUser  User?           @relation("BillingPaymentRecordedBy", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+  reversedByUser  User?           @relation("BillingPaymentReversedBy", fields: [reversedByUserId], references: [id], onDelete: SetNull)
 
   @@index([associationId, paidAt])
   @@index([billingDocumentId, paidAt])

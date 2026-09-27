@@ -33,7 +33,11 @@ type OverviewResponse = {
     tax: {
       invoicedTax: string
       collectedTax: string
+      outputTax: string | null
       collectionBasis: string
+      liabilityStatus: string
+      filingFrequency: string
+      effectiveFrom: string | null
       expenseTaxRecorded: string
       deductibleTax: string
       pendingReviewCount: number
@@ -265,7 +269,15 @@ async function applyPeriod() {
               <h2>Suivi fiscal</h2>
             </div>
             <span class="warning-pill">
-              Calcul fiscal à configurer
+              {{
+                overview.tax.status === 'NOT_SUBJECT'
+                  ? 'Non assujetti'
+                  : overview.tax.status === 'OUTPUT_TAX_CONFIGURED'
+                    ? 'Configuration TVA active'
+                    : overview.tax.status === 'VAT_CONFIGURATION_NOT_EFFECTIVE_FOR_PERIOD'
+                      ? 'Configuration non applicable à cette période'
+                      : 'Calcul fiscal à configurer'
+              }}
             </span>
           </div>
 
@@ -275,8 +287,22 @@ async function applyPeriod() {
               <dd>{{ money(overview.tax.invoicedTax) }}</dd>
             </div>
             <div>
-              <dt>TVA exigible estimée — encaissements</dt>
-              <dd>{{ money(overview.tax.collectedTax) }}</dd>
+              <dt>TVA de sortie selon configuration</dt>
+              <dd>
+                {{ money(overview.tax.outputTax) }}
+
+                <small
+                  v-if="overview.tax.collectionBasis === 'COLLECTIONS'"
+                >
+                  (encaissements)
+                </small>
+
+                <small
+                  v-else-if="overview.tax.collectionBasis === 'DEBITS'"
+                >
+                  (débits)
+                </small>
+              </dd>
             </div>
             <div>
               <dt>TVA portée sur les dépenses</dt>
@@ -296,16 +322,16 @@ async function applyPeriod() {
               </dd>
             </div>
             <div>
-              <dt>TVA à décaisser</dt>
-              <dd>À déterminer</dd>
+              <dt>Solde TVA déclaratif</dt>
+              <dd>{{ money(overview.tax.payableTax) }}</dd>
             </div>
           </dl>
 
           <p class="warning">
-            La TVA exigible est actuellement estimée selon le régime
-            sur encaissements. Seule la TVA explicitement qualifiée comme
-            déductible est affichée comme telle. Les montants en attente
-            de qualification restent exclus du calcul fiscal.
+            La TVA de sortie suit la configuration fiscale enregistrée.
+            La TVA déductible est rattachée à la période au moyen de sa
+            date fiscale de déduction. Les montants en attente de
+            qualification restent exclus du calcul du solde TVA.
           </p>
         </section>
       </div>

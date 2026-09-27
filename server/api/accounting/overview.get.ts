@@ -160,6 +160,8 @@ export default defineEventHandler(async (event) => {
     expenses,
     payments,
     paidExpenses,
+    financeSettings,
+    deductibleTaxExpenses,
   ] = await Promise.all([
     prisma.billingDocument.findMany({
       where: {
@@ -294,6 +296,53 @@ export default defineEventHandler(async (event) => {
         amountInclTax: true,
       },
     }),
+
+    prisma.associationFinanceSettings.findUnique({
+      where: {
+        associationId:
+          context.associationId,
+      },
+
+      select: {
+        vatLiabilityStatus: true,
+        vatCollectionBasis: true,
+        vatFilingFrequency: true,
+        vatEffectiveFrom: true,
+      },
+    }),
+
+    prisma.expense.findMany({
+      where: {
+        associationId:
+          context.associationId,
+
+        status: {
+          in: [
+            'APPROVED',
+            'PAID',
+          ],
+        },
+
+        taxDeductibility:
+          'DEDUCTIBLE',
+
+        taxDeductibleDate: {
+          not: null,
+
+          ...(from
+            ? { gte: from }
+            : {}),
+
+          ...(toExclusive
+            ? { lt: toExclusive }
+            : {}),
+        },
+      },
+
+      select: {
+        deductibleTaxAmount: true,
+      },
+    }),
   ])
 
   let invoicedExclTax = BigInt(0)
@@ -310,7 +359,6 @@ export default defineEventHandler(async (event) => {
   let expenseTax = BigInt(0)
   let expenseInclTax = BigInt(0)
 
-  let deductibleExpenseTax = BigInt(0)
   let pendingTaxReviewCount = 0
   let pendingTaxReviewAmount = BigInt(0)
 
@@ -329,15 +377,6 @@ export default defineEventHandler(async (event) => {
 
     if (
       expense.taxDeductibility
-      === 'DEDUCTIBLE'
-    ) {
-      deductibleExpenseTax += cents(
-        expense.deductibleTaxAmount,
-      )
-    }
-
-    if (
-      expense.taxDeductibility
       === 'PENDING'
       && cents(expense.taxAmount) > BigInt(0)
     ) {
@@ -347,6 +386,17 @@ export default defineEventHandler(async (event) => {
       )
     }
   }
+
+  const deductibleExpenseTax =
+    deductibleTaxExpenses.reduce(
+      (total, expense) =>
+        total
+        + cents(
+          expense.deductibleTaxAmount,
+        ),
+
+      BigInt(0),
+    )
 
   const collected = payments.reduce(
     (total, payment) => {
@@ -392,6 +442,69 @@ export default defineEventHandler(async (event) => {
       })),
       from,
     )
+
+  const vatLiabilityStatus =
+    financeSettings?.vatLiabilityStatus
+    ?? 'NOT_CONFIGURED'
+
+  const vatCollectionBasis =
+    financeSettings?.vatCollectionBasis
+    ?? 'NOT_CONFIGURED'
+
+  const vatFilingFrequency =
+    financeSettings?.vatFilingFrequency
+    ?? 'NOT_CONFIGURED'
+
+  const vatEffectiveFrom =
+    financeSettings?.vatEffectiveFrom
+    ?? null
+
+  const vatConfigurationComplete =
+    vatLiabilityStatus === 'SUBJECT'
+    && vatCollectionBasis !== 'NOT_CONFIGURED'
+    && vatEffectiveFrom !== null
+
+  /*
+   * Une configuration unique est actuellement stockée.
+   *
+   * On ne l'applique donc qu'à une période dont la borne
+   * de début est explicitement connue et située à compter
+   * de sa date d'effet.
+   *
+   * Cela évite d'appliquer rétroactivement la configuration
+   * actuelle à une période antérieure ou à une période qui
+   * chevauche sa date d'effet.
+   */
+  const vatConfigurationActive =
+    vatConfigurationComplete
+    && from !== null
+    && from >= vatEffectiveFrom
+
+  /*
+   * TVA de sortie de la période.
+   *
+   * COLLECTIONS :
+   * TVA attribuée aux encaissements de la période.
+   *
+   * DEBITS :
+   * TVA portée par les factures émises pendant la période.
+   *
+   * Le solde déclaratif reste volontairement séparé :
+   * la période fiscale de déduction de la TVA d'achat
+   * n'est pas encore modélisée.
+   */
+  const outputTax =
+    !vatConfigurationActive
+      ? null
+      : vatCollectionBasis === 'COLLECTIONS'
+        ? collectedTax
+        : invoicedTax
+
+  const payableTax =
+    outputTax === null
+      ? null
+      : outputTax
+        - deductibleExpenseTax
 
   /*
    * ATTENTION :
@@ -477,25 +590,43 @@ export default defineEventHandler(async (event) => {
         money(invoicedTax),
 
       /*
-       * TVA devenue exigible à partir des règlements reçus
-       * pendant la période, selon une logique d'encaissements.
+       * Indicateur technique conservé :
+       * TVA correspondant aux encaissements.
        */
       collectedTax:
         money(collectedTax),
 
+      /*
+       * TVA de sortie retenue selon la configuration.
+       * null signifie qu'aucun calcul fiscal ne doit
+       * être présenté comme applicable.
+       */
+      outputTax:
+        outputTax === null
+          ? null
+          : money(outputTax),
+
       collectionBasis:
-        'PAYMENTS',
+        vatConfigurationActive
+          ? vatCollectionBasis
+          : 'NOT_CONFIGURED',
+
+      liabilityStatus:
+        vatLiabilityStatus,
+
+      filingFrequency:
+        vatFilingFrequency,
+
+      effectiveFrom:
+        vatEffectiveFrom
+          ? vatEffectiveFrom
+              .toISOString()
+              .slice(0, 10)
+          : null,
 
       expenseTaxRecorded:
         money(expenseTax),
 
-      /*
-       * Seuls les montants explicitement qualifiés
-       * DEDUCTIBLE sont agrégés ici.
-       *
-       * Une dépense PENDING ou NON_DEDUCTIBLE
-       * ne contribue jamais à ce montant.
-       */
       deductibleTax:
         money(deductibleExpenseTax),
 
@@ -505,15 +636,19 @@ export default defineEventHandler(async (event) => {
       pendingReviewTax:
         money(pendingTaxReviewAmount),
 
-      /*
-       * Le montant à décaisser reste volontairement
-       * indéterminé tant que le régime fiscal complet
-       * de l'association n'est pas modélisé.
-       */
-      payableTax: null,
+      payableTax:
+        payableTax === null
+          ? null
+          : money(payableTax),
 
       status:
-        'PARTIAL',
+        vatLiabilityStatus === 'NOT_SUBJECT'
+          ? 'NOT_SUBJECT'
+          : vatConfigurationActive
+            ? 'OUTPUT_TAX_CONFIGURED'
+            : vatConfigurationComplete
+              ? 'VAT_CONFIGURATION_NOT_EFFECTIVE_FOR_PERIOD'
+              : 'FISCAL_REGIME_NOT_CONFIGURED',
     },
   })
 })

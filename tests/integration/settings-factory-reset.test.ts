@@ -60,7 +60,7 @@ describe.skipIf(process.env.SETTINGS_INTEGRATION_TESTS !== '1')(
       const association = await prisma.association.create({ data: { id: associationId, name: 'IFICS Test', legalName: 'IFICS Legal', billingName: 'IFICS Facturation', billingAddress: '1 rue Test', billingPostalCode: '75000', billingCity: 'Paris', billingCountry: 'France', siret: '12345678901234', primaryColor: '#123456', secondaryColor: '#654321', pdfFooter: 'Pied de page', timezone: 'America/New_York', locale: 'en-US', currency: 'USD', maintenanceEnabled: true, maintenanceMessage: 'Maintenance' } })
       const role = await prisma.role.create({ data: { associationId, name: `Admin ${token}`, code: `RESET_${token}`, permissions: ['*'] } })
       const user = await prisma.user.create({ data: { associationId, roleId: role.id, firstName: 'Test', lastName: 'Reset', email: `reset-${token}@example.invalid`, passwordHash: 'not-used' } })
-      await prisma.associationFinanceSettings.create({ data: { associationId, legalForm: 'Association', bankName: 'Banque test', bankAccountHolder: 'IFICS', iban: 'FR7612345678901234567890123', bic: 'ABCDEFGHXXX', paymentTerms: '30 jours', taxExemptionText: 'Texte fiscal', maxAssetDocuments: 77, maxAssetDocumentMb: 33 } })
+      await prisma.associationFinanceSettings.create({ data: { associationId, legalForm: 'Association', bankName: 'Banque test', bankAccountHolder: 'IFICS', iban: 'FR7612345678901234567890123', bic: 'ABCDEFGHXXX', paymentTerms: '30 jours', taxExemptionText: 'Texte fiscal', vatLiabilityStatus: 'SUBJECT', vatCollectionBasis: 'COLLECTIONS', vatFilingFrequency: 'MONTHLY', vatEffectiveFrom: new Date('2026-01-01T00:00:00.000Z'), maxAssetDocuments: 77, maxAssetDocumentMb: 33 } })
       request.associationId = association.id
       request.userId = user.id
     })
@@ -106,6 +106,12 @@ describe.skipIf(process.env.SETTINGS_INTEGRATION_TESTS !== '1')(
       expect(finance.iban).toBe('FR7612345678901234567890123')
       expect(finance.paymentTerms).toBeNull()
       expect(finance.taxExemptionText).toBeNull()
+      expect(finance.vatLiabilityStatus).toBe('SUBJECT')
+      expect(finance.vatCollectionBasis).toBe('COLLECTIONS')
+      expect(finance.vatFilingFrequency).toBe('MONTHLY')
+      expect(
+        finance.vatEffectiveFrom?.toISOString().slice(0, 10),
+      ).toBe('2026-01-01')
       expect(finance.maxAssetDocuments).toBe(20)
       expect(finance.maxAssetDocumentMb).toBe(10)
 
