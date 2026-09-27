@@ -84,3 +84,6 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
     </footer>
   </div>
 </template>
+
+<style src="~/assets/css/public-polish.css"></style>
+<style src="~/assets/css/public-photos.css"></style>

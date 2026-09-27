@@ -193,3 +193,116 @@ tr:last-child td { border-bottom: 0; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+
+/* IFICS DASHBOARD RESPONSIVE — MOBILE OPERATIONS */
+@media (max-width: 900px) {
+  .dashboard-shell .page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .dashboard-shell .page-head > * {
+    min-width: 0;
+  }
+
+  .dashboard-shell .page-head .actions {
+    width: 100%;
+  }
+
+  .dashboard-shell .card-pad {
+    padding: 18px;
+  }
+
+  .dashboard-shell .grid-4,
+  .dashboard-shell .grid-3,
+  .dashboard-shell .grid-2,
+  .dashboard-shell .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-shell .field,
+  .dashboard-shell .field-full,
+  .dashboard-shell .input,
+  .dashboard-shell .select,
+  .dashboard-shell .textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .dashboard-shell .field-full {
+    grid-column: auto;
+  }
+
+  .dashboard-shell .actions {
+    align-items: stretch;
+  }
+
+  .dashboard-shell .table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-shell .page-head h1 {
+    font-size: clamp(1.55rem, 8vw, 2rem);
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-shell .card {
+    min-width: 0;
+  }
+
+  .dashboard-shell .card-pad {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .dashboard-shell .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .dashboard-shell .actions > .btn,
+  .dashboard-shell .actions > button,
+  .dashboard-shell .actions > a {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .dashboard-shell .btn {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .dashboard-shell .input,
+  .dashboard-shell .select,
+  .dashboard-shell .textarea {
+    font-size: 16px;
+  }
+
+  .dashboard-shell .table-wrap {
+    border-radius: 12px;
+  }
+
+  .dashboard-shell .table-wrap table {
+    min-width: 680px;
+  }
+
+  .dashboard-shell th,
+  .dashboard-shell td {
+    padding: 11px 12px;
+  }
+
+  .dashboard-shell .empty-state {
+    padding: 24px 14px;
+  }
+}

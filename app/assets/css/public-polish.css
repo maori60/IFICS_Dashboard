@@ -1,5 +1,5 @@
 /* IFICS public website V2 — brand system 2026 */
-:root {
+.public-shell {
   --public-max: 1240px;
   --public-gutter: 48px;
   --v2-deep: #073f35;
@@ -16,7 +16,7 @@
   --v2-shadow: 0 24px 70px rgba(4,45,39,.10);
 }
 
-body {
+.public-shell {
   font-family: Inter, "Avenir Next", "Segoe UI", Helvetica, Arial, sans-serif;
   color: var(--v2-ink);
   background: var(--v2-paper);
@@ -24,7 +24,14 @@ body {
   line-height: 1.6;
 }
 
-h1, h2, h3, h4, h5, h6, .display-title, .section-title {
+.public-shell h1,
+.public-shell h2,
+.public-shell h3,
+.public-shell h4,
+.public-shell h5,
+.public-shell h6,
+.public-shell .display-title,
+.public-shell .section-title {
   font-family: Montserrat, Inter, "Avenir Next", "Segoe UI", sans-serif;
   color: var(--v2-ink);
   letter-spacing: -.04em;
@@ -366,7 +373,7 @@ h1, h2, h3, h4, h5, h6, .display-title, .section-title {
 .alert-success { color: #155539; background: #effaf3; border-color: #c8e8d3; }
 
 @media (max-width: 1300px) {
-  :root { --public-gutter: 38px; }
+  .public-shell { --public-gutter: 38px; }
   .public-brand-wordmark { width: 188px; }
   .menu-button { display: inline-flex; margin-left: auto; }
   .public-nav { position: absolute; top: 74px; left: 20px; right: 20px; display: none; flex-direction: column; align-items: stretch; gap: 14px; padding: 18px; border: 1px solid var(--v2-line); border-radius: 12px; background: #fff; box-shadow: 0 24px 70px rgba(4,45,39,.14); }
@@ -411,7 +418,7 @@ h1, h2, h3, h4, h5, h6, .display-title, .section-title {
 }
 
 @media (max-width: 680px) {
-  :root { --public-gutter: 26px; }
+  .public-shell { --public-gutter: 26px; }
   .section { padding: 72px 0; }
   .section-compact { padding: 48px 0; }
   .header-container { width: calc(100% - 24px); }
@@ -561,7 +568,7 @@ h1, h2, h3, h4, h5, h6, .display-title, .section-title {
    IFICS PUBLIC V2.1 — DIRECTION ARTISTIQUE VERROUILLÉE
    Référence : maquette sombre IFICS + KREATORTECH validée
    ========================================================== */
-:root {
+.public-shell {
   --v3-bg: #020808;
   --v3-panel: #061312;
   --v3-panel-2: #0a1716;
@@ -574,7 +581,7 @@ h1, h2, h3, h4, h5, h6, .display-title, .section-title {
   --v3-shadow: 0 24px 70px rgba(0, 0, 0, .42);
 }
 
-body {
+.public-shell {
   background: var(--v3-bg);
   color: var(--v3-text);
 }

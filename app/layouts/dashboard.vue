@@ -12,7 +12,7 @@ useHead({
 
 const route = useRoute()
 const menuOpen = ref(false)
-const brandingLogoUrl = '/api/public/branding/logo'
+const dashboardLogoUrl = '/brand/ifics-logo.png'
 const { data: sessionResponse } = await useFetch<ApiSuccess<SessionPayload>>('/api/auth/me')
 const session = computed(() => sessionResponse.value?.data ?? null)
 const permissions = computed(() => new Set(session.value?.user.permissions ?? []))
@@ -52,6 +52,11 @@ const navigationSections = computed<NavigationSection[]>(() => [
   {
     label: 'FINANCES & COMPTABILITÉ',
     items: [
+      {
+        label: 'Vue financière',
+        to: '/dashboard/accounting',
+        visible: can('accounting:read'),
+      },
       {
         label: 'Facturation',
         to: '/dashboard/billing',
@@ -138,9 +143,16 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
 
 <template>
   <div class="dashboard-shell">
-    <div class="dash-mobile-bar"><NuxtLink to="/dashboard" class="dash-mobile-brand"><img :src="brandingLogoUrl" alt=""><strong>IFICS</strong></NuxtLink><button class="dash-menu" type="button" :aria-expanded="menuOpen" aria-controls="dash-sidebar" @click="menuOpen = !menuOpen">☰ Menu</button></div>
+    <div class="dash-mobile-bar"><NuxtLink to="/dashboard" class="dash-mobile-brand"><img :src="dashboardLogoUrl" alt="" aria-hidden="true"><strong>IFICS</strong></NuxtLink><button class="dash-menu" type="button" :aria-expanded="menuOpen" aria-controls="dash-sidebar" @click="menuOpen = !menuOpen">☰ Menu</button></div>
+    <button
+      v-if="menuOpen"
+      class="dash-backdrop"
+      type="button"
+      aria-label="Fermer le menu"
+      @click="menuOpen = false"
+    />
     <aside id="dash-sidebar" class="dash-sidebar" :class="{ open: menuOpen }">
-      <NuxtLink to="/dashboard" class="dash-brand"><span class="dash-logo"><img :src="brandingLogoUrl" alt=""></span><div><strong>IFICS</strong><small>Platform</small></div></NuxtLink>
+      <NuxtLink to="/dashboard" class="dash-brand"><span class="dash-logo"><img :src="dashboardLogoUrl" alt="" aria-hidden="true"></span><div><strong>IFICS</strong><small>Platform</small></div></NuxtLink>
       <div class="workspace"><small>Organisation</small><strong>{{ session?.association?.name || 'IFICS' }}</strong><span>{{ session?.user.roleName || 'Compte' }}</span></div>
       <nav aria-label="Navigation espace IFICS">
         <NuxtLink
@@ -216,15 +228,156 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
 .secure-pill { font-size:.7rem; color:#1c6042; background:#edf8f1; border:1px solid #c9e5d4; padding:6px 9px; border-radius:999px; font-weight:800; }
 .dash-content { width:min(1520px,100%); margin:0 auto; padding:30px; }
 .dash-mobile-bar { display:none; }
-.dash-menu { border:1px solid var(--ifics-border); background:#fff; border-radius:9px; padding:9px 11px; color:#113d2d; font-weight:800; }
+.dash-backdrop { display:none; }
+.dash-menu {
+  min-width:44px;
+  min-height:44px;
+  border:1px solid var(--ifics-border);
+  background:#fff;
+  border-radius:9px;
+  padding:9px 11px;
+  color:#113d2d;
+  font-weight:800;
+  cursor:pointer;
+}
+
 @media (max-width:900px) {
-  .dash-mobile-bar { position:fixed; inset:0 0 auto 0; z-index:65; height:62px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,.97); border-bottom:1px solid var(--ifics-border); backdrop-filter:blur(10px); }
-  .dash-mobile-brand { display:flex; align-items:center; gap:8px; color:var(--ifics-ink); text-decoration:none; }
-  .dash-mobile-brand img { width:36px; height:36px; object-fit:contain; }
-  .dash-sidebar { width:278px; max-width:88vw; padding-top:72px; transform:translateX(-100%); transition:transform .2s ease; }
-  .dash-sidebar.open { transform:translateX(0); box-shadow:0 0 0 100vmax rgba(0,0,0,.32); }
-  .dash-main { margin-left:0; width:100%; }
-  .dash-content { padding:82px 14px 24px; }
+  .dashboard-shell { display:block; min-width:0; }
+
+  .dash-mobile-bar {
+    position:fixed;
+    inset:0 0 auto 0;
+    z-index:65;
+    min-height:62px;
+    padding:8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    background:rgba(255,255,255,.97);
+    border-bottom:1px solid var(--ifics-border);
+    backdrop-filter:blur(10px);
+  }
+
+  .dash-mobile-brand {
+    min-width:0;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--ifics-ink);
+    text-decoration:none;
+  }
+
+  .dash-mobile-brand img {
+    width:36px;
+    height:36px;
+    flex:0 0 36px;
+    object-fit:contain;
+  }
+
+  .dash-backdrop {
+    position:fixed;
+    inset:0;
+    z-index:45;
+    display:block;
+    width:100%;
+    height:100%;
+    padding:0;
+    border:0;
+    background:rgba(0,0,0,.38);
+    cursor:pointer;
+  }
+
+  .dash-sidebar {
+    width:300px;
+    max-width:88vw;
+    padding-top:calc(72px + env(safe-area-inset-top));
+    padding-bottom:max(18px, env(safe-area-inset-bottom));
+    transform:translateX(-105%);
+    transition:transform .2s ease;
+    will-change:transform;
+  }
+
+  .dash-sidebar.open {
+    transform:translateX(0);
+    box-shadow:12px 0 34px rgba(0,0,0,.24);
+  }
+
+  .dash-sidebar nav a,
+  .logout,
+  .site-link {
+    min-height:44px;
+    display:flex;
+    align-items:center;
+  }
+
+  .dash-main {
+    margin-left:0;
+    width:100%;
+    min-width:0;
+  }
+
+  .dash-content {
+    width:100%;
+    min-width:0;
+    padding:
+      calc(78px + env(safe-area-inset-top))
+      max(14px, env(safe-area-inset-right))
+      calc(24px + env(safe-area-inset-bottom))
+      max(14px, env(safe-area-inset-left));
+  }
+
   .dash-top { display:none; }
+}
+
+@media (max-width:480px) {
+  .dash-mobile-bar {
+    min-height:58px;
+    padding-top:7px;
+    padding-bottom:7px;
+  }
+
+  .dash-mobile-brand img {
+    width:34px;
+    height:34px;
+    flex-basis:34px;
+  }
+
+  .dash-menu {
+    min-height:42px;
+    padding:8px 10px;
+    font-size:.86rem;
+  }
+
+  .dash-sidebar {
+    width:min(310px, 92vw);
+    max-width:92vw;
+    padding-left:12px;
+    padding-right:12px;
+    padding-top:calc(68px + env(safe-area-inset-top));
+  }
+
+  .dash-content {
+    padding:
+      calc(72px + env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      calc(20px + env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+}
+
+@media (max-height:520px) and (max-width:900px) {
+  .dash-sidebar {
+    padding-top:66px;
+  }
+
+  .workspace {
+    margin-bottom:8px;
+    padding:9px 11px;
+  }
+
+  .nav-section {
+    margin-top:9px;
+  }
 }
 </style>
