@@ -8022,3 +8022,4381 @@
     min-height: 52px;
   }
 }
+
+/* ============================================================
+   IFICS HOME — FINAL POLISH
+   2026-09-27
+   ============================================================ */
+
+/* Hero : conserver l'impact sans surdimensionner l'introduction */
+.public-v3 .home-v3-stage {
+  padding-top: 28px;
+  padding-bottom: 58px;
+}
+
+.public-v3 .home-v3-hero {
+  min-height: 390px;
+}
+
+.public-v3 .home-v3-copy {
+  padding: 42px 46px;
+}
+
+.public-v3 .home-v3-copy h1 {
+  font-size: clamp(2.55rem, 3vw, 3.55rem);
+}
+
+.public-v3 .home-v3-copy h1 > span {
+  color: #59b99a;
+}
+
+.public-v3 .home-v3-photo {
+  min-height: 390px;
+}
+
+/* Les repères terminent réellement le premier chapitre */
+.public-v3 .home-v3-metrics {
+  margin-top: 38px;
+}
+
+/* KREATORTECH : bloc plus équilibré et plus éditorial */
+.public-v3 .v3-kreator-feature {
+  padding: 76px 0;
+  border-top: 1px solid rgba(221, 255, 247, .07);
+  border-bottom: 1px solid rgba(221, 255, 247, .07);
+}
+
+.public-v3 .v3-kreator-grid {
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+  gap: clamp(56px, 7vw, 100px);
+}
+
+.public-v3 .v3-brand-block {
+  max-width: 520px;
+}
+
+.public-v3 .v3-brand-block img {
+  width: min(390px, 100%);
+  max-height: 108px;
+}
+
+.public-v3 .v3-brand-block p {
+  max-width: 500px;
+  margin-top: 20px;
+  margin-bottom: 24px;
+  color: #a9bbb5;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.public-v3 .v3-services {
+  border-top-color: rgba(180, 225, 211, .20);
+}
+
+.public-v3 .v3-services span {
+  position: relative;
+  min-height: 82px;
+  padding: 20px 26px 20px 30px;
+  border-right-color: rgba(180, 225, 211, .16);
+  border-bottom-color: rgba(180, 225, 211, .16);
+  color: #edf6f2;
+  font-size: .96rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.public-v3 .v3-services span::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 9px;
+  height: 1px;
+  background: #52b797;
+  transform: translateY(-50%);
+  opacity: .75;
+}
+
+/* Partenaires : éviter un grand vide lorsqu'ils sont peu nombreux */
+.public-v3 .v3-proof-content {
+  padding-top: 54px;
+  padding-bottom: 54px;
+}
+
+/* CTA : transition plus compacte vers le footer */
+.public-v3 .v3-final-cta {
+  padding-top: 58px;
+  padding-bottom: 58px;
+}
+
+.public-v3 .v3-final-cta .final-cta {
+  padding: 42px 48px;
+}
+
+.public-v3 .v3-final-cta h2 {
+  font-size: clamp(2.15rem, 3vw, 3.25rem);
+}
+
+/* Footer légèrement moins haut sur desktop */
+.public-v3 .public-footer {
+  padding-top: 52px;
+}
+
+.public-v3 .footer-dual-brand {
+  padding-bottom: 34px;
+}
+
+.public-v3 .footer-top {
+  padding-top: 44px;
+  padding-bottom: 46px;
+}
+
+/* Tablette */
+@media (max-width: 1050px) {
+  .public-v3 .home-v3-hero,
+  .public-v3 .home-v3-photo {
+    min-height: auto;
+  }
+
+  .public-v3 .v3-kreator-feature {
+    padding: 62px 0;
+  }
+
+  .public-v3 .v3-kreator-grid {
+    gap: 42px;
+  }
+
+  .public-v3 .v3-brand-block {
+    max-width: 620px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 680px) {
+  .public-v3 .home-v3-stage {
+    padding-top: 12px;
+    padding-bottom: 42px;
+  }
+
+  .public-v3 .home-v3-copy {
+    padding: 32px 22px 29px;
+  }
+
+  .public-v3 .home-v3-copy h1 {
+    font-size: clamp(2.15rem, 10vw, 3rem);
+  }
+
+  .public-v3 .v3-kreator-feature {
+    padding: 48px 0;
+  }
+
+  .public-v3 .v3-brand-block img {
+    width: min(330px, 100%);
+  }
+
+  .public-v3 .v3-services span {
+    min-height: 66px;
+    padding: 17px 20px 17px 25px;
+  }
+
+  .public-v3 .v3-final-cta {
+    padding: 44px 0;
+  }
+
+  .public-v3 .v3-final-cta .final-cta {
+    padding: 28px 22px;
+  }
+
+  .public-v3 .public-footer {
+    padding-top: 40px;
+  }
+}
+
+/* ============================================================
+   IFICS HOME — SPACING FINAL
+   ============================================================ */
+
+.public-v3 .home-v3-metrics {
+  margin-bottom: 0;
+}
+
+.public-v3 .v3-kreator-feature {
+  margin-top: 0;
+  padding-top: 58px;
+  padding-bottom: 58px;
+}
+
+.public-v3 .v3-final-cta {
+  padding-top: 48px;
+  padding-bottom: 48px;
+}
+
+.public-v3 .v3-final-cta + .public-footer,
+.public-v3 .public-footer {
+  margin-top: 0;
+}
+
+@media (max-width: 680px) {
+  .public-v3 .v3-kreator-feature {
+    padding-top: 42px;
+    padding-bottom: 42px;
+  }
+
+  .public-v3 .v3-final-cta {
+    padding-top: 38px;
+    padding-bottom: 38px;
+  }
+}
+
+/* ============================================================
+   IFICS ASSOCIATION — FINAL POLISH
+   ============================================================ */
+
+/*
+ * La composition V8 est conservée.
+ * Cette passe harmonise uniquement le rythme vertical avec
+ * l'accueil afin d'éviter les grands espaces sur desktop.
+ */
+
+.public-v3 .about-v8-mission {
+  padding-top: 58px;
+  padding-bottom: 58px;
+}
+
+.public-v3 .about-v8-people,
+.public-v3 .about-v8-team {
+  padding-top: 62px;
+  padding-bottom: 62px;
+}
+
+.public-v3 .about-v8-values {
+  padding-top: 58px;
+  padding-bottom: 58px;
+}
+
+.public-v3 .about-v8-cta {
+  margin-top: 12px;
+  margin-bottom: 48px;
+}
+
+/* Les cartes restent généreuses sans occuper inutilement la hauteur. */
+.public-v3 .about-v8-person,
+.public-v3 .about-v8-person-card {
+  min-height: 0;
+}
+
+/* Transition plus courte vers le footer. */
+.public-v3 .about-v8-cta + .public-footer {
+  margin-top: 0;
+}
+
+@media (max-width: 1050px) {
+  .public-v3 .about-v8-mission,
+  .public-v3 .about-v8-values {
+    padding-top: 52px;
+    padding-bottom: 52px;
+  }
+
+  .public-v3 .about-v8-people,
+  .public-v3 .about-v8-team {
+    padding-top: 54px;
+    padding-bottom: 54px;
+  }
+}
+
+@media (max-width: 680px) {
+  .public-v3 .about-v8-mission,
+  .public-v3 .about-v8-people,
+  .public-v3 .about-v8-team,
+  .public-v3 .about-v8-values {
+    padding-top: 42px;
+    padding-bottom: 42px;
+  }
+
+  .public-v3 .about-v8-cta {
+    margin-top: 0;
+    margin-bottom: 38px;
+  }
+}
+
+/* ============================================================
+   IFICS ACTIONS — FINAL POLISH
+   ============================================================ */
+
+/*
+ * Conservation intégrale de la composition V8.
+ * Ajustement du rythme vertical uniquement.
+ */
+
+.public-v3 .actions-v8-principle,
+.public-v3 .actions-v8-process {
+  padding-top: 58px;
+  padding-bottom: 58px;
+}
+
+.public-v3 .actions-v8-universes,
+.public-v3 .actions-v8-domains {
+  padding-top: 58px;
+  padding-bottom: 58px;
+}
+
+.public-v3 .actions-v8-cta {
+  margin-top: 0;
+  margin-bottom: 48px;
+}
+
+.public-v3 .actions-v8-cta + .public-footer {
+  margin-top: 0;
+}
+
+@media (max-width: 1050px) {
+  .public-v3 .actions-v8-principle,
+  .public-v3 .actions-v8-process,
+  .public-v3 .actions-v8-universes,
+  .public-v3 .actions-v8-domains {
+    padding-top: 52px;
+    padding-bottom: 52px;
+  }
+}
+
+@media (max-width: 680px) {
+  .public-v3 .actions-v8-principle,
+  .public-v3 .actions-v8-process,
+  .public-v3 .actions-v8-universes,
+  .public-v3 .actions-v8-domains {
+    padding-top: 42px;
+    padding-bottom: 42px;
+  }
+
+  .public-v3 .actions-v8-cta {
+    margin-bottom: 38px;
+  }
+}
+
+/* ===== KREATORTECH FINAL POLISH ===== */
+
+/*
+ * Finition de la page KREATORTECH.
+ * Objectifs :
+ * - conserver le command center comme pièce forte ;
+ * - resserrer le rythme vertical ;
+ * - renforcer la hiérarchie des sections ;
+ * - améliorer les cartes sans modifier le contenu ;
+ * - préserver le comportement responsive existant.
+ */
+
+.kt6-page {
+  overflow: clip;
+}
+
+.kt6-page .kt6-shell {
+  width: min(100% - 48px, 1216px);
+  margin-inline: auto;
+}
+
+/* HERO ----------------------------------------------------- */
+
+.kt6-page .kt6-hero {
+  padding-top: clamp(72px, 7vw, 112px);
+  padding-bottom: clamp(58px, 6vw, 92px);
+}
+
+.kt6-page .kt6-hero-copy {
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.kt6-page .kt6-hero h1 {
+  max-width: 880px;
+  margin-inline: auto;
+  text-wrap: balance;
+  letter-spacing: -0.045em;
+}
+
+.kt6-page .kt6-hero-lead {
+  max-width: 760px;
+  margin-inline: auto;
+  line-height: 1.65;
+}
+
+.kt6-page .kt6-hero-actions {
+  margin-top: 28px;
+}
+
+/* Le command center reste l'élément visuel principal. */
+.kt6-page .kt6-command-wrap,
+.kt6-page .kt6-command-center {
+  margin-top: clamp(42px, 5vw, 68px);
+}
+
+/* SECTIONS ------------------------------------------------- */
+
+.kt6-page .kt6-section {
+  padding-top: clamp(76px, 8vw, 116px);
+  padding-bottom: clamp(76px, 8vw, 116px);
+}
+
+.kt6-page .kt6-section-head {
+  margin-bottom: clamp(40px, 5vw, 62px);
+  align-items: end;
+}
+
+.kt6-page .kt6-section-head h2 {
+  max-width: 760px;
+  text-wrap: balance;
+  letter-spacing: -0.035em;
+}
+
+.kt6-page .kt6-section-head > p {
+  max-width: 430px;
+  line-height: 1.7;
+}
+
+/* EXPERTISES ---------------------------------------------- */
+
+.kt6-page .kt6-expertise-grid {
+  gap: 12px;
+}
+
+.kt6-page .kt6-expertise-card {
+  min-height: 214px;
+  padding: clamp(24px, 2.4vw, 34px);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .kt6-page .kt6-expertise-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(72, 214, 164, 0.34);
+    background-color: rgba(9, 39, 31, 0.52);
+  }
+}
+
+.kt6-page .kt6-expertise-card h3 {
+  margin-top: clamp(36px, 4vw, 54px);
+  letter-spacing: -0.025em;
+}
+
+.kt6-page .kt6-expertise-card p {
+  max-width: 610px;
+  line-height: 1.65;
+}
+
+/* MÉTHODE -------------------------------------------------- */
+
+.kt6-page .kt6-method-grid {
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.kt6-page .kt6-method-step {
+  min-height: 196px;
+  padding: 28px 22px;
+}
+
+.kt6-page .kt6-method-step h3 {
+  margin-top: 30px;
+}
+
+.kt6-page .kt6-method-step p {
+  line-height: 1.6;
+}
+
+/* MODES D'INTERVENTION ------------------------------------ */
+
+.kt6-page .kt6-delivery-grid {
+  gap: 12px;
+}
+
+.kt6-page .kt6-delivery-card {
+  min-height: 238px;
+  padding: clamp(26px, 2.5vw, 36px);
+}
+
+.kt6-page .kt6-delivery-card h3 {
+  margin-top: clamp(64px, 7vw, 92px);
+}
+
+/* GOUVERNANCE --------------------------------------------- */
+
+.kt6-page .kt6-governance-intro {
+  max-width: 760px;
+}
+
+.kt6-page .kt6-governance-grid {
+  gap: 12px;
+}
+
+.kt6-page .kt6-person-card {
+  min-height: 214px;
+  overflow: hidden;
+}
+
+.kt6-page .kt6-person-photo {
+  width: clamp(138px, 12vw, 166px);
+  flex: 0 0 auto;
+}
+
+.kt6-page .kt6-person-body {
+  padding: 28px 24px;
+}
+
+.kt6-page .kt6-person-body p {
+  line-height: 1.6;
+}
+
+/* ÉCOSYSTÈME ---------------------------------------------- */
+
+.kt6-page .kt6-ecosystem {
+  align-items: center;
+  gap: clamp(54px, 7vw, 92px);
+}
+
+.kt6-page .kt6-ecosystem-copy {
+  max-width: 520px;
+}
+
+.kt6-page .kt6-ecosystem-copy p {
+  line-height: 1.7;
+}
+
+.kt6-page .kt6-ecosystem-grid {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* CONVERSION ---------------------------------------------- */
+
+.kt6-page .kt6-conversion {
+  padding-top: clamp(76px, 8vw, 112px);
+  padding-bottom: clamp(76px, 8vw, 112px);
+}
+
+.kt6-page .kt6-conversion-main {
+  align-items: center;
+  gap: 40px;
+}
+
+.kt6-page .kt6-conversion h2 {
+  text-wrap: balance;
+  letter-spacing: -0.035em;
+}
+
+.kt6-page .kt6-conversion-links {
+  margin-top: 46px;
+}
+
+/* TABLETTE ------------------------------------------------- */
+
+@media (max-width: 980px) {
+  .kt6-page .kt6-shell {
+    width: min(100% - 36px, 1216px);
+  }
+
+  .kt6-page .kt6-section-head {
+    align-items: start;
+  }
+
+  .kt6-page .kt6-person-photo {
+    width: 150px;
+  }
+
+  .kt6-page .kt6-ecosystem {
+    gap: 46px;
+  }
+}
+
+/* MOBILE --------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .kt6-page .kt6-shell {
+    width: min(100% - 28px, 1216px);
+  }
+
+  .kt6-page .kt6-hero {
+    padding-top: 52px;
+    padding-bottom: 58px;
+  }
+
+  .kt6-page .kt6-hero h1 {
+    letter-spacing: -0.035em;
+  }
+
+  .kt6-page .kt6-section {
+    padding-top: 66px;
+    padding-bottom: 66px;
+  }
+
+  .kt6-page .kt6-section-head {
+    margin-bottom: 32px;
+  }
+
+  .kt6-page .kt6-expertise-card,
+  .kt6-page .kt6-delivery-card {
+    min-height: 0;
+  }
+
+  .kt6-page .kt6-expertise-card h3,
+  .kt6-page .kt6-delivery-card h3 {
+    margin-top: 34px;
+  }
+
+  .kt6-page .kt6-method-step {
+    min-height: 0;
+  }
+
+  .kt6-page .kt6-person-card {
+    min-height: 0;
+  }
+
+  .kt6-page .kt6-person-photo {
+    width: 128px;
+  }
+
+  .kt6-page .kt6-person-body {
+    padding: 22px 18px;
+  }
+
+  .kt6-page .kt6-conversion {
+    padding-top: 66px;
+    padding-bottom: 66px;
+  }
+
+  .kt6-page .kt6-conversion-links {
+    margin-top: 32px;
+  }
+}
+
+@media (max-width: 520px) {
+  .kt6-page .kt6-person-card {
+    display: block;
+  }
+
+  .kt6-page .kt6-person-photo {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    object-position: center 24%;
+  }
+}
+
+/* ===== /KREATORTECH FINAL POLISH ===== */
+
+
+/* ==========================================================
+   IFICS — INNOVATION R&D
+   MAQUETTE C / MÉDIATHÈQUE & IMPACT
+   Namespace isolé : rnd10-*
+   ========================================================== */
+
+.public-v3 .rnd10-page {
+  --rnd10-bg: #01140f;
+  --rnd10-bg-soft: #031b15;
+  --rnd10-panel: rgba(5, 39, 30, .72);
+  --rnd10-panel-strong: rgba(5, 48, 36, .88);
+  --rnd10-line: rgba(72, 214, 164, .15);
+  --rnd10-line-strong: rgba(72, 214, 164, .30);
+  --rnd10-accent: #32d9a2;
+  --rnd10-accent-bright: #72f3c7;
+  --rnd10-text: #f2f8f5;
+  --rnd10-muted: #9cb8ae;
+
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 88% 5%, rgba(24, 194, 139, .08), transparent 27rem),
+    var(--rnd10-bg);
+  color: var(--rnd10-text);
+}
+
+.public-v3 .rnd10-page *,
+.public-v3 .rnd10-page *::before,
+.public-v3 .rnd10-page *::after {
+  box-sizing: border-box;
+}
+
+
+/* TYPO / COMMUN ------------------------------------------- */
+
+.public-v3 .rnd10-eyebrow {
+  margin: 0 0 18px;
+  color: var(--rnd10-accent);
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.public-v3 .rnd10-btn {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.public-v3 .rnd10-btn-primary {
+  background: var(--rnd10-accent);
+  color: #002219;
+}
+
+.public-v3 .rnd10-btn-secondary {
+  border-color: var(--rnd10-line-strong);
+  background: rgba(2, 30, 23, .45);
+  color: var(--rnd10-text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .public-v3 .rnd10-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .public-v3 .rnd10-btn-primary:hover {
+    background: var(--rnd10-accent-bright);
+  }
+
+  .public-v3 .rnd10-btn-secondary:hover {
+    border-color: rgba(83, 235, 183, .55);
+    background: rgba(6, 53, 40, .58);
+  }
+}
+
+
+/* HERO ---------------------------------------------------- */
+
+.public-v3 .rnd10-hero {
+  position: relative;
+  min-height: 650px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--rnd10-line);
+}
+
+.public-v3 .rnd10-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(1, 20, 15, .97) 0%, rgba(1, 20, 15, .86) 46%, rgba(1, 20, 15, .2) 100%);
+}
+
+.public-v3 .rnd10-hero-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, .95fr) minmax(430px, 1.05fr);
+  gap: clamp(44px, 6vw, 92px);
+  align-items: center;
+  padding-top: 76px;
+  padding-bottom: 76px;
+}
+
+.public-v3 .rnd10-hero-copy {
+  max-width: 700px;
+}
+
+.public-v3 .rnd10-hero h1 {
+  margin: 0;
+  max-width: 760px;
+  color: var(--rnd10-text);
+  font-size: clamp(3.15rem, 5vw, 5.2rem);
+  line-height: .98;
+  font-weight: 730;
+  letter-spacing: -.052em;
+}
+
+.public-v3 .rnd10-hero h1 span {
+  color: var(--rnd10-accent-bright);
+}
+
+.public-v3 .rnd10-lead {
+  max-width: 620px;
+  margin: 28px 0 0;
+  color: var(--rnd10-muted);
+  font-size: 16px;
+  line-height: 1.72;
+}
+
+.public-v3 .rnd10-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 32px;
+}
+
+
+/* SIGNAL R&D ---------------------------------------------- */
+
+.public-v3 .rnd10-signal {
+  position: relative;
+  width: min(100%, 620px);
+  height: 500px;
+  justify-self: end;
+}
+
+.public-v3 .rnd10-signal-glow {
+  position: absolute;
+  width: 370px;
+  height: 370px;
+  right: 20px;
+  top: 55px;
+  border-radius: 50%;
+  background: rgba(27, 210, 153, .10);
+  filter: blur(75px);
+}
+
+.public-v3 .rnd10-signal-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.public-v3 .rnd10-wave {
+  stroke: url(#rnd10Line);
+  stroke-width: 1.35;
+  vector-effect: non-scaling-stroke;
+}
+
+.public-v3 .rnd10-wave-b {
+  opacity: .52;
+}
+
+.public-v3 .rnd10-wave-c {
+  opacity: .30;
+}
+
+.public-v3 .rnd10-particles circle {
+  fill: var(--rnd10-accent-bright);
+  opacity: .7;
+}
+
+.public-v3 .rnd10-signal-label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border: 1px solid var(--rnd10-line);
+  border-radius: 999px;
+  background: rgba(2, 28, 21, .82);
+  color: #d9eee7;
+  font-size: 11px;
+  backdrop-filter: blur(10px);
+}
+
+.public-v3 .rnd10-signal-label span {
+  color: var(--rnd10-accent);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.public-v3 .rnd10-signal-label-a {
+  left: 18%;
+  top: 24%;
+}
+
+.public-v3 .rnd10-signal-label-b {
+  right: 7%;
+  top: 37%;
+}
+
+.public-v3 .rnd10-signal-label-c {
+  left: 28%;
+  bottom: 20%;
+}
+
+.public-v3 .rnd10-signal-label-d {
+  right: 4%;
+  bottom: 9%;
+}
+
+
+/* INTRO --------------------------------------------------- */
+
+.public-v3 .rnd10-intro {
+  padding: 62px 0;
+  border-bottom: 1px solid var(--rnd10-line);
+  background: rgba(2, 27, 20, .56);
+}
+
+.public-v3 .rnd10-intro-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, .36fr) minmax(0, 1fr);
+  gap: clamp(40px, 7vw, 110px);
+}
+
+.public-v3 .rnd10-intro h2 {
+  max-width: 900px;
+  margin: 0;
+  color: var(--rnd10-text);
+  font-size: clamp(2rem, 3.2vw, 3.5rem);
+  line-height: 1.04;
+  letter-spacing: -.04em;
+}
+
+.public-v3 .rnd10-intro-grid > div > p {
+  max-width: 720px;
+  margin: 22px 0 0;
+  color: var(--rnd10-muted);
+  line-height: 1.7;
+}
+
+
+/* SECTIONS ------------------------------------------------ */
+
+.public-v3 .rnd10-section {
+  padding: 74px 0;
+  border-bottom: 1px solid var(--rnd10-line);
+}
+
+.public-v3 .rnd10-section-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .45fr);
+  gap: 54px;
+  align-items: end;
+  margin-bottom: 36px;
+}
+
+.public-v3 .rnd10-section-head h2 {
+  margin: 0;
+  color: var(--rnd10-text);
+  font-size: clamp(2rem, 3vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -.04em;
+}
+
+.public-v3 .rnd10-section-head > p {
+  margin: 0;
+  color: var(--rnd10-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+
+/* DOMAINES ------------------------------------------------ */
+
+.public-v3 .rnd10-domains {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(34, 188, 139, .06), transparent 32rem);
+}
+
+.public-v3 .rnd10-domain-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.public-v3 .rnd10-domain-card {
+  position: relative;
+  min-height: 330px;
+  overflow: hidden;
+  border: 1px solid var(--rnd10-line);
+  border-radius: 12px;
+  background: rgba(3, 31, 24, .72);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+
+.public-v3 .rnd10-domain-visual {
+  position: relative;
+  height: 175px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--rnd10-line);
+  background:
+    radial-gradient(circle at 72% 40%, rgba(51, 225, 166, .18), transparent 25%),
+    linear-gradient(135deg, #062c22, #021a14);
+}
+
+.public-v3 .rnd10-domain-symbol {
+  position: absolute;
+  z-index: 2;
+  left: 28px;
+  bottom: 23px;
+  color: rgba(113, 247, 201, .88);
+  font-size: 42px;
+}
+
+.public-v3 .rnd10-domain-lines {
+  position: absolute;
+  inset: 0;
+  opacity: .75;
+}
+
+.public-v3 .rnd10-domain-lines i {
+  position: absolute;
+  left: 15%;
+  width: 76%;
+  height: 1px;
+  transform: rotate(-7deg);
+  background: linear-gradient(90deg, transparent, rgba(68, 224, 171, .42), transparent);
+}
+
+.public-v3 .rnd10-domain-lines i:nth-child(1) { top: 30%; }
+.public-v3 .rnd10-domain-lines i:nth-child(2) { top: 45%; width: 58%; left: 28%; }
+.public-v3 .rnd10-domain-lines i:nth-child(3) { top: 61%; transform: rotate(8deg); }
+.public-v3 .rnd10-domain-lines i:nth-child(4) { top: 74%; width: 44%; left: 42%; }
+
+.public-v3 .rnd10-domain-association .rnd10-domain-visual {
+  background:
+    radial-gradient(circle at 28% 38%, rgba(46, 216, 161, .16), transparent 22%),
+    linear-gradient(145deg, #031b15, #073428);
+}
+
+.public-v3 .rnd10-domain-field .rnd10-domain-visual {
+  background:
+    radial-gradient(circle at 78% 70%, rgba(61, 234, 177, .17), transparent 25%),
+    linear-gradient(120deg, #073226, #021812);
+}
+
+.public-v3 .rnd10-domain-open .rnd10-domain-visual {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(67, 235, 181, .18), transparent 26%),
+    linear-gradient(155deg, #021b14, #07372a);
+}
+
+.public-v3 .rnd10-domain-body {
+  position: relative;
+  min-height: 155px;
+  padding: 23px 58px 24px 26px;
+}
+
+.public-v3 .rnd10-domain-body h3 {
+  margin: 0 0 9px;
+  color: var(--rnd10-text);
+  font-size: 18px;
+  letter-spacing: -.02em;
+}
+
+.public-v3 .rnd10-domain-body p {
+  max-width: 560px;
+  margin: 0;
+  color: var(--rnd10-muted);
+  font-size: 13px;
+  line-height: 1.62;
+}
+
+.public-v3 .rnd10-arrow {
+  position: absolute;
+  right: 25px;
+  bottom: 24px;
+  color: var(--rnd10-accent);
+  font-size: 20px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .public-v3 .rnd10-domain-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--rnd10-line-strong);
+  }
+}
+
+
+/* AXES ---------------------------------------------------- */
+
+.public-v3 .rnd10-cycle {
+  background: rgba(1, 18, 14, .58);
+}
+
+.public-v3 .rnd10-axis-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.public-v3 .rnd10-axis-card {
+  min-height: 225px;
+  padding: 25px;
+  border: 1px solid var(--rnd10-line);
+  border-radius: 11px;
+  background:
+    linear-gradient(145deg, rgba(7, 61, 46, .42), rgba(1, 22, 17, .72));
+}
+
+.public-v3 .rnd10-axis-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 44px;
+}
+
+.public-v3 .rnd10-axis-icon {
+  color: var(--rnd10-accent-bright);
+  font-size: 23px;
+}
+
+.public-v3 .rnd10-axis-number {
+  color: var(--rnd10-accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.public-v3 .rnd10-axis-card h3 {
+  margin: 0 0 10px;
+  color: var(--rnd10-text);
+  font-size: 19px;
+}
+
+.public-v3 .rnd10-axis-card p {
+  margin: 0;
+  color: var(--rnd10-muted);
+  font-size: 13px;
+  line-height: 1.62;
+}
+
+
+/* RESSOURCES ---------------------------------------------- */
+
+.public-v3 .rnd10-resources {
+  background:
+    radial-gradient(circle at 90% 50%, rgba(39, 203, 151, .07), transparent 30rem);
+}
+
+.public-v3 .rnd10-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.public-v3 .rnd10-resource-card {
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 21px 22px;
+  border: 1px solid var(--rnd10-line);
+  border-radius: 10px;
+  background: rgba(4, 43, 32, .62);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.public-v3 .rnd10-resource-icon {
+  color: var(--rnd10-accent-bright);
+  font-size: 25px;
+}
+
+.public-v3 .rnd10-resource-card h3 {
+  margin: 0 0 6px;
+  color: var(--rnd10-text);
+  font-size: 16px;
+}
+
+.public-v3 .rnd10-resource-card p {
+  margin: 0;
+  color: var(--rnd10-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.public-v3 .rnd10-resource-arrow {
+  color: var(--rnd10-accent);
+  font-size: 18px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .public-v3 .rnd10-resource-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--rnd10-line-strong);
+    background: rgba(5, 53, 39, .74);
+  }
+}
+
+
+/* FINAL --------------------------------------------------- */
+
+.public-v3 .rnd10-final {
+  padding: 68px 0 54px;
+}
+
+.public-v3 .rnd10-final-card {
+  position: relative;
+  min-height: 350px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(330px, .72fr);
+  gap: 50px;
+  align-items: center;
+  overflow: hidden;
+  padding: 48px;
+  border: 1px solid var(--rnd10-line-strong);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 82% 70%, rgba(40, 218, 160, .14), transparent 24rem),
+    rgba(4, 42, 32, .68);
+}
+
+.public-v3 .rnd10-final-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 720px;
+}
+
+.public-v3 .rnd10-final h2 {
+  margin: 0;
+  color: var(--rnd10-text);
+  font-size: clamp(2.1rem, 3.5vw, 3.8rem);
+  line-height: 1.02;
+  letter-spacing: -.045em;
+}
+
+.public-v3 .rnd10-final h2 span {
+  color: var(--rnd10-accent-bright);
+}
+
+.public-v3 .rnd10-final-copy > p:not(.rnd10-eyebrow) {
+  max-width: 610px;
+  margin: 20px 0 26px;
+  color: var(--rnd10-muted);
+  line-height: 1.7;
+}
+
+.public-v3 .rnd10-final-visual {
+  position: relative;
+  height: 280px;
+}
+
+.public-v3 .rnd10-document {
+  position: absolute;
+  width: 220px;
+  height: 270px;
+  padding: 34px 28px;
+  border: 1px solid rgba(92, 241, 190, .24);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(9, 74, 55, .94), rgba(2, 29, 22, .96));
+  box-shadow: 0 25px 60px rgba(0, 0, 0, .22);
+}
+
+.public-v3 .rnd10-document-back {
+  right: 80px;
+  top: 8px;
+  opacity: .42;
+  transform: rotate(-10deg);
+}
+
+.public-v3 .rnd10-document-front {
+  z-index: 2;
+  right: 15px;
+  top: 4px;
+  transform: rotate(7deg);
+}
+
+.public-v3 .rnd10-document strong {
+  display: block;
+  margin-bottom: 36px;
+  color: var(--rnd10-accent-bright);
+  font-size: 26px;
+  letter-spacing: -.04em;
+}
+
+.public-v3 .rnd10-document span {
+  display: block;
+  height: 1px;
+  margin: 17px 0;
+  background: rgba(143, 225, 198, .23);
+}
+
+.public-v3 .rnd10-final-orbit {
+  position: absolute;
+  width: 390px;
+  height: 160px;
+  right: -55px;
+  bottom: 3px;
+  border: 1px solid rgba(66, 230, 174, .16);
+  border-radius: 50%;
+  transform: rotate(-13deg);
+}
+
+
+/* RESPONSIVE ---------------------------------------------- */
+
+@media (max-width: 1050px) {
+  .public-v3 .rnd10-hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(350px, .78fr);
+    gap: 36px;
+  }
+
+  .public-v3 .rnd10-signal {
+    transform: scale(.88);
+    transform-origin: center right;
+  }
+
+  .public-v3 .rnd10-axis-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .public-v3 .rnd10-hero {
+    min-height: 0;
+  }
+
+  .public-v3 .rnd10-hero-grid,
+  .public-v3 .rnd10-intro-grid,
+  .public-v3 .rnd10-section-head,
+  .public-v3 .rnd10-final-card {
+    grid-template-columns: 1fr;
+  }
+
+  .public-v3 .rnd10-hero-grid {
+    padding-top: 62px;
+    padding-bottom: 62px;
+  }
+
+  .public-v3 .rnd10-signal {
+    justify-self: center;
+    transform: scale(.88);
+    transform-origin: center;
+    margin-top: -30px;
+    margin-bottom: -30px;
+  }
+
+  .public-v3 .rnd10-intro-grid,
+  .public-v3 .rnd10-section-head {
+    gap: 22px;
+  }
+
+  .public-v3 .rnd10-domain-grid,
+  .public-v3 .rnd10-resource-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-v3 .rnd10-final-card {
+    gap: 20px;
+  }
+
+  .public-v3 .rnd10-final-visual {
+    width: min(100%, 430px);
+    justify-self: center;
+  }
+}
+
+@media (max-width: 620px) {
+  .public-v3 .rnd10-hero-grid {
+    padding-top: 50px;
+    padding-bottom: 50px;
+  }
+
+  .public-v3 .rnd10-hero h1 {
+    font-size: clamp(2.55rem, 12vw, 3.8rem);
+  }
+
+  .public-v3 .rnd10-actions {
+    flex-direction: column;
+  }
+
+  .public-v3 .rnd10-actions .rnd10-btn {
+    width: 100%;
+  }
+
+  .public-v3 .rnd10-signal {
+    width: 620px;
+    max-width: none;
+    left: 50%;
+    margin-left: -310px;
+    transform: scale(.62);
+    margin-top: -90px;
+    margin-bottom: -90px;
+  }
+
+  .public-v3 .rnd10-intro,
+  .public-v3 .rnd10-section {
+    padding-top: 52px;
+    padding-bottom: 52px;
+  }
+
+  .public-v3 .rnd10-domain-card {
+    min-height: 0;
+  }
+
+  .public-v3 .rnd10-domain-visual {
+    height: 145px;
+  }
+
+  .public-v3 .rnd10-axis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-v3 .rnd10-axis-card {
+    min-height: 0;
+  }
+
+  .public-v3 .rnd10-axis-top {
+    margin-bottom: 30px;
+  }
+
+  .public-v3 .rnd10-resource-card {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 13px;
+    padding: 19px 17px;
+  }
+
+  .public-v3 .rnd10-final {
+    padding-top: 48px;
+    padding-bottom: 38px;
+  }
+
+  .public-v3 .rnd10-final-card {
+    min-height: 0;
+    padding: 30px 24px;
+  }
+
+  .public-v3 .rnd10-final-visual {
+    height: 230px;
+    transform: scale(.82);
+    transform-origin: center;
+    margin-top: -20px;
+    margin-bottom: -20px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .public-v3 .rnd10-wave-a {
+    animation: rnd10-dash 18s linear infinite;
+    stroke-dasharray: 10 9;
+  }
+
+  .public-v3 .rnd10-wave-b {
+    animation: rnd10-dash 25s linear infinite reverse;
+    stroke-dasharray: 6 12;
+  }
+
+  .public-v3 .rnd10-particles {
+    animation: rnd10-pulse 4s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes rnd10-dash {
+  to {
+    stroke-dashoffset: -220;
+  }
+}
+
+@keyframes rnd10-pulse {
+  from {
+    opacity: .45;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-v3 .rnd10-page *,
+  .public-v3 .rnd10-page *::before,
+  .public-v3 .rnd10-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ===== /IFICS INNOVATION R&D — MAQUETTE C ===== */
+
+
+/* ==========================================================
+   IFICS — INNOVATION R&D / MAQUETTE C V2
+   Fidélité visuelle : médiathèque, images, densité.
+   Namespace isolé : rnd11-*
+   ========================================================== */
+
+.public-v3 .rnd11-page {
+  --rnd11-bg: #01150f;
+  --rnd11-bg-soft: #031d16;
+  --rnd11-panel: #05271e;
+  --rnd11-line: rgba(83, 217, 168, .15);
+  --rnd11-line-strong: rgba(83, 217, 168, .29);
+  --rnd11-accent: #42d9a5;
+  --rnd11-accent-bright: #7bf2ca;
+  --rnd11-text: #f1f7f4;
+  --rnd11-muted: #9ab5ab;
+
+  overflow: hidden;
+  background: var(--rnd11-bg);
+  color: var(--rnd11-text);
+}
+
+.public-v3 .rnd11-page *,
+.public-v3 .rnd11-page *::before,
+.public-v3 .rnd11-page *::after {
+  box-sizing: border-box;
+}
+
+.public-v3 .rnd11-eyebrow {
+  margin: 0 0 15px;
+  color: var(--rnd11-accent);
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+
+/* BUTTONS ------------------------------------------------- */
+
+.public-v3 .rnd11-btn {
+  min-height: 45px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  padding: 0 19px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.public-v3 .rnd11-btn-primary {
+  background: var(--rnd11-accent);
+  color: #002219;
+}
+
+.public-v3 .rnd11-btn-secondary {
+  border-color: var(--rnd11-line-strong);
+  background: rgba(3, 36, 27, .55);
+  color: var(--rnd11-text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .public-v3 .rnd11-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .public-v3 .rnd11-btn-primary:hover {
+    background: var(--rnd11-accent-bright);
+  }
+}
+
+
+/* HERO ---------------------------------------------------- */
+
+.public-v3 .rnd11-hero {
+  position: relative;
+  min-height: 530px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--rnd11-line);
+  background:
+    radial-gradient(circle at 78% 45%, rgba(37, 205, 150, .08), transparent 28rem),
+    linear-gradient(115deg, #01150f, #021b14);
+}
+
+.public-v3 .rnd11-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .95fr) minmax(430px, 1.05fr);
+  gap: clamp(40px, 6vw, 88px);
+  align-items: center;
+  padding-top: 62px;
+  padding-bottom: 62px;
+}
+
+.public-v3 .rnd11-hero-copy {
+  position: relative;
+  z-index: 3;
+}
+
+.public-v3 .rnd11-hero h1 {
+  max-width: 760px;
+  margin: 0;
+  color: var(--rnd11-text);
+  font-size: clamp(3rem, 4.65vw, 4.85rem);
+  line-height: .99;
+  font-weight: 730;
+  letter-spacing: -.052em;
+}
+
+.public-v3 .rnd11-hero h1 span {
+  color: var(--rnd11-accent-bright);
+}
+
+.public-v3 .rnd11-lead {
+  max-width: 620px;
+  margin: 24px 0 0;
+  color: var(--rnd11-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.public-v3 .rnd11-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 28px;
+}
+
+
+/* HERO IMAGE ---------------------------------------------- */
+
+.public-v3 .rnd11-hero-media {
+  position: relative;
+  min-height: 355px;
+  overflow: hidden;
+  border: 1px solid var(--rnd11-line);
+  border-radius: 13px;
+  background: #031c15;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, .24);
+}
+
+.public-v3 .rnd11-hero-media > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: .88;
+  transform: scale(1.08);
+}
+
+.public-v3 .rnd11-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(1, 21, 15, .30), transparent 42%),
+    linear-gradient(0deg, rgba(1, 18, 13, .46), transparent 55%);
+}
+
+.public-v3 .rnd11-hero-note {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border: 1px solid rgba(111, 240, 195, .25);
+  border-radius: 999px;
+  background: rgba(2, 25, 19, .72);
+  color: #d9eee6;
+  font-size: 10px;
+  backdrop-filter: blur(9px);
+}
+
+.public-v3 .rnd11-hero-note span {
+  color: var(--rnd11-accent);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.public-v3 .rnd11-note-a {
+  left: 8%;
+  top: 19%;
+}
+
+.public-v3 .rnd11-note-b {
+  right: 8%;
+  top: 45%;
+}
+
+.public-v3 .rnd11-note-c {
+  left: 34%;
+  bottom: 13%;
+}
+
+
+/* APPROACH STRIP ------------------------------------------ */
+
+.public-v3 .rnd11-approach {
+  padding: 34px 0 38px;
+  border-bottom: 1px solid var(--rnd11-line);
+  background: #021a14;
+}
+
+.public-v3 .rnd11-approach-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  align-items: end;
+  margin-bottom: 23px;
+}
+
+.public-v3 .rnd11-approach-head .rnd11-eyebrow {
+  margin-bottom: 0;
+}
+
+.public-v3 .rnd11-approach-head > p:last-child {
+  max-width: 520px;
+  margin: 0;
+  color: var(--rnd11-muted);
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: right;
+}
+
+.public-v3 .rnd11-approach-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--rnd11-line);
+  border-bottom: 1px solid var(--rnd11-line);
+}
+
+.public-v3 .rnd11-approach-item {
+  min-height: 86px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 17px 20px;
+  border-right: 1px solid var(--rnd11-line);
+}
+
+.public-v3 .rnd11-approach-item:last-child {
+  border-right: 0;
+}
+
+.public-v3 .rnd11-approach-icon {
+  min-width: 28px;
+  color: var(--rnd11-accent-bright);
+  font-size: 23px;
+}
+
+.public-v3 .rnd11-approach-item strong,
+.public-v3 .rnd11-approach-item small {
+  display: block;
+}
+
+.public-v3 .rnd11-approach-item strong {
+  margin-bottom: 4px;
+  color: var(--rnd11-text);
+  font-size: 13px;
+}
+
+.public-v3 .rnd11-approach-item small {
+  color: var(--rnd11-muted);
+  font-size: 10px;
+}
+
+
+/* SECTIONS ------------------------------------------------ */
+
+.public-v3 .rnd11-section {
+  padding: 62px 0;
+  border-bottom: 1px solid var(--rnd11-line);
+}
+
+.public-v3 .rnd11-section-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, .38fr);
+  gap: 50px;
+  align-items: end;
+  margin-bottom: 30px;
+}
+
+.public-v3 .rnd11-section-head h2 {
+  margin: 0;
+  color: var(--rnd11-text);
+  font-size: clamp(2rem, 2.8vw, 3rem);
+  line-height: 1.04;
+  letter-spacing: -.038em;
+}
+
+.public-v3 .rnd11-section-head > p {
+  margin: 0;
+  color: var(--rnd11-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+
+/* DOMAINES ------------------------------------------------ */
+
+.public-v3 .rnd11-domains {
+  background:
+    radial-gradient(circle at 45% 0%, rgba(38, 194, 143, .055), transparent 30rem);
+}
+
+.public-v3 .rnd11-domain-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.public-v3 .rnd11-domain-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--rnd11-line);
+  border-radius: 11px;
+  background: var(--rnd11-panel);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+
+.public-v3 .rnd11-domain-image {
+  position: relative;
+  height: 190px;
+  overflow: hidden;
+  background: #06271e;
+}
+
+.public-v3 .rnd11-domain-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 400ms ease;
+}
+
+.public-v3 .rnd11-domain-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(0deg, rgba(2, 27, 20, .62), transparent 55%),
+    rgba(0, 40, 28, .08);
+}
+
+.public-v3 .rnd11-domain-content {
+  min-height: 125px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: end;
+  padding: 20px 22px 22px;
+}
+
+.public-v3 .rnd11-domain-content h3 {
+  margin: 0 0 7px;
+  color: var(--rnd11-text);
+  font-size: 17px;
+}
+
+.public-v3 .rnd11-domain-content p {
+  max-width: 560px;
+  margin: 0;
+  color: var(--rnd11-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.public-v3 .rnd11-domain-content > span {
+  color: var(--rnd11-accent);
+  font-size: 19px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .public-v3 .rnd11-domain-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--rnd11-line-strong);
+  }
+
+  .public-v3 .rnd11-domain-card:hover img {
+    transform: scale(1.035);
+  }
+}
+
+
+/* RESOURCES ----------------------------------------------- */
+
+.public-v3 .rnd11-resources {
+  background: #021812;
+}
+
+.public-v3 .rnd11-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.public-v3 .rnd11-resource-card {
+  min-height: 98px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 15px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid var(--rnd11-line);
+  border-radius: 9px;
+  background: rgba(5, 44, 33, .68);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.public-v3 .rnd11-resource-icon {
+  color: var(--rnd11-accent-bright);
+  font-size: 23px;
+}
+
+.public-v3 .rnd11-resource-card h3 {
+  margin: 0 0 5px;
+  color: var(--rnd11-text);
+  font-size: 15px;
+}
+
+.public-v3 .rnd11-resource-card p {
+  margin: 0;
+  color: var(--rnd11-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.public-v3 .rnd11-resource-arrow {
+  color: var(--rnd11-accent);
+  font-size: 17px;
+}
+
+.public-v3 .rnd11-resource-action {
+  margin-top: 22px;
+  text-align: right;
+}
+
+.public-v3 .rnd11-text-link {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--rnd11-accent-bright);
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .public-v3 .rnd11-resource-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--rnd11-line-strong);
+    background: rgba(7, 55, 41, .76);
+  }
+}
+
+
+/* FINAL --------------------------------------------------- */
+
+.public-v3 .rnd11-final {
+  padding: 54px 0 48px;
+}
+
+.public-v3 .rnd11-final-card {
+  min-height: 300px;
+  display: grid;
+  grid-template-columns: minmax(320px, .8fr) minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--rnd11-line-strong);
+  border-radius: 13px;
+  background: #05271e;
+}
+
+.public-v3 .rnd11-final-media {
+  position: relative;
+  min-height: 300px;
+  overflow: hidden;
+}
+
+.public-v3 .rnd11-final-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.35);
+}
+
+.public-v3 .rnd11-final-media > div {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 35%, #05271e 100%),
+    rgba(0, 38, 27, .08);
+}
+
+.public-v3 .rnd11-final-copy {
+  position: relative;
+  z-index: 2;
+  align-self: center;
+  padding: 38px 42px 38px 24px;
+}
+
+.public-v3 .rnd11-final-copy h2 {
+  max-width: 720px;
+  margin: 0;
+  color: var(--rnd11-text);
+  font-size: clamp(2rem, 3.2vw, 3.35rem);
+  line-height: 1.03;
+  letter-spacing: -.04em;
+}
+
+.public-v3 .rnd11-final-copy h2 span {
+  color: var(--rnd11-accent-bright);
+}
+
+.public-v3 .rnd11-final-copy > p:not(.rnd11-eyebrow) {
+  max-width: 600px;
+  margin: 17px 0 23px;
+  color: var(--rnd11-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+
+/* RESPONSIVE ---------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .public-v3 .rnd11-hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, .78fr);
+    gap: 34px;
+  }
+
+  .public-v3 .rnd11-hero-media {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 820px) {
+  .public-v3 .rnd11-hero-grid,
+  .public-v3 .rnd11-section-head,
+  .public-v3 .rnd11-final-card {
+    grid-template-columns: 1fr;
+  }
+
+  .public-v3 .rnd11-hero-grid {
+    padding-top: 54px;
+    padding-bottom: 54px;
+  }
+
+  .public-v3 .rnd11-hero-media {
+    min-height: 310px;
+  }
+
+  .public-v3 .rnd11-approach-head {
+    display: block;
+  }
+
+  .public-v3 .rnd11-approach-head > p:last-child {
+    margin-top: 10px;
+    text-align: left;
+  }
+
+  .public-v3 .rnd11-approach-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-v3 .rnd11-approach-item:nth-child(2) {
+    border-right: 0;
+  }
+
+  .public-v3 .rnd11-approach-item:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--rnd11-line);
+  }
+
+  .public-v3 .rnd11-section-head {
+    gap: 18px;
+  }
+
+  .public-v3 .rnd11-final-media {
+    min-height: 230px;
+  }
+
+  .public-v3 .rnd11-final-media > div {
+    background:
+      linear-gradient(0deg, #05271e 0%, transparent 60%),
+      rgba(0, 38, 27, .08);
+  }
+
+  .public-v3 .rnd11-final-copy {
+    padding: 12px 28px 34px;
+  }
+}
+
+@media (max-width: 620px) {
+  .public-v3 .rnd11-hero h1 {
+    font-size: clamp(2.5rem, 12vw, 3.65rem);
+  }
+
+  .public-v3 .rnd11-actions {
+    flex-direction: column;
+  }
+
+  .public-v3 .rnd11-actions .rnd11-btn {
+    width: 100%;
+  }
+
+  .public-v3 .rnd11-hero-media {
+    min-height: 245px;
+  }
+
+  .public-v3 .rnd11-approach {
+    padding-top: 30px;
+    padding-bottom: 30px;
+  }
+
+  .public-v3 .rnd11-approach-grid,
+  .public-v3 .rnd11-domain-grid,
+  .public-v3 .rnd11-resource-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-v3 .rnd11-approach-item {
+    border-right: 0;
+    border-bottom: 1px solid var(--rnd11-line);
+  }
+
+  .public-v3 .rnd11-approach-item:last-child {
+    border-bottom: 0;
+  }
+
+  .public-v3 .rnd11-section {
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+
+  .public-v3 .rnd11-domain-image {
+    height: 165px;
+  }
+
+  .public-v3 .rnd11-domain-content {
+    min-height: 0;
+  }
+
+  .public-v3 .rnd11-resource-action {
+    text-align: left;
+  }
+
+  .public-v3 .rnd11-final {
+    padding-top: 42px;
+    padding-bottom: 36px;
+  }
+
+  .public-v3 .rnd11-final-copy {
+    padding: 8px 22px 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-v3 .rnd11-page *,
+  .public-v3 .rnd11-page *::before,
+  .public-v3 .rnd11-page *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ===== /IFICS INNOVATION R&D — MAQUETTE C V2 ===== */
+
+
+/* ==========================================================
+   IFICS — INNOVATION FINAL POLISH
+   - densité desktop
+   - flux R&D lisible
+   - transitions plus compactes
+   - CTA final resserré
+   ========================================================== */
+
+.public-v3 .rnd11-hero {
+  min-height: 500px;
+}
+
+.public-v3 .rnd11-hero-grid {
+  padding-top: 52px;
+  padding-bottom: 52px;
+}
+
+.public-v3 .rnd11-hero h1 {
+  font-size: clamp(2.8rem, 4.15vw, 4.35rem);
+}
+
+.public-v3 .rnd11-hero-media {
+  min-height: 330px;
+}
+
+
+/* Anciennes pastilles neutralisées si cache/HMR transitoire. */
+
+.public-v3 .rnd11-hero-note {
+  display: none;
+}
+
+
+/* ----------------------------------------------------------
+   FLUX R&D
+   ---------------------------------------------------------- */
+
+.public-v3 .rnd11-flow {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.public-v3 .rnd11-flow-line {
+  position: absolute;
+  left: 9%;
+  right: 8%;
+  top: 52%;
+  height: 1px;
+  opacity: .72;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(102, 244, 194, .38) 8%,
+      rgba(102, 244, 194, .82) 45%,
+      rgba(102, 244, 194, .48) 86%,
+      transparent
+    );
+  box-shadow:
+    0 0 12px rgba(66, 217, 165, .25),
+    0 0 28px rgba(66, 217, 165, .12);
+  transform: rotate(-5deg);
+  transform-origin: center;
+}
+
+.public-v3 .rnd11-flow-line::before,
+.public-v3 .rnd11-flow-line::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--rnd11-accent-bright);
+  box-shadow:
+    0 0 0 4px rgba(66, 217, 165, .08),
+    0 0 15px rgba(66, 217, 165, .65);
+  transform: translateY(-50%);
+}
+
+.public-v3 .rnd11-flow-line::before {
+  left: 12%;
+}
+
+.public-v3 .rnd11-flow-line::after {
+  right: 10%;
+}
+
+.public-v3 .rnd11-flow-step {
+  position: absolute;
+  min-width: 86px;
+  padding: 8px 10px 8px 11px;
+  border: 1px solid rgba(104, 238, 191, .25);
+  border-radius: 8px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(2, 32, 24, .90),
+      rgba(2, 24, 19, .72)
+    );
+  box-shadow:
+    0 9px 24px rgba(0, 0, 0, .14),
+    inset 0 1px 0 rgba(255, 255, 255, .025);
+  backdrop-filter: blur(9px);
+}
+
+.public-v3 .rnd11-flow-index {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--rnd11-accent);
+  font-size: 7px;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: .11em;
+}
+
+.public-v3 .rnd11-flow-step strong {
+  display: block;
+  color: #eef9f5;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 760;
+}
+
+.public-v3 .rnd11-flow-step small {
+  display: block;
+  margin-top: 2px;
+  color: rgba(189, 218, 207, .68);
+  font-size: 7px;
+  line-height: 1.2;
+}
+
+.public-v3 .rnd11-flow-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border: 1px solid rgba(126, 246, 203, .85);
+  border-radius: 50%;
+  background: #073b2c;
+  box-shadow:
+    0 0 0 3px rgba(66, 217, 165, .08),
+    0 0 12px rgba(66, 217, 165, .55);
+}
+
+.public-v3 .rnd11-flow-1 {
+  left: 7%;
+  top: 17%;
+}
+
+.public-v3 .rnd11-flow-1 .rnd11-flow-dot {
+  right: -17px;
+  bottom: -12px;
+}
+
+.public-v3 .rnd11-flow-2 {
+  left: 27%;
+  top: 37%;
+}
+
+.public-v3 .rnd11-flow-2 .rnd11-flow-dot {
+  right: -14px;
+  bottom: -10px;
+}
+
+.public-v3 .rnd11-flow-3 {
+  left: 45%;
+  top: 55%;
+}
+
+.public-v3 .rnd11-flow-3 .rnd11-flow-dot {
+  right: -14px;
+  top: -10px;
+}
+
+.public-v3 .rnd11-flow-4 {
+  right: 25%;
+  top: 31%;
+}
+
+.public-v3 .rnd11-flow-4 .rnd11-flow-dot {
+  left: -14px;
+  bottom: -10px;
+}
+
+.public-v3 .rnd11-flow-5 {
+  right: 8%;
+  top: 51%;
+}
+
+.public-v3 .rnd11-flow-5 .rnd11-flow-dot {
+  left: -14px;
+  top: -10px;
+}
+
+.public-v3 .rnd11-flow-6 {
+  right: 18%;
+  bottom: 8%;
+}
+
+.public-v3 .rnd11-flow-6 .rnd11-flow-dot {
+  left: -14px;
+  top: -10px;
+}
+
+
+/* Micro-information laboratoire */
+
+.public-v3 .rnd11-lab-status {
+  position: absolute;
+  z-index: 4;
+  right: 13px;
+  bottom: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(174, 215, 200, .55);
+  font-size: 6px;
+  font-weight: 750;
+  letter-spacing: .13em;
+}
+
+.public-v3 .rnd11-lab-status > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--rnd11-accent);
+  box-shadow: 0 0 8px rgba(66, 217, 165, .75);
+}
+
+
+/* ----------------------------------------------------------
+   DENSITÉ GÉNÉRALE
+   ---------------------------------------------------------- */
+
+.public-v3 .rnd11-section {
+  padding-top: 54px;
+  padding-bottom: 54px;
+}
+
+.public-v3 .rnd11-section-head {
+  margin-bottom: 26px;
+}
+
+.public-v3 .rnd11-domains {
+  padding-bottom: 50px;
+}
+
+.public-v3 .rnd11-resources {
+  padding-top: 50px;
+  padding-bottom: 50px;
+}
+
+.public-v3 .rnd11-domain-content {
+  min-height: 112px;
+}
+
+.public-v3 .rnd11-resource-action {
+  margin-top: 18px;
+}
+
+
+/* ----------------------------------------------------------
+   CTA FINAL
+   ---------------------------------------------------------- */
+
+.public-v3 .rnd11-final {
+  padding-top: 44px;
+  padding-bottom: 42px;
+}
+
+.public-v3 .rnd11-final-card {
+  min-height: 270px;
+}
+
+.public-v3 .rnd11-final-media {
+  min-height: 270px;
+}
+
+.public-v3 .rnd11-final-copy {
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+.public-v3 .rnd11-final-copy h2 {
+  font-size: clamp(1.9rem, 2.8vw, 3rem);
+}
+
+
+/* ----------------------------------------------------------
+   TABLETTE
+   ---------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .public-v3 .rnd11-flow-step {
+    min-width: 78px;
+  }
+
+  .public-v3 .rnd11-flow-2 {
+    left: 24%;
+  }
+
+  .public-v3 .rnd11-flow-3 {
+    left: 41%;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE / TABLETTE ÉTROITE
+   Le flux devient une frise horizontale lisible.
+   ---------------------------------------------------------- */
+
+@media (max-width: 820px) {
+  .public-v3 .rnd11-hero {
+    min-height: 0;
+  }
+
+  .public-v3 .rnd11-hero-grid {
+    padding-top: 46px;
+    padding-bottom: 46px;
+  }
+
+  .public-v3 .rnd11-hero-media {
+    min-height: 300px;
+  }
+
+  .public-v3 .rnd11-flow {
+    inset: auto 12px 14px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .public-v3 .rnd11-flow-line {
+    display: none;
+  }
+
+  .public-v3 .rnd11-flow-step {
+    position: relative;
+    inset: auto !important;
+    min-width: 0;
+    padding: 7px 8px;
+    background: rgba(2, 28, 21, .78);
+  }
+
+  .public-v3 .rnd11-flow-dot {
+    display: none;
+  }
+
+  .public-v3 .rnd11-lab-status {
+    display: none;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 620px) {
+  .public-v3 .rnd11-hero-grid {
+    padding-top: 38px;
+    padding-bottom: 38px;
+  }
+
+  .public-v3 .rnd11-hero h1 {
+    font-size: clamp(2.35rem, 11.5vw, 3.4rem);
+  }
+
+  .public-v3 .rnd11-hero-media {
+    min-height: 275px;
+  }
+
+  .public-v3 .rnd11-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-v3 .rnd11-flow-step strong {
+    font-size: 8px;
+  }
+
+  .public-v3 .rnd11-section {
+    padding-top: 42px;
+    padding-bottom: 42px;
+  }
+
+  .public-v3 .rnd11-domains {
+    padding-bottom: 42px;
+  }
+
+  .public-v3 .rnd11-resources {
+    padding-top: 42px;
+    padding-bottom: 42px;
+  }
+
+  .public-v3 .rnd11-final {
+    padding-top: 36px;
+    padding-bottom: 34px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   ACCESSIBILITÉ
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .public-v3 .rnd11-flow-line,
+  .public-v3 .rnd11-flow-dot,
+  .public-v3 .rnd11-lab-status > span {
+    box-shadow: none;
+  }
+}
+
+/* ===== /IFICS INNOVATION FINAL POLISH ===== */
+
+
+/* ==========================================================
+   IFICS — INNOVATION / HERO IMMERSIF FINAL
+   Le contenu reste en HTML.
+   L'image est purement visuelle et couvre le hero.
+   ========================================================== */
+
+.public-v3 .rnd11-hero {
+  position: relative;
+  min-height: 640px;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+
+  background:
+    #01150f
+    url("/images/innovation/innovation-hero.webp")
+    center center / cover
+    no-repeat;
+}
+
+
+/*
+ * Dégradé de lecture :
+ * sombre derrière le texte, plus transparent côté visuel.
+ */
+.public-v3 .rnd11-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 18, 13, .98) 0%,
+      rgba(0, 18, 13, .94) 24%,
+      rgba(0, 18, 13, .73) 47%,
+      rgba(0, 18, 13, .27) 70%,
+      rgba(0, 18, 13, .08) 100%
+    );
+}
+
+
+/*
+ * Léger vignettage pour fondre l'image
+ * dans l'identité sombre du site.
+ */
+.public-v3 .rnd11-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 15, 11, .24),
+      transparent 24%,
+      transparent 72%,
+      rgba(0, 15, 11, .38)
+    );
+}
+
+
+.public-v3 .rnd11-hero-grid {
+  position: relative;
+  z-index: 2;
+
+  display: block;
+
+  width: 100%;
+  padding-top: 72px;
+  padding-bottom: 72px;
+}
+
+
+.public-v3 .rnd11-hero-copy {
+  width: min(670px, 58%);
+  position: relative;
+  z-index: 3;
+}
+
+
+/*
+ * L'ancien conteneur image reste dans le DOM,
+ * mais l'image est désormais portée par le hero.
+ */
+.public-v3 .rnd11-hero-media {
+  display: none !important;
+}
+
+
+.public-v3 .rnd11-hero h1 {
+  max-width: 660px;
+
+  margin: 0;
+
+  font-size: clamp(3.15rem, 4.7vw, 5rem);
+  line-height: .98;
+  letter-spacing: -.052em;
+
+  text-wrap: balance;
+}
+
+
+.public-v3 .rnd11-lead {
+  max-width: 590px;
+
+  margin-top: 26px;
+
+  color: rgba(211, 231, 223, .82);
+
+  font-size: 15px;
+  line-height: 1.72;
+}
+
+
+.public-v3 .rnd11-actions {
+  margin-top: 30px;
+}
+
+
+/*
+ * Le côté droit reste volontairement vide :
+ * c'est l'image elle-même qui devient le contenu visuel.
+ */
+.public-v3 .rnd11-hero-copy::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: -38px;
+
+  width: 72px;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--rnd11-accent),
+      transparent
+    );
+}
+
+
+/* ----------------------------------------------------------
+   GRAND ÉCRAN
+   ---------------------------------------------------------- */
+
+@media (min-width: 1500px) {
+  .public-v3 .rnd11-hero {
+    min-height: 680px;
+
+    background-size: cover;
+    background-position: center 54%;
+  }
+
+  .public-v3 .rnd11-hero-copy {
+    width: min(700px, 55%);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLETTE
+   ---------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .public-v3 .rnd11-hero {
+    min-height: 600px;
+
+    background-position: 58% center;
+  }
+
+  .public-v3 .rnd11-hero::before {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(0, 18, 13, .97) 0%,
+        rgba(0, 18, 13, .91) 38%,
+        rgba(0, 18, 13, .56) 70%,
+        rgba(0, 18, 13, .22) 100%
+      );
+  }
+
+  .public-v3 .rnd11-hero-copy {
+    width: min(650px, 67%);
+  }
+
+  .public-v3 .rnd11-hero h1 {
+    font-size: clamp(3rem, 6.3vw, 4.4rem);
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLETTE ÉTROITE / MOBILE
+   On conserve l'image, mais le dégradé devient vertical
+   afin de protéger la lisibilité du contenu.
+   ---------------------------------------------------------- */
+
+@media (max-width: 820px) {
+  .public-v3 .rnd11-hero {
+    min-height: 620px;
+
+    align-items: flex-end;
+
+    background-position: 62% center;
+  }
+
+  .public-v3 .rnd11-hero::before {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(0, 18, 13, .18) 0%,
+        rgba(0, 18, 13, .34) 27%,
+        rgba(0, 18, 13, .86) 59%,
+        rgba(0, 18, 13, .99) 100%
+      );
+  }
+
+  .public-v3 .rnd11-hero-grid {
+    padding-top: 170px;
+    padding-bottom: 48px;
+  }
+
+  .public-v3 .rnd11-hero-copy {
+    width: 100%;
+    max-width: 650px;
+  }
+
+  .public-v3 .rnd11-hero h1 {
+    max-width: 620px;
+
+    font-size: clamp(2.8rem, 8.7vw, 4.15rem);
+  }
+
+  .public-v3 .rnd11-lead {
+    max-width: 570px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 620px) {
+  .public-v3 .rnd11-hero {
+    min-height: 610px;
+
+    background-position: 63% center;
+  }
+
+  .public-v3 .rnd11-hero-grid {
+    padding-top: 155px;
+    padding-bottom: 38px;
+  }
+
+  .public-v3 .rnd11-hero h1 {
+    font-size: clamp(2.45rem, 11vw, 3.35rem);
+    line-height: .99;
+  }
+
+  .public-v3 .rnd11-lead {
+    margin-top: 20px;
+
+    font-size: 14px;
+    line-height: 1.62;
+  }
+
+  .public-v3 .rnd11-actions {
+    margin-top: 24px;
+  }
+
+  .public-v3 .rnd11-hero-copy::after {
+    display: none;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   PETIT MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 420px) {
+  .public-v3 .rnd11-hero {
+    min-height: 590px;
+
+    background-position: 65% center;
+  }
+
+  .public-v3 .rnd11-hero-grid {
+    padding-top: 135px;
+  }
+
+  .public-v3 .rnd11-hero h1 {
+    font-size: clamp(2.25rem, 11.5vw, 3rem);
+  }
+}
+
+/* ===== /IFICS INNOVATION HERO IMMERSIF FINAL ===== */
+
+
+/* ==========================================================
+   IFICS — INNOVATION / VISUELS FINAUX
+   Hero HD + cartes Ressources illustrées.
+   Ce bloc finalise la direction visuelle validée.
+   ========================================================== */
+
+
+/* ----------------------------------------------------------
+   HERO HD
+   ---------------------------------------------------------- */
+
+.public-v3 .rnd11-hero {
+  position: relative;
+
+  min-height: 620px;
+
+  display: flex;
+  align-items: center;
+
+  overflow: hidden;
+  isolation: isolate;
+
+  background:
+    #01150f
+    url("/images/innovation/innovation-hero-hd.webp")
+    center center / cover
+    no-repeat;
+}
+
+
+/*
+ * Le dégradé protège le texte sans masquer
+ * la partie spectaculaire de l'image à droite.
+ */
+.public-v3 .rnd11-hero::before {
+  content: "";
+
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 17, 12, .97) 0%,
+      rgba(0, 17, 12, .92) 20%,
+      rgba(0, 17, 12, .72) 40%,
+      rgba(0, 17, 12, .30) 62%,
+      rgba(0, 17, 12, .08) 100%
+    );
+}
+
+
+.public-v3 .rnd11-hero::after {
+  content: "";
+
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 14, 10, .24),
+      transparent 24%,
+      transparent 72%,
+      rgba(0, 14, 10, .38)
+    );
+}
+
+
+/*
+ * IMPORTANT :
+ * on revient au conteneur commun du site.
+ * Le texte n'est plus collé au bord de l'écran.
+ */
+.public-v3 .rnd11-hero-grid {
+  position: relative;
+  z-index: 2;
+
+  display: block;
+
+  width: min(100% - 48px, 1240px);
+
+  margin-inline: auto;
+
+  padding-top: 68px;
+  padding-bottom: 68px;
+}
+
+
+.public-v3 .rnd11-hero-copy {
+  position: relative;
+
+  width: min(620px, 54%);
+  max-width: 620px;
+}
+
+
+.public-v3 .rnd11-hero-media {
+  display: none !important;
+}
+
+
+.public-v3 .rnd11-hero h1 {
+  max-width: 610px;
+
+  margin: 0;
+
+  font-size: clamp(3rem, 4.2vw, 4.45rem);
+  line-height: .99;
+  letter-spacing: -.05em;
+
+  text-wrap: balance;
+}
+
+
+.public-v3 .rnd11-lead {
+  max-width: 550px;
+
+  margin-top: 24px;
+
+  font-size: 15px;
+  line-height: 1.68;
+
+  color: rgba(214, 234, 226, .82);
+}
+
+
+.public-v3 .rnd11-actions {
+  margin-top: 28px;
+}
+
+
+/* ----------------------------------------------------------
+   RESSOURCES — CARTES ILLUSTREES
+   ---------------------------------------------------------- */
+
+.public-v3 .rnd11-resources {
+  position: relative;
+
+  padding-top: 54px;
+  padding-bottom: 58px;
+
+  overflow: hidden;
+}
+
+
+/*
+ * Halo très discret derrière les cartes.
+ */
+.public-v3 .rnd11-resources::before {
+  content: "";
+
+  position: absolute;
+
+  width: 680px;
+  height: 420px;
+
+  right: -250px;
+  top: 70px;
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(47, 214, 159, .055),
+      transparent 67%
+    );
+}
+
+
+.public-v3 .rnd11-resource-grid {
+  position: relative;
+  z-index: 1;
+
+  align-items: stretch;
+}
+
+
+/*
+ * La carte devient une vraie carte média.
+ */
+.public-v3 .rnd11-resource-card {
+  position: relative;
+
+  display: grid;
+  grid-template-columns: 178px minmax(0, 1fr);
+
+  min-height: 142px;
+
+  padding: 0 !important;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(82, 218, 170, .20);
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(5, 52, 39, .82),
+      rgba(3, 42, 32, .90)
+    );
+
+  transition:
+    transform .24s ease,
+    border-color .24s ease,
+    box-shadow .24s ease;
+}
+
+
+.public-v3 .rnd11-resource-card:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(92, 234, 183, .40);
+
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, .16);
+}
+
+
+/*
+ * Encadré image.
+ */
+.public-v3 .rnd11-resource-visual {
+  position: relative;
+
+  min-width: 0;
+  min-height: 142px;
+
+  overflow: hidden;
+
+  border-right:
+    1px solid rgba(82, 218, 170, .16);
+
+  background: #05271e;
+}
+
+
+.public-v3 .rnd11-resource-visual::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent 55%,
+      rgba(3, 42, 32, .38) 100%
+    );
+}
+
+
+.public-v3 .rnd11-resource-visual img {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  min-height: 142px;
+
+  object-fit: cover;
+
+  transition:
+    transform .45s cubic-bezier(.2, .7, .2, 1),
+    filter .35s ease;
+}
+
+
+.public-v3 .rnd11-resource-card:hover
+.rnd11-resource-visual img {
+  transform: scale(1.035);
+}
+
+
+/*
+ * Le contenu existant de la carte reste à droite.
+ * On ne change ni son texte ni sa sémantique.
+ */
+.public-v3 .rnd11-resource-visual ~ * {
+  min-width: 0;
+}
+
+
+/*
+ * Les anciennes icônes restent possibles mais
+ * deviennent secondaires par rapport à l'image.
+ */
+.public-v3 .rnd11-resource-card
+.rnd11-resource-icon {
+  opacity: .85;
+}
+
+
+/* ----------------------------------------------------------
+   DESKTOP LARGE
+   ---------------------------------------------------------- */
+
+@media (min-width: 1500px) {
+
+  .public-v3 .rnd11-hero {
+    min-height: 650px;
+
+    background-position: center 52%;
+  }
+
+  .public-v3 .rnd11-hero-grid {
+    width: min(100% - 64px, 1280px);
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   TABLETTE
+   ---------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+
+  .public-v3 .rnd11-hero {
+    min-height: 580px;
+
+    background-position: 58% center;
+  }
+
+
+  .public-v3 .rnd11-hero-grid {
+    width: min(100% - 40px, 1240px);
+
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+
+
+  .public-v3 .rnd11-hero-copy {
+    width: min(600px, 66%);
+  }
+
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   TABLETTE ETROITE
+   ---------------------------------------------------------- */
+
+@media (max-width: 820px) {
+
+  .public-v3 .rnd11-hero {
+    min-height: 600px;
+
+    align-items: flex-end;
+
+    background-position: 60% center;
+  }
+
+
+  .public-v3 .rnd11-hero::before {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(0, 17, 12, .10) 0%,
+        rgba(0, 17, 12, .28) 29%,
+        rgba(0, 17, 12, .84) 62%,
+        rgba(0, 17, 12, .98) 100%
+      );
+  }
+
+
+  .public-v3 .rnd11-hero-grid {
+    width: min(100% - 36px, 1240px);
+
+    padding-top: 190px;
+    padding-bottom: 44px;
+  }
+
+
+  .public-v3 .rnd11-hero-copy {
+    width: 100%;
+    max-width: 620px;
+  }
+
+
+  .public-v3 .rnd11-hero h1 {
+    font-size: clamp(2.7rem, 8.7vw, 4rem);
+  }
+
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-columns: 138px minmax(0, 1fr);
+
+    min-height: 132px;
+  }
+
+
+  .public-v3 .rnd11-resource-visual,
+  .public-v3 .rnd11-resource-visual img {
+    min-height: 132px;
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 620px) {
+
+  .public-v3 .rnd11-hero {
+    min-height: 590px;
+
+    background-position: 62% center;
+  }
+
+
+  .public-v3 .rnd11-hero-grid {
+    width: min(100% - 30px, 1240px);
+
+    padding-top: 165px;
+    padding-bottom: 36px;
+  }
+
+
+  .public-v3 .rnd11-hero h1 {
+    max-width: 520px;
+
+    font-size: clamp(2.35rem, 11vw, 3.25rem);
+    line-height: 1;
+  }
+
+
+  .public-v3 .rnd11-lead {
+    margin-top: 19px;
+
+    font-size: 14px;
+    line-height: 1.62;
+  }
+
+
+  .public-v3 .rnd11-actions {
+    margin-top: 23px;
+  }
+
+
+  /*
+   * Sur téléphone la photo passe au-dessus du texte.
+   * Elle reste donc suffisamment grande pour être utile.
+   */
+  .public-v3 .rnd11-resource-card {
+    display: block;
+
+    min-height: 0;
+  }
+
+
+  .public-v3 .rnd11-resource-visual {
+    width: 100%;
+    height: 148px;
+    min-height: 148px;
+
+    border-right: 0;
+    border-bottom:
+      1px solid rgba(82, 218, 170, .16);
+  }
+
+
+  .public-v3 .rnd11-resource-visual img {
+    height: 148px;
+    min-height: 148px;
+  }
+
+
+  .public-v3 .rnd11-resource-visual::after {
+    background:
+      linear-gradient(
+        180deg,
+        transparent 55%,
+        rgba(3, 42, 32, .36)
+      );
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   PETIT MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 420px) {
+
+  .public-v3 .rnd11-hero-grid {
+    width: min(100% - 24px, 1240px);
+  }
+
+
+  .public-v3 .rnd11-resource-visual,
+  .public-v3 .rnd11-resource-visual img {
+    height: 132px;
+    min-height: 132px;
+  }
+
+}
+
+
+/* ----------------------------------------------------------
+   ACCESSIBILITE
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .public-v3 .rnd11-resource-card,
+  .public-v3 .rnd11-resource-visual img {
+    transition: none;
+  }
+
+}
+
+/* ===== /IFICS INNOVATION VISUELS FINAUX ===== */
+
+/* ==========================================================
+   IFICS — INNOVATION / CADRAGE FINAL
+   - conserve le hero HD validé
+   - respecte son format panoramique
+   - transforme Ressources en vraies cartes média
+   - ne modifie ni Domaines ni CTA final
+   ========================================================== */
+
+
+/* ----------------------------------------------------------
+   HERO — FORMAT PANORAMIQUE PROPRE
+   L'asset source est très large (2172 × 402).
+   On évite donc de le zoomer verticalement inutilement.
+   ---------------------------------------------------------- */
+
+.public-v3 .rnd11-hero {
+  min-height: clamp(500px, 34vw, 590px);
+
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(0, 17, 12, .97) 0%,
+      rgba(0, 17, 12, .91) 21%,
+      rgba(0, 17, 12, .68) 39%,
+      rgba(0, 17, 12, .27) 61%,
+      rgba(0, 17, 12, .06) 100%
+    ),
+    url("/images/innovation/innovation-hero-hd.webp");
+
+  background-size:
+    100% 100%,
+    cover;
+
+  background-position:
+    center,
+    center center;
+
+  background-repeat: no-repeat;
+}
+
+
+/*
+ * Les anciens pseudo-éléments ne doivent plus ajouter
+ * plusieurs couches susceptibles d'assombrir/cadrer
+ * différemment l'image.
+ */
+.public-v3 .rnd11-hero::before {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 12, 9, .10) 0%,
+      transparent 22%,
+      transparent 73%,
+      rgba(0, 12, 9, .24) 100%
+    );
+}
+
+.public-v3 .rnd11-hero::after {
+  background: none;
+}
+
+
+/*
+ * Texte légèrement plus compact :
+ * il reste dans la zone sombre naturelle de l'image
+ * sans empiéter sur le relief lumineux.
+ */
+.public-v3 .rnd11-hero-grid {
+  width: min(100% - 48px, 1240px);
+  padding-top: 54px;
+  padding-bottom: 54px;
+}
+
+.public-v3 .rnd11-hero-copy {
+  width: min(590px, 50%);
+  max-width: 590px;
+}
+
+.public-v3 .rnd11-hero h1 {
+  max-width: 590px;
+
+  font-size: clamp(2.85rem, 3.85vw, 4.15rem);
+  line-height: .99;
+}
+
+.public-v3 .rnd11-lead {
+  max-width: 520px;
+  margin-top: 21px;
+}
+
+.public-v3 .rnd11-actions {
+  margin-top: 24px;
+}
+
+
+/* ----------------------------------------------------------
+   RESSOURCES — VRAIES CARTES ILLUSTRÉES
+   ---------------------------------------------------------- */
+
+.public-v3 .rnd11-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+
+
+/*
+ * L'image occupe désormais toute la largeur de l'encadré.
+ * Le texte vient dessous.
+ */
+.public-v3 .rnd11-resource-card {
+  position: relative;
+
+  display: grid;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 190px auto;
+
+  min-height: 0;
+
+  padding: 0 !important;
+
+  overflow: hidden;
+
+  border: 1px solid rgba(82, 218, 170, .22);
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(5, 53, 40, .88),
+      rgba(3, 42, 32, .94)
+    );
+}
+
+
+/*
+ * Visuel plein cadre.
+ */
+.public-v3 .rnd11-resource-visual {
+  position: relative;
+
+  grid-column: 1 / -1;
+  grid-row: 1;
+
+  width: 100%;
+  height: 190px;
+  min-height: 190px;
+
+  overflow: hidden;
+
+  border-right: 0;
+  border-bottom: 1px solid rgba(82, 218, 170, .18);
+
+  background: #05271e;
+}
+
+
+.public-v3 .rnd11-resource-visual img {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+
+  object-fit: cover;
+  object-position: center;
+
+  transform: scale(1.002);
+}
+
+
+/*
+ * Fondu léger uniquement en bas de l'image.
+ */
+.public-v3 .rnd11-resource-visual::after {
+  background:
+    linear-gradient(
+      180deg,
+      transparent 52%,
+      rgba(3, 42, 32, .10) 72%,
+      rgba(3, 42, 32, .36) 100%
+    );
+}
+
+
+/*
+ * On place les éléments textuels existants dans
+ * une seconde zone de la carte sans modifier le HTML.
+ */
+.public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+  position: absolute;
+
+  z-index: 3;
+  top: 202px;
+  left: 20px;
+
+  width: 28px;
+  height: 28px;
+
+  display: grid;
+  place-items: center;
+
+  color: var(--rnd11-accent);
+
+  border: 1px solid rgba(82, 218, 170, .20);
+  border-radius: 7px;
+
+  background: rgba(2, 35, 26, .76);
+}
+
+
+.public-v3 .rnd11-resource-card > .rnd11-resource-icon + div {
+  grid-column: 1;
+  grid-row: 2;
+
+  min-width: 0;
+  min-height: 108px;
+
+  padding: 18px 58px 18px 62px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+
+.public-v3 .rnd11-resource-card h3 {
+  margin: 0 0 6px;
+
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+
+.public-v3 .rnd11-resource-card p {
+  max-width: 420px;
+  margin: 0;
+
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+
+.public-v3 .rnd11-resource-arrow {
+  position: absolute;
+
+  z-index: 3;
+  right: 20px;
+  bottom: 43px;
+
+  color: var(--rnd11-accent);
+}
+
+
+/* Hover : mouvement discret uniquement. */
+.public-v3 .rnd11-resource-card:hover
+.rnd11-resource-visual img {
+  transform: scale(1.025);
+}
+
+
+/* ----------------------------------------------------------
+   GRAND DESKTOP
+   ---------------------------------------------------------- */
+
+@media (min-width: 1500px) {
+
+  .public-v3 .rnd11-hero {
+    min-height: 570px;
+
+    background-position:
+      center,
+      center 52%;
+  }
+
+  .public-v3 .rnd11-hero-grid {
+    width: min(100% - 64px, 1280px);
+  }
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-rows: 205px auto;
+  }
+
+  .public-v3 .rnd11-resource-visual {
+    height: 205px;
+    min-height: 205px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 217px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLETTE
+   ---------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+
+  .public-v3 .rnd11-hero {
+    min-height: 540px;
+
+    background-position:
+      center,
+      58% center;
+  }
+
+  .public-v3 .rnd11-hero-copy {
+    width: min(570px, 61%);
+  }
+
+  .public-v3 .rnd11-hero h1 {
+    font-size: clamp(2.7rem, 5.5vw, 3.85rem);
+  }
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-rows: 170px auto;
+  }
+
+  .public-v3 .rnd11-resource-visual {
+    height: 170px;
+    min-height: 170px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 182px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   TABLETTE ÉTROITE
+   ---------------------------------------------------------- */
+
+@media (max-width: 820px) {
+
+  .public-v3 .rnd11-hero {
+    min-height: 580px;
+    align-items: flex-end;
+
+    background-position:
+      center,
+      61% center;
+  }
+
+  .public-v3 .rnd11-hero::before {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(0, 17, 12, .08) 0%,
+        rgba(0, 17, 12, .20) 28%,
+        rgba(0, 17, 12, .76) 59%,
+        rgba(0, 17, 12, .97) 100%
+      );
+  }
+
+  .public-v3 .rnd11-hero-grid {
+    width: min(100% - 36px, 1240px);
+
+    padding-top: 170px;
+    padding-bottom: 42px;
+  }
+
+  .public-v3 .rnd11-hero-copy {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .public-v3 .rnd11-resource-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-rows: 230px auto;
+  }
+
+  .public-v3 .rnd11-resource-visual {
+    height: 230px;
+    min-height: 230px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 242px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 620px) {
+
+  .public-v3 .rnd11-hero {
+    min-height: 570px;
+
+    background-position:
+      center,
+      63% center;
+  }
+
+  .public-v3 .rnd11-hero-grid {
+    width: min(100% - 30px, 1240px);
+
+    padding-top: 155px;
+    padding-bottom: 34px;
+  }
+
+  .public-v3 .rnd11-hero h1 {
+    font-size: clamp(2.3rem, 10.7vw, 3.15rem);
+  }
+
+  .public-v3 .rnd11-resource-card {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 190px auto;
+  }
+
+  .public-v3 .rnd11-resource-visual {
+    width: 100%;
+    height: 190px;
+    min-height: 190px;
+  }
+
+  .public-v3 .rnd11-resource-visual img {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 202px;
+    left: 16px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon + div {
+    min-height: 104px;
+
+    padding:
+      17px
+      48px
+      17px
+      56px;
+  }
+
+  .public-v3 .rnd11-resource-arrow {
+    right: 16px;
+    bottom: 41px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   PETIT MOBILE
+   ---------------------------------------------------------- */
+
+@media (max-width: 420px) {
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-rows: 165px auto;
+  }
+
+  .public-v3 .rnd11-resource-visual,
+  .public-v3 .rnd11-resource-visual img {
+    height: 165px;
+    min-height: 165px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 177px;
+  }
+}
+
+
+/* ----------------------------------------------------------
+   ACCESSIBILITÉ
+   ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .public-v3 .rnd11-resource-card,
+  .public-v3 .rnd11-resource-visual img {
+    transition: none;
+  }
+
+}
+
+/* ===== /IFICS INNOVATION CADRAGE FINAL ===== */
+
+/* ==========================================================
+   IFICS — INNOVATION / RESSOURCES COMPACTES
+   Réduit la zone éditoriale et fond visuellement
+   la photographie dans la carte.
+   ========================================================== */
+
+.public-v3 .rnd11-resource-card {
+  grid-template-rows: 190px auto;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(4, 53, 39, .96),
+      rgba(3, 43, 32, .98)
+    );
+}
+
+
+/*
+ * La photo reste dominante.
+ * Le dégradé inférieur prépare la transition vers le contenu.
+ */
+.public-v3 .rnd11-resource-visual::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent 58%,
+      rgba(3, 45, 33, .06) 69%,
+      rgba(3, 45, 33, .32) 84%,
+      rgba(3, 45, 33, .82) 100%
+    );
+}
+
+
+/*
+ * Transition douce entre image et contenu :
+ * léger fondu remontant au lieu d'une coupure franche.
+ */
+.public-v3 .rnd11-resource-visual {
+  border-bottom: 0;
+}
+
+.public-v3 .rnd11-resource-card > .rnd11-resource-icon + div {
+  position: relative;
+
+  min-height: 82px;
+
+  padding:
+    13px
+    54px
+    13px
+    60px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(3, 48, 36, .98) 0%,
+      rgba(3, 43, 32, .98) 100%
+    );
+}
+
+
+/*
+ * Petit halo vertical au raccord.
+ */
+.public-v3 .rnd11-resource-card > .rnd11-resource-icon + div::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  top: -20px;
+
+  height: 21px;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(3, 48, 36, .76)
+    );
+}
+
+
+.public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+  top: 202px;
+
+  width: 26px;
+  height: 26px;
+}
+
+
+.public-v3 .rnd11-resource-card h3 {
+  margin: 0 0 4px;
+
+  font-size: 14px;
+  line-height: 1.22;
+}
+
+
+.public-v3 .rnd11-resource-card p {
+  margin: 0;
+
+  font-size: 11px;
+  line-height: 1.42;
+
+  color: rgba(188, 220, 207, .72);
+}
+
+
+.public-v3 .rnd11-resource-arrow {
+  right: 18px;
+  bottom: 31px;
+}
+
+
+/* Desktop large */
+@media (min-width: 1500px) {
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-rows: 205px auto;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 217px;
+  }
+}
+
+
+/* Tablette */
+@media (max-width: 1000px) {
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-rows: 170px auto;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 182px;
+  }
+}
+
+
+/* Tablette étroite : une carte par ligne */
+@media (max-width: 820px) {
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-rows: 220px auto;
+  }
+
+  .public-v3 .rnd11-resource-visual {
+    height: 220px;
+    min-height: 220px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 232px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon + div {
+    min-height: 82px;
+  }
+}
+
+
+/* Mobile */
+@media (max-width: 620px) {
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-rows: 175px auto;
+  }
+
+  .public-v3 .rnd11-resource-visual,
+  .public-v3 .rnd11-resource-visual img {
+    height: 175px;
+    min-height: 175px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 187px;
+    left: 15px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon + div {
+    min-height: 78px;
+
+    padding:
+      12px
+      44px
+      12px
+      54px;
+  }
+
+  .public-v3 .rnd11-resource-arrow {
+    right: 15px;
+    bottom: 29px;
+  }
+}
+
+
+/* Petit mobile */
+@media (max-width: 420px) {
+
+  .public-v3 .rnd11-resource-card {
+    grid-template-rows: 155px auto;
+  }
+
+  .public-v3 .rnd11-resource-visual,
+  .public-v3 .rnd11-resource-visual img {
+    height: 155px;
+    min-height: 155px;
+  }
+
+  .public-v3 .rnd11-resource-card > .rnd11-resource-icon {
+    top: 167px;
+  }
+}
+
+/* ===== /IFICS INNOVATION RESSOURCES COMPACTES ===== */
+
+/* ==========================================================
+   IFICS — INNOVATION / RESSOURCES COMPACT FINAL
+   - images conservées comme élément principal
+   - zone éditoriale divisée approximativement par deux
+   - pictogrammes masqués pour alléger les cartes
+   ========================================================== */
+
+.public-v3 .rnd11-resource-card {
+  min-height: 0 !important;
+  overflow: hidden;
+}
+
+/* Image principale */
+.public-v3 .rnd11-resource-visual {
+  height: clamp(125px, 10vw, 155px) !important;
+  min-height: 0 !important;
+}
+
+.public-v3 .rnd11-resource-visual img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block;
+}
+
+/* Retrait complet des pictogrammes */
+.public-v3 .rnd11-resource-icon {
+  display: none !important;
+}
+
+/* Partie texte beaucoup plus compacte */
+.public-v3 .rnd11-resource-body {
+  min-height: 0 !important;
+  padding: 13px 18px 14px !important;
+  gap: 3px !important;
+}
+
+/* Au cas où la structure utilise directement le contenu */
+.public-v3 .rnd11-resource-content {
+  min-height: 0 !important;
+  padding: 13px 18px 14px !important;
+  gap: 3px !important;
+}
+
+/* Titres */
+.public-v3 .rnd11-resource-card h3 {
+  margin: 0 !important;
+  font-size: 0.94rem !important;
+  line-height: 1.15 !important;
+}
+
+/* Description */
+.public-v3 .rnd11-resource-card p {
+  margin: 4px 0 0 !important;
+  font-size: 0.72rem !important;
+  line-height: 1.35 !important;
+}
+
+/* Flèche discrète */
+.public-v3 .rnd11-resource-card .rnd11-arrow,
+.public-v3 .rnd11-resource-card > span:last-child {
+  font-size: 0.82rem;
+}
+
+/* Grille plus resserrée */
+.public-v3 .rnd11-resources-grid {
+  gap: 12px !important;
+}
+
+/* Tablette */
+@media (max-width: 980px) {
+  .public-v3 .rnd11-resource-visual {
+    height: clamp(130px, 19vw, 165px) !important;
+  }
+
+  .public-v3 .rnd11-resource-body,
+  .public-v3 .rnd11-resource-content {
+    padding: 13px 16px 14px !important;
+  }
+}
+
+/* Mobile : l'image reste lisible, texte toujours compact */
+@media (max-width: 680px) {
+  .public-v3 .rnd11-resource-visual {
+    height: clamp(145px, 48vw, 210px) !important;
+  }
+
+  .public-v3 .rnd11-resource-body,
+  .public-v3 .rnd11-resource-content {
+    padding: 14px 15px 15px !important;
+  }
+
+  .public-v3 .rnd11-resource-card h3 {
+    font-size: 0.92rem !important;
+  }
+
+  .public-v3 .rnd11-resource-card p {
+    font-size: 0.72rem !important;
+  }
+}
+
+/* ==========================================================
+   /IFICS — INNOVATION / RESSOURCES COMPACT FINAL
+   ========================================================== */
+
+/* ==========================================================
+   IFICS — INNOVATION / RESOURCE PROPORTIONS FINAL
+   Image restaurée à sa hauteur précédente.
+   Seule la zone éditoriale inférieure est compactée.
+   ========================================================== */
+
+.public-v3 .rnd11-resource-card {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* RESTAURATION DE LA GRANDE IMAGE */
+.public-v3 .rnd11-resource-visual {
+  height: clamp(190px, 15vw, 230px) !important;
+  min-height: clamp(190px, 15vw, 230px) !important;
+}
+
+.public-v3 .rnd11-resource-visual img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* ICÔNES TOUJOURS SUPPRIMÉES */
+.public-v3 .rnd11-resource-icon {
+  display: none !important;
+}
+
+/* SEULEMENT LE BANDEAU TEXTE DEVIENT PETIT */
+.public-v3 .rnd11-resource-body,
+.public-v3 .rnd11-resource-content {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 10px 16px 11px !important;
+  gap: 2px !important;
+}
+
+/* On neutralise tout espace interne inutile */
+.public-v3 .rnd11-resource-body > *,
+.public-v3 .rnd11-resource-content > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.public-v3 .rnd11-resource-card h3 {
+  margin: 0 !important;
+  font-size: 0.9rem !important;
+  line-height: 1.15 !important;
+}
+
+.public-v3 .rnd11-resource-card p {
+  margin: 3px 0 0 !important;
+  font-size: 0.68rem !important;
+  line-height: 1.25 !important;
+}
+
+/* Transition image -> texte douce */
+.public-v3 .rnd11-resource-visual {
+  position: relative;
+}
+
+.public-v3 .rnd11-resource-visual::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 24px;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(1, 48, 37, 0),
+      rgba(1, 48, 37, 0.82)
+    );
+}
+
+/* TABLETTE */
+@media (max-width: 980px) {
+  .public-v3 .rnd11-resource-visual {
+    height: clamp(180px, 25vw, 220px) !important;
+    min-height: clamp(180px, 25vw, 220px) !important;
+  }
+
+  .public-v3 .rnd11-resource-body,
+  .public-v3 .rnd11-resource-content {
+    padding: 10px 14px 11px !important;
+  }
+}
+
+/* MOBILE */
+@media (max-width: 680px) {
+  .public-v3 .rnd11-resource-visual {
+    height: clamp(190px, 55vw, 260px) !important;
+    min-height: clamp(190px, 55vw, 260px) !important;
+  }
+
+  .public-v3 .rnd11-resource-body,
+  .public-v3 .rnd11-resource-content {
+    padding: 11px 14px 12px !important;
+  }
+
+  .public-v3 .rnd11-resource-card h3 {
+    font-size: 0.9rem !important;
+  }
+
+  .public-v3 .rnd11-resource-card p {
+    font-size: 0.69rem !important;
+  }
+}
+
+/* ==========================================================
+   /IFICS — INNOVATION / RESOURCE PROPORTIONS FINAL
+   ========================================================== */

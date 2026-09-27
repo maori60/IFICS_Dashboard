@@ -5,157 +5,325 @@ usePublicSeo({
   path: '/innovation',
 })
 
-const axes = [
+const approach = [
   {
-    number: '01',
     icon: '⌘',
     title: 'Explorer',
-    text: 'Observer les usages, écouter les personnes concernées et formuler des hypothèses testables.',
+    text: 'Observer les usages',
   },
   {
-    number: '02',
     icon: '◇',
     title: 'Prototyper',
-    text: 'Construire rapidement, confronter au réel et ajuster.',
+    text: 'Construire et confronter',
   },
   {
-    number: '03',
     icon: '□',
     title: 'Tester',
-    text: 'Mesurer, documenter les limites et vérifier la valeur apportée.',
+    text: 'Mesurer et ajuster',
   },
   {
-    number: '04',
     icon: '▣',
     title: 'Transmettre',
-    text: 'Capitaliser les résultats et publier lorsque la diffusion est pertinente.',
+    text: 'Documenter et partager',
+  },
+]
+
+const domains = [
+  {
+    title: 'Éducation & inclusion',
+    text: 'Outils pédagogiques, accessibilité, médiation numérique et accompagnement des usages.',
+    image: '/images/innovation/innovation-education.webp',
+  },
+  {
+    title: 'Vie associative',
+    text: 'Gestion, collaboration, bénévolat et outils adaptés aux réalités des structures.',
+    image: '/images/innovation/innovation-association.webp',
+  },
+  {
+    title: 'Terrain & services',
+    text: 'Besoins métiers, outils opérationnels, parcours et simplification des usages.',
+    image: '/images/innovation/innovation-terrain.webp',
+  },
+  {
+    title: 'Open source & mutualisation',
+    text: 'Partage de ressources, documentation, réutilisation et amélioration collective.',
+    image: '/images/innovation/innovation-opensource.webp',
+  },
+]
+
+const resources = [
+  {
+    icon: '▤',
+    title: 'Guides & tutoriels',
+    text: 'Comprendre, reproduire et transmettre.',
+    to: '/logiciels',
+    image: '/images/innovation/innovation-resource-guides.webp',
+  },
+  {
+    icon: '◫',
+    title: 'Retours d’expérience',
+    text: 'Capitaliser les enseignements du terrain.',
+    to: '/actions',
+    image: '/images/innovation/innovation-resource-retours.webp',
+  },
+  {
+    icon: '◇',
+    title: 'Outils & modèles',
+    text: 'Réutiliser des ressources structurées.',
+    to: '/logiciels',
+    image: '/images/innovation/innovation-resource-outils.webp',
+  },
+  {
+    icon: '⌁',
+    title: 'Veille technologique',
+    text: 'Explorer les pratiques et technologies utiles.',
+    to: '/kreatortech',
+    image: '/images/innovation/innovation-resource-veille.webp',
   },
 ]
 </script>
 
 <template>
-  <div class="v9-page v9-innovation">
-    <section class="v9-hero">
-      <div class="container v9-hero-grid">
-        <div class="v9-hero-copy">
-          <p class="v9-eyebrow">KREATORTECH · Innovation &amp; R&amp;D</p>
+  <div class="rnd11-page">
 
-          <h1>
-            Expérimenter pour<br>
-            résoudre.<br>
-            Documenter pour<br>
-            transmettre.
-          </h1>
+    <section class="rnd11-hero">
+      <div class="container rnd11-hero-grid">
 
-          <p class="v9-lead">
-            L’innovation n’a de valeur que si elle améliore un usage réel
-            et peut être comprise, testée et améliorée.
+        <div class="rnd11-hero-copy">
+          <p class="rnd11-eyebrow">
+            KREATORTECH · Innovation &amp; R&amp;D
           </p>
 
-          <div class="v9-actions">
-            <NuxtLink to="/contact" class="v9-btn v9-btn-primary">
+          <h1>
+            Des expérimentations<br>
+            documentées pour<br>
+            des <span>usages durables.</span>
+          </h1>
+
+          <p class="rnd11-lead">
+            Nous concevons, testons et partageons des solutions pour répondre
+            à des besoins concrets, avec une documentation complète et une
+            volonté de transmission.
+          </p>
+
+          <div class="rnd11-actions">
+            <NuxtLink to="/actions" class="rnd11-btn rnd11-btn-primary">
+              Découvrir nos travaux
+              <span aria-hidden="true">→</span>
+            </NuxtLink>
+
+            <NuxtLink to="/contact" class="rnd11-btn rnd11-btn-secondary">
               Échanger avec nous
-              <span>→</span>
-            </NuxtLink>
-
-            <NuxtLink to="/logiciels" class="v9-btn v9-btn-secondary">
-              Voir les ressources
             </NuxtLink>
           </div>
         </div>
 
-        <div class="v9-rnd-visual" aria-hidden="true">
-          <svg
-            class="v9-rnd-path"
-            viewBox="0 0 600 440"
-            fill="none"
+        <div class="rnd11-hero-media">
+          <img
+            src="/images/innovation/innovation-hero.webp"
+            alt=""
+            width="1600"
+            height="290"
           >
-            <path
-              d="M110 180C110 92 233 58 303 130C366 195 286 232 355 286C416 334 506 291 507 208"
-            />
-            <path
-              d="M94 295C149 366 244 356 284 293C327 225 388 206 485 248"
-            />
-          </svg>
 
-          <div class="v9-rnd-card v9-rnd-card-1">
-            <span>♢</span>
-            <div>
-              <strong>Recherche</strong>
-              <small>Exploration d’idées et veille technologique.</small>
-            </div>
-          </div>
+          <div class="rnd11-hero-overlay" />
 
-          <div class="v9-rnd-card v9-rnd-card-2">
-            <span>△</span>
-            <div>
-              <strong>Prototypage</strong>
-              <small>Tests rapides et itérations sur le terrain.</small>
-            </div>
-          </div>
 
-          <div class="v9-rnd-card v9-rnd-card-3">
-            <span>↗</span>
-            <div>
-              <strong>Usages réels</strong>
-              <small>Confrontation aux besoins et aux contraintes.</small>
-            </div>
-          </div>
-
-          <div class="v9-rnd-card v9-rnd-card-4">
-            <span>▤</span>
-            <div>
-              <strong>Transmission</strong>
-              <small>Documentation et partage des résultats.</small>
-            </div>
-          </div>
         </div>
+
       </div>
     </section>
 
-    <section class="v9-section">
+
+    <section class="rnd11-approach">
       <div class="container">
-        <p class="v9-eyebrow">Quatre axes d’innovation</p>
 
-        <div class="v9-feature-grid v9-feature-grid-4">
+        <div class="rnd11-approach-head">
+          <p class="rnd11-eyebrow">
+            Notre approche
+          </p>
+
+          <p>
+            Une innovation utile part du terrain et produit
+            une connaissance transmissible.
+          </p>
+        </div>
+
+        <div class="rnd11-approach-grid">
           <article
-            v-for="axis in axes"
-            :key="axis.number"
-            class="v9-feature-card"
+            v-for="item in approach"
+            :key="item.title"
+            class="rnd11-approach-item"
           >
-            <div class="v9-card-top">
-              <span class="v9-feature-icon">{{ axis.icon }}</span>
-              <span class="v9-card-number">{{ axis.number }}</span>
-            </div>
+            <span class="rnd11-approach-icon">
+              {{ item.icon }}
+            </span>
 
-            <h2>{{ axis.title }}</h2>
-            <p>{{ axis.text }}</p>
+            <div>
+              <strong>{{ item.title }}</strong>
+              <small>{{ item.text }}</small>
+            </div>
           </article>
         </div>
+
       </div>
     </section>
 
-    <section class="v9-bottom-shell">
+
+    <section class="rnd11-section rnd11-domains">
       <div class="container">
-        <div class="v9-bottom-card">
+
+        <header class="rnd11-section-head">
           <div>
-            <p class="v9-eyebrow">Du prototype au terrain</p>
-            <h2>Une innovation utile doit pouvoir vivre après le test.</h2>
+            <p class="rnd11-eyebrow">
+              Nos domaines d’expérimentation
+            </p>
+
+            <h2>
+              Des usages réels.<br>
+              Des réponses concrètes.
+            </h2>
           </div>
 
-          <div class="v9-bottom-copy">
+          <p>
+            Nos expérimentations croisent besoins de terrain,
+            numérique et transmission.
+          </p>
+        </header>
+
+        <div class="rnd11-domain-grid">
+          <article
+            v-for="domain in domains"
+            :key="domain.title"
+            class="rnd11-domain-card"
+          >
+            <div class="rnd11-domain-image">
+              <img
+                :src="domain.image"
+                :alt="domain.title"
+                loading="lazy"
+              >
+
+              <div class="rnd11-domain-shade" />
+            </div>
+
+            <div class="rnd11-domain-content">
+              <div>
+                <h3>{{ domain.title }}</h3>
+                <p>{{ domain.text }}</p>
+              </div>
+
+              <span aria-hidden="true">→</span>
+            </div>
+          </article>
+        </div>
+
+      </div>
+    </section>
+
+
+    <section class="rnd11-section rnd11-resources">
+      <div class="container">
+
+        <header class="rnd11-section-head">
+          <div>
+            <p class="rnd11-eyebrow">
+              Ressources &amp; documentation
+            </p>
+
+            <h2>
+              Documenter pour<br>
+              rendre réutilisable.
+            </h2>
+          </div>
+
+          <p>
+            Les expérimentations ont vocation à laisser
+            des ressources compréhensibles et transmissibles.
+          </p>
+        </header>
+
+        <div class="rnd11-resource-grid">
+          <NuxtLink
+            v-for="resource in resources"
+            :key="resource.title"
+            :to="resource.to"
+            class="rnd11-resource-card"
+          >
+            <div class="rnd11-resource-visual">
+              <img
+                :src="resource.image"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              >
+            </div>
+
+            <span class="rnd11-resource-icon">
+              {{ resource.icon }}
+            </span>
+
+            <div>
+              <h3>{{ resource.title }}</h3>
+              <p>{{ resource.text }}</p>
+            </div>
+
+            <span class="rnd11-resource-arrow" aria-hidden="true">
+              →
+            </span>
+          </NuxtLink>
+        </div>
+
+        <div class="rnd11-resource-action">
+          <NuxtLink to="/logiciels" class="rnd11-text-link">
+            Voir toutes les ressources
+            <span aria-hidden="true">→</span>
+          </NuxtLink>
+        </div>
+
+      </div>
+    </section>
+
+
+    <section class="rnd11-final">
+      <div class="container">
+
+        <div class="rnd11-final-card">
+
+          <div class="rnd11-final-media">
+            <img
+              src="/images/innovation/innovation-hero.webp"
+              alt=""
+              loading="lazy"
+            >
+            <div />
+          </div>
+
+          <div class="rnd11-final-copy">
+            <p class="rnd11-eyebrow">
+              Du prototype au terrain
+            </p>
+
+            <h2>
+              Une innovation utile doit pouvoir
+              <span>vivre après le test.</span>
+            </h2>
+
             <p>
               Chaque expérimentation vise un résultat compréhensible,
               documenté et transmissible.
             </p>
 
-            <NuxtLink to="/logiciels" class="v9-btn v9-btn-primary">
+            <NuxtLink to="/logiciels" class="rnd11-btn rnd11-btn-primary">
               Explorer les ressources
-              <span>→</span>
+              <span aria-hidden="true">→</span>
             </NuxtLink>
           </div>
+
         </div>
+
       </div>
     </section>
+
   </div>
 </template>
