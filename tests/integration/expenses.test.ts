@@ -3958,7 +3958,12 @@ describe.skipIf(
 
         expect(
           await prisma.expenseAttachment
-            .count(),
+            .count({
+              where: {
+                expenseId:
+                  ownExpenseId,
+              },
+            }),
         ).toBe(0)
 
         expect(
@@ -4012,7 +4017,12 @@ describe.skipIf(
 
         expect(
           await prisma.expenseAttachment
-            .count(),
+            .count({
+              where: {
+                expenseId:
+                  ownExpenseId,
+              },
+            }),
         ).toBe(0)
 
         expect(
@@ -4093,7 +4103,12 @@ describe.skipIf(
 
         expect(
           await prisma.expenseAttachment
-            .count(),
+            .count({
+              where: {
+                expenseId:
+                  ownExpenseId,
+              },
+            }),
         ).toBe(0)
 
         expect(
@@ -5043,7 +5058,12 @@ describe.skipIf(
 
         expect(
           await prisma.expenseAttachment
-            .count(),
+            .count({
+              where: {
+                expenseId:
+                  ownExpenseId,
+              },
+            }),
         ).toBe(0)
       },
     )

@@ -42,6 +42,19 @@ export default defineEventHandler(async (event) => {
       paymentMethod: true,
       reimbursable: true,
 
+      taxDeductibility: true,
+      deductibleTaxAmount: true,
+      taxReviewNote: true,
+      taxReviewedAt: true,
+
+      taxReviewedByUser: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+
       submittedAt: true,
       reviewedAt: true,
       paidAt: true,

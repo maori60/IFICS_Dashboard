@@ -258,6 +258,7 @@ model User {
   reviewedExpenses            Expense[]                      @relation("ExpenseReviewedBy")
   paidExpenses                Expense[]                      @relation("ExpensePaidBy")
   cancelledExpenses           Expense[]                      @relation("ExpenseCancelledBy")
+  taxReviewedExpenses         Expense[]                      @relation("ExpenseTaxReviewedBy")
   uploadedExpenseAttachments  ExpenseAttachment[]            @relation("ExpenseAttachmentUploadedBy")
 
   @@index([associationId])
@@ -790,6 +791,12 @@ enum ExpensePaymentMethod {
   OTHER
 }
 
+enum ExpenseTaxDeductibility {
+  PENDING
+  DEDUCTIBLE
+  NON_DEDUCTIBLE
+}
+
 model Expense {
   id                String  @id @default(cuid())
   associationId     String
@@ -817,6 +824,12 @@ model Expense {
   paymentMethod ExpensePaymentMethod?
   reimbursable  Boolean               @default(false)
 
+  taxDeductibility    ExpenseTaxDeductibility @default(PENDING)
+  deductibleTaxAmount Decimal                 @default(0) @db.Decimal(12, 2)
+  taxReviewNote       String?
+  taxReviewedAt       DateTime?
+  taxReviewedByUserId String?
+
   submittedAt        DateTime?
   reviewedAt         DateTime?
   paidAt             DateTime?
@@ -836,6 +849,7 @@ model Expense {
   reviewedByUser  User? @relation("ExpenseReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
   paidByUser      User? @relation("ExpensePaidBy", fields: [paidByUserId], references: [id], onDelete: SetNull)
   cancelledByUser User? @relation("ExpenseCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: SetNull)
+  taxReviewedByUser User? @relation("ExpenseTaxReviewedBy", fields: [taxReviewedByUserId], references: [id], onDelete: SetNull)
 
   attachments ExpenseAttachment[]
 
@@ -849,6 +863,8 @@ model Expense {
   @@index([reviewedByUserId])
   @@index([paidByUserId])
   @@index([cancelledByUserId])
+  @@index([taxReviewedByUserId])
+  @@index([associationId, taxDeductibility])
   @@index([archivedAt])
 }
 
