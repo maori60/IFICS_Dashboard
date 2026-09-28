@@ -52,12 +52,12 @@
 .text-link:hover { text-decoration: underline; }
 .light-link { color: #b5f2de; }
 
-.btn { min-height: 48px; padding: 12px 20px; border-radius: 10px; border: 1px solid transparent; box-shadow: none; font-weight: 800; transition: transform .15s ease, background .15s ease, border-color .15s ease; }
-.btn:hover { transform: translateY(-1px); }
-.btn-primary { background: var(--v2-deep); color: #fff; }
-.btn-primary:hover { background: #052f28; }
-.btn-secondary { background: #fff; color: var(--v2-deep); border-color: #cbd8d2; }
-.btn-secondary:hover { border-color: #91aa9f; }
+.public-shell .btn { min-height: 48px; padding: 12px 20px; border-radius: 10px; border: 1px solid transparent; box-shadow: none; font-weight: 800; transition: transform .15s ease, background .15s ease, border-color .15s ease; }
+.public-shell .btn:hover { transform: translateY(-1px); }
+.public-shell .btn-primary { background: var(--v2-deep); color: #fff; }
+.public-shell .btn-primary:hover { background: #052f28; }
+.public-shell .btn-secondary { background: #fff; color: var(--v2-deep); border-color: #cbd8d2; }
+.public-shell .btn-secondary:hover { border-color: #91aa9f; }
 .btn-ivory { background: var(--v2-ivory); color: var(--v2-deeper); }
 .btn-ivory:hover { background: #fff; }
 .btn-outline-light { color: #fff; background: transparent; border-color: rgba(255,255,255,.34); }
