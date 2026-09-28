@@ -16,6 +16,8 @@ type Assignment = {
   project: {
     title: string
     reference: string | null
+    startDate: string | null
+    endDate: string | null
   }
   intervenor: {
     firstName: string
@@ -102,10 +104,10 @@ const selectedAssignment = computed(() =>
   ) ?? null,
 )
 
-const validPeriod = computed(() => {
+const periodError = computed(() => {
   const match = /^(\d{4})-(\d{2})$/.exec(selectedMonth.value)
 
-  if (!match) return null
+  if (!match) return ''
 
   const year = Number(match[1])
   const month = Number(match[2])
@@ -115,12 +117,69 @@ const validPeriod = computed(() => {
     || year > 2100
     || month < 1
     || month > 12
-    || !coveredYears.has(year)
   ) {
+    return 'Mois invalide.'
+  }
+
+  if (!coveredYears.has(year)) {
+    return 'Cette année n’est pas encore couverte par le calendrier des jours fériés.'
+  }
+
+  const assignment = selectedAssignment.value
+
+  if (!assignment) return ''
+
+  const periodStart = new Date(Date.UTC(year, month - 1, 1))
+  const periodEnd = new Date(Date.UTC(year, month, 0))
+
+  const projectStart = assignment.project.startDate
+    ? new Date(assignment.project.startDate)
+    : null
+
+  const projectEnd = assignment.project.endDate
+    ? new Date(assignment.project.endDate)
+    : null
+
+  if (projectStart && periodEnd < projectStart) {
+    return 'Ce mois est antérieur au début de la mission.'
+  }
+
+  if (projectEnd && periodStart > projectEnd) {
+    return 'Ce mois est postérieur à la fin de la mission.'
+  }
+
+  return ''
+})
+
+const validPeriod = computed(() => {
+  const match = /^(\d{4})-(\d{2})$/.exec(selectedMonth.value)
+
+  if (!match) return null
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+
+  if (periodError.value) {
     return null
   }
 
   return { year, month }
+})
+
+watch(selectedAssignment, (assignment) => {
+  if (!assignment || !selectedMonth.value) return
+
+  const minimumMonth = assignment.project.startDate?.slice(0, 7)
+  const maximumMonth = assignment.project.endDate?.slice(0, 7)
+
+  if (minimumMonth && selectedMonth.value < minimumMonth) {
+    selectedMonth.value = minimumMonth
+    return
+  }
+
+  if (maximumMonth && selectedMonth.value > maximumMonth) {
+    selectedMonth.value = maximumMonth
+  }
 })
 
 const canCreate = computed(() =>
@@ -383,13 +442,23 @@ async function createReport() {
               type="month"
               required
               :disabled="creating"
+              :min="
+                selectedAssignment?.project.startDate
+                  ? selectedAssignment.project.startDate.slice(0, 7)
+                  : undefined
+              "
+              :max="
+                selectedAssignment?.project.endDate
+                  ? selectedAssignment.project.endDate.slice(0, 7)
+                  : undefined
+              "
             >
             <p
-              v-if="selectedMonth && !validPeriod"
+              v-if="selectedMonth && periodError"
               class="field-error"
               role="alert"
             >
-              Mois invalide ou année non couverte par le calendrier des jours fériés.
+              {{ periodError }}
             </p>
           </div>
 

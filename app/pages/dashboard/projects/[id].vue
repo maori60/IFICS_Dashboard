@@ -167,7 +167,7 @@ const associativeClientName = computed(() => {
 const ownAssignment = computed(() => {
   const user = session.value?.data.user
 
-  if (user?.roleCode !== 'INTERVENOR' || !user.intervenorId) {
+  if (!user?.intervenorId) {
     return null
   }
 

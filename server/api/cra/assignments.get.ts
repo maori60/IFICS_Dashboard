@@ -113,6 +113,8 @@ export default defineEventHandler(async (event) => {
             select: {
               title: true,
               reference: true,
+              startDate: true,
+              endDate: true,
             },
           },
           intervenor: {

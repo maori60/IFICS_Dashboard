@@ -57,7 +57,32 @@ export default defineEventHandler(async (event) => {
     badRequest('Mois invalide : indiquez un entier entre 1 et 12.')
   }
 
-  await requireCraAssignmentForCreation(context, projectId, intervenorId)
+  const assignment = await requireCraAssignmentForCreation(
+    context,
+    projectId,
+    intervenorId,
+  )
+
+  const periodStart = new Date(Date.UTC(year, month - 1, 1))
+  const periodEnd = new Date(Date.UTC(year, month, 0))
+
+  if (
+    assignment.project.startDate
+    && periodEnd < assignment.project.startDate
+  ) {
+    badRequest(
+      'Le mois du CRA est antérieur au début de la mission.',
+    )
+  }
+
+  if (
+    assignment.project.endDate
+    && periodStart > assignment.project.endDate
+  ) {
+    badRequest(
+      'Le mois du CRA est postérieur à la fin de la mission.',
+    )
+  }
 
   try {
     const report = await prisma.craReport.create({

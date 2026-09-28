@@ -12,8 +12,12 @@ export default defineEventHandler(async (event) => {
   const context = await requireAuth(event)
   const projectId = requireRouterId(getRouterParam(event, 'id'), 'Projet')
 
-  if (context.roleCode !== 'INTERVENOR' || !context.intervenorId) {
-    httpError(403, 'Cette action est réservée aux intervenants.', 'INTERVENOR_ONLY')
+  if (!context.intervenorId) {
+    httpError(
+      403,
+      'Cette action nécessite un profil intervenant associé au compte.',
+      'INTERVENOR_PROFILE_REQUIRED',
+    )
   }
 
   const body = safeObject(await readBody(event))
