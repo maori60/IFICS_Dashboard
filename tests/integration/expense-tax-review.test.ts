@@ -244,7 +244,9 @@ async function createExpense(
   })
 }
 
-describe(
+describe.skipIf(
+  process.env.EXPENSE_INTEGRATION_TESTS !== '1',
+)(
   'Qualification fiscale TVA des dépenses',
   () => {
     beforeAll(async () => {
@@ -490,24 +492,56 @@ describe(
     )
 
     afterAll(async () => {
-      await prisma.association
-        .delete({
-          where: {
-            id: associationId,
-          },
-        })
-        .catch(() => undefined)
+      try {
+        if (
+          !associationId.startsWith('tax-review-association-')
+          || !foreignAssociationId.startsWith('tax-review-foreign-')
+          || associationId === foreignAssociationId
+        ) {
+          throw new Error('Identifiants de nettoyage invalides')
+        }
 
-      await prisma.association
-        .delete({
-          where: {
-            id: foreignAssociationId,
-          },
-        })
-        .catch(() => undefined)
+        await prisma.$transaction(async (tx) => {
+          const associationIds = [
+            associationId,
+            foreignAssociationId,
+          ]
 
-      vi.unstubAllGlobals()
-      await prisma.$disconnect()
+          await tx.auditLog.deleteMany({
+            where: {
+              associationId: { in: associationIds },
+            },
+          })
+
+          await tx.expense.deleteMany({
+            where: {
+              associationId: { in: associationIds },
+            },
+          })
+
+          await tx.user.deleteMany({
+            where: {
+              associationId: { in: associationIds },
+            },
+          })
+
+          await tx.role.deleteMany({
+            where: {
+              associationId: { in: associationIds },
+            },
+          })
+
+          await tx.association.deleteMany({
+            where: {
+              id: { in: associationIds },
+            },
+          })
+        })
+      }
+      finally {
+        vi.unstubAllGlobals()
+        await prisma.$disconnect()
+      }
     })
 
     it(

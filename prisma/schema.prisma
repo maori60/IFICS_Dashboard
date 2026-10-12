@@ -630,9 +630,12 @@ model ProjectReport {
   reviewedByUserId String?
   title            String?      @db.VarChar(255)
   sessionDate      DateTime
+  startTime        String?      @db.VarChar(5)
+  endTime          String?      @db.VarChar(5)
   studentsCount    Int?
   status           ReportStatus @default(NOT_STARTED)
   currentVersion   Int          @default(0)
+  revisionByIfics  Boolean      @default(false)
   pdfPath          String?      @db.VarChar(500)
   comment          String?
   refusalReason    String?
@@ -646,8 +649,9 @@ model ProjectReport {
   intervenor     Intervenor?            @relation(fields: [intervenorId], references: [id], onDelete: SetNull)
   reviewedByUser User?                  @relation("ProjectReportReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
   versions       ProjectReportVersion[]
+  archives       ProjectReportArchive[]
 
-  @@unique([projectId, intervenorId, sessionDate])
+  @@index([projectId, sessionDate])
   @@index([projectId])
   @@index([intervenorId])
   @@index([status])
@@ -663,10 +667,51 @@ model ProjectReportVersion {
   createdAt       DateTime @default(now())
 
   report        ProjectReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  archives      ProjectReportArchive[]
   createdByUser User?         @relation("ProjectReportVersionCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@unique([reportId, version])
+  @@unique([id, reportId, version])
   @@index([createdByUserId])
+}
+
+
+model ProjectReportArchive {
+  id                 String   @id @default(cuid())
+  reportId           String
+  reportVersionId    String
+  version            Int
+  reference          String   @unique @db.VarChar(120)
+
+  associationName    String   @db.VarChar(255)
+  projectTitle       String   @db.VarChar(255)
+  reportTitle        String   @db.VarChar(255)
+  intervenorName     String?  @db.VarChar(255)
+  sessionDate        DateTime
+  startTime          String?  @db.VarChar(5)
+  endTime            String?  @db.VarChar(5)
+  studentsCount      Int?
+  content            String
+
+  validatedByUserId  String?
+  validatedAt        DateTime
+
+  originalName       String   @db.VarChar(255)
+  storedName         String   @db.VarChar(255)
+  filePath           String   @db.VarChar(500)
+  mimeType           String   @default("application/pdf") @db.VarChar(100)
+  fileSize           BigInt
+  sha256             String   @db.VarChar(64)
+
+  createdAt          DateTime @default(now())
+
+  report             ProjectReport        @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  reportVersion      ProjectReportVersion @relation(fields: [reportVersionId, reportId, version], references: [id, reportId, version], onDelete: Restrict)
+
+  @@unique([reportId, version])
+  @@unique([reportVersionId])
+  @@index([validatedAt])
+  @@index([sha256])
 }
 
 enum AccountingFiscalYearStatus {

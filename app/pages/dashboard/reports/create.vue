@@ -29,6 +29,8 @@ const form = reactive({
   intervenorId: '',
   title: 'Bilan de séance',
   sessionDate: '',
+  startTime: '',
+  endTime: '',
   studentsCount: '',
 })
 
@@ -54,6 +56,8 @@ async function submit() {
         intervenorId: roleCode.value === 'INTERVENOR' ? undefined : form.intervenorId || undefined,
         title: form.title,
         sessionDate: form.sessionDate,
+        startTime: form.startTime || null,
+        endTime: form.endTime || null,
         studentsCount: form.studentsCount,
       },
     })
@@ -134,6 +138,17 @@ async function submit() {
         <div class="field">
           <label for="report-date">Date de séance *</label>
           <input id="report-date" v-model="form.sessionDate" class="input" type="date" required>
+        </div>
+
+        <div class="field">
+          <label for="report-start-time">Heure de début</label>
+          <input id="report-start-time" v-model="form.startTime" class="input" type="time" step="60">
+        </div>
+
+        <div class="field">
+          <label for="report-end-time">Heure de fin</label>
+          <input id="report-end-time" v-model="form.endTime" class="input" type="time" step="60" :min="form.startTime || undefined">
+          <span class="help">Facultatif. Si les deux horaires sont renseignés, la fin doit être postérieure au début.</span>
         </div>
 
         <div class="field">

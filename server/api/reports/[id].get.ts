@@ -6,10 +6,16 @@ import { httpError, requireRouterId, success } from '../../utils/api'
 
 export default defineEventHandler(async (event) => {
   const context = await requirePermission(event, PERMISSIONS.REPORT_READ)
+  // Publication client désactivée jusqu'à mise en place
+  // d'une autorisation explicite de partage.
+  if (context.roleCode === ROLE_CODES.CLIENT) {
+    httpError(404, 'Bilan introuvable.', 'REPORT_CLIENT_NOT_PUBLISHED')
+  }
+
   const id = requireRouterId(getRouterParam(event, 'id'), 'Bilan')
   const report = await prisma.projectReport.findFirst({
     where: { id, project: { associationId: context.associationId, archivedAt: null } },
-    select: { id: true, projectId: true, intervenorId: true, title: true, sessionDate: true, studentsCount: true, status: true, currentVersion: true, comment: true, refusalReason: true, submittedAt: true, validatedAt: true, reviewedAt: true, createdAt: true, updatedAt: true, project: { select: { id: true, title: true, reference: true } }, intervenor: { select: { id: true, firstName: true, lastName: true } }, versions: { orderBy: { version: 'desc' }, select: { id: true, version: true, content: true, createdAt: true, createdByUserId: true } } },
+    select: { id: true, projectId: true, intervenorId: true, title: true, sessionDate: true, startTime: true, endTime: true, studentsCount: true, status: true, currentVersion: true, revisionByIfics: true, comment: true, refusalReason: true, submittedAt: true, validatedAt: true, reviewedAt: true, createdAt: true, updatedAt: true, project: { select: { id: true, title: true, reference: true } }, intervenor: { select: { id: true, firstName: true, lastName: true } }, versions: { orderBy: { version: 'desc' }, select: { id: true, version: true, content: true, createdAt: true, createdByUserId: true } } },
   })
   if (!report) httpError(404, 'Bilan introuvable.', 'REPORT_NOT_FOUND')
   await assertProjectAccess(context, report.projectId, false)

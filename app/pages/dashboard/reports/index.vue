@@ -8,6 +8,8 @@ type Report = {
   id: string
   title: string | null
   sessionDate: string
+  startTime: string | null
+  endTime: string | null
   studentsCount: number | null
   status: string
   currentVersion: number
@@ -27,6 +29,15 @@ const permissions = computed(() => session.value?.data.user.permissions ?? [])
 const canWrite = computed(() => permissions.value.includes('*') || permissions.value.includes('report:write'))
 const created = computed(() => route.query.created === '1')
 const fmt = (value: string) => new Date(value).toLocaleDateString('fr-FR')
+
+function sessionHours(report: Report): string {
+  if (report.startTime && report.endTime) {
+    return `${report.startTime}–${report.endTime}`
+  }
+  if (report.startTime) return `Début : ${report.startTime}`
+  if (report.endTime) return `Fin : ${report.endTime}`
+  return ''
+}
 
 function statusLabel(status: string) {
   return ({
@@ -87,7 +98,12 @@ function statusLabel(status: string) {
         </thead>
         <tbody>
           <tr v-for="report in reports" :key="report.id">
-            <td>{{ fmt(report.sessionDate) }}</td>
+            <td>
+              <div>{{ fmt(report.sessionDate) }}</div>
+              <small v-if="sessionHours(report)" class="muted">
+                {{ sessionHours(report) }}
+              </small>
+            </td>
             <td>
               <strong>{{ report.title || report.project.title }}</strong><br>
               <small>{{ report.project.reference || report.project.title }}</small>

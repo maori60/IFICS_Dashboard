@@ -463,10 +463,16 @@ export type ReportPdfInput = {
   projectTitle: string
   intervenorName?: string | null
   sessionDate: Date | string
+  startTime?: string | null
+  endTime?: string | null
   studentsCount?: number | null
   content: string
   version: number
   associationName: string
+  official?: {
+    reference: string
+    validatedAt: Date | string
+  }
 }
 
 export async function generateReportPdf(input: ReportPdfInput): Promise<Uint8Array> {
@@ -487,12 +493,55 @@ export async function generateReportPdf(input: ReportPdfInput): Promise<Uint8Arr
   y -= 18
   page.drawText(`Séance : ${formatDate(input.sessionDate)}${input.studentsCount !== null && input.studentsCount !== undefined ? ` — ${input.studentsCount} ${input.studentsCount === 1 ? 'participant' : 'participants'}` : ''}`, { x: MARGIN, y, size: 9, font: regular })
   y -= 15
+  const sessionHours = input.startTime && input.endTime
+    ? `${input.startTime} - ${input.endTime}`
+    : input.startTime
+      ? `Début : ${input.startTime}`
+      : input.endTime
+        ? `Fin : ${input.endTime}`
+        : null
+
+  if (sessionHours) {
+    page.drawText(`Horaires : ${safeText(sessionHours)}`, { x: MARGIN, y, size: 9, font: regular })
+    y -= 15
+  }
+
   if (input.intervenorName) {
     page.drawText(`Intervenant : ${safeText(input.intervenorName)}`, { x: MARGIN, y, size: 9, font: regular })
     y -= 15
   }
   page.drawText(`Version ${input.version}`, { x: MARGIN, y, size: 8, font: regular, color: rgb(0.45, 0.49, 0.57) })
-  y -= 28
+  y -= 20
+
+  if (input.official) {
+    page.drawText('BILAN OFFICIELLEMENT VALIDÉ', {
+      x: MARGIN,
+      y,
+      size: 10,
+      font: bold,
+      color: COLORS.green,
+    })
+    y -= 16
+
+    page.drawText(`Référence : ${safeText(input.official.reference)}`, {
+      x: MARGIN,
+      y,
+      size: 8,
+      font: regular,
+    })
+    y -= 14
+
+    page.drawText(`Validation : ${formatDate(input.official.validatedAt)}`, {
+      x: MARGIN,
+      y,
+      size: 8,
+      font: regular,
+    })
+    y -= 18
+  }
+  else {
+    y -= 8
+  }
 
   const paragraphs = input.content.split(/\n{2,}/)
   for (const paragraph of paragraphs) {

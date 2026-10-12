@@ -1,0 +1,88 @@
+name: ifics-test
+
+services:
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+
+    restart: "no"
+    user: "1000:1000"
+
+    working_dir: /app
+
+    entrypoint:
+      - node
+      - scripts/run-isolated-database.mjs
+
+    environment:
+      DATABASE_URL: "postgresql://placeholder:unused@db:5432/placeholder"
+      SHADOW_DATABASE_URL: ""
+      NODE_ENV: test
+      UPLOAD_DIR: /tmp/ifics-test-uploads
+      SMTP_HOST: ""
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
+      SMTP_FROM: tests@example.invalid
+      APP_BASE_URL: http://localhost.invalid
+
+    volumes:
+      - type: bind
+        source: ${HOME}/.config/ifics/test-empty-env
+        target: /app/.env
+        read_only: true
+      - .:/app:ro
+      - type: tmpfs
+        target: /app/.nuxt
+        tmpfs:
+          mode: 511
+      - type: tmpfs
+        target: /app/backups
+        tmpfs:
+          mode: 365
+      - node_modules_dev:/app/node_modules:ro
+      - type: tmpfs
+        target: /app/node_modules/.vite-temp
+        tmpfs:
+          mode: 511
+      - type: tmpfs
+        target: /app/uploads
+        tmpfs:
+          mode: 511
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          mode: 1023
+      - type: tmpfs
+        target: /tmp/ifics-test-uploads
+        tmpfs:
+          mode: 511
+      - type: bind
+        source: ${HOME}/.config/ifics/test-runner-password
+        target: /run/secrets/ifics-test-password
+        read_only: true
+
+    networks:
+      - test_db_network
+
+    read_only: true
+
+    security_opt:
+      - no-new-privileges:true
+
+    cap_drop:
+      - ALL
+
+    pids_limit: 256
+
+    mem_limit: 2g
+
+volumes:
+  node_modules_dev:
+    external: true
+    name: ifics-dev_node_modules_dev
+
+networks:
+  test_db_network:
+    external: true
+    name: ifics-test-internal
